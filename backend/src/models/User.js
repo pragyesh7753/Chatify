@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
+// User schema definition
 const userSchema = new mongoose.Schema({
     fullName: {
         type: String,
@@ -47,8 +49,6 @@ const userSchema = new mongoose.Schema({
     ]
 }, { timestamps: true }); //This will add createdAt and updatedAt fields
 
-const User = mongoose.model("User", userSchema);
-
 // Pre hook
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
@@ -62,5 +62,7 @@ userSchema.pre("save", async function (next) {
         next(error);
     }
 })
+
+const User = mongoose.model("User", userSchema);
 
 export default User;
