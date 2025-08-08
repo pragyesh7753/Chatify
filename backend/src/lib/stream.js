@@ -19,6 +19,7 @@ export const upsertStreamUser = async (userData) => {
     }
 }
 
+// TODO: Do it later
 export const generateStreamToken = (userId) => {
     try {
         
