@@ -1,4 +1,3 @@
-import { Route, Routes } from 'react-router';
 import HomePage from './pages/HomePage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -7,9 +6,25 @@ import OnboardingPage from './pages/OnboardingPage.jsx';
 import CallPage from './pages/CallPage.jsx';
 import ChatPage from './pages/ChatPage.jsx';
 
+import { Route, Routes } from 'react-router';
 import { Toaster } from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
+import { axiosInstance } from './lib/axios.js';
 
-function App() {
+const App = () => {
+
+  // Tanstack Query
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["todos"],
+
+    queryFn: async () => {
+      const res = await axiosInstance.get('/auth/me');
+      return res.data
+    },
+    retry: false  // This is auth check
+  })
+  console.log(data)
+
   return (
     <div className=' h-screen' data-theme="night">
       <Routes>
