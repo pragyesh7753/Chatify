@@ -37,38 +37,16 @@ export const debugDeviceInfo = () => {
 
 export const testCookieSupport = () => {
   try {
-    // Test basic cookie support
-    document.cookie = "test=1; path=/";
-    const basicCookieSet = document.cookie.indexOf("test=1") !== -1;
+    // Test if we can set a cookie
+    document.cookie = "test=1; SameSite=None; Secure";
+    const cookieSet = document.cookie.indexOf("test=1") !== -1;
     
-    // Test SameSite=None cookie support (for HTTPS only)
-    if (window.location.protocol === 'https:') {
-      document.cookie = "testSecure=1; SameSite=None; Secure; path=/";
-      const secureCookieSet = document.cookie.indexOf("testSecure=1") !== -1;
-      
-      // Clean up test cookies
-      document.cookie = "test=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-      document.cookie = "testSecure=; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure; path=/";
-      
-      return { basic: basicCookieSet, secure: secureCookieSet };
-    } else {
-      // Clean up test cookie
-      document.cookie = "test=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-      return { basic: basicCookieSet, secure: false };
-    }
+    // Clean up test cookie
+    document.cookie = "test=; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure";
+    
+    return cookieSet;
   } catch (error) {
     console.error('Cookie test failed:', error);
-    return { basic: false, secure: false };
+    return false;
   }
-};
-
-export const getAllCookies = () => {
-  const cookies = {};
-  document.cookie.split(';').forEach(cookie => {
-    const [name, value] = cookie.trim().split('=');
-    if (name && value) {
-      cookies[name] = value;
-    }
-  });
-  return cookies;
 };
