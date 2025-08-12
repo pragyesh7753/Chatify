@@ -16,21 +16,10 @@ const LoginPage = () => {
     const cookieSupport = testCookieSupport();
     console.log('Cookie support:', cookieSupport);
     
-    if (!cookieSupport && deviceInfo.isMobile) {
+    if (!cookieSupport.basic && deviceInfo.isMobile) {
       console.warn('Mobile device detected with limited cookie support');
     }
   }, []);
-
-  // This is how we did it at first, without using our custom hook
-  // const queryClient = useQueryClient();
-  // const {
-  //   mutate: loginMutation,
-  //   isPending,
-  //   error,
-  // } = useMutation({
-  //   mutationFn: login,
-  //   onSuccess: () => queryClient.invalidateQueries({ queryKey: ["authUser"] }),
-  // });
 
   // This is how we did it using our custom hook - optimized version
   const { isPending, error, loginMutation } = useLogin();
@@ -151,4 +140,5 @@ const LoginPage = () => {
     </div>
   );
 };
+
 export default LoginPage;

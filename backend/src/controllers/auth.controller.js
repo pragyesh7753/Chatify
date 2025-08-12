@@ -50,13 +50,28 @@ export async function signup(req, res) {
       expiresIn: "7d",
     });
 
-    res.cookie("jwt", token, {
+    // Mobile-friendly cookie settings
+    const cookieOptions = {
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true, // prevent XSS attacks,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // More permissive for development
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser handle domain
-    });
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/", // Ensure cookie is sent for all paths
+    };
+
+    // For mobile debugging
+    const userAgent = req.get('User-Agent') || '';
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    if (isMobile) {
+      console.log('Setting cookie for mobile device:', {
+        userId: newUser._id,
+        cookieOptions,
+        userAgent: userAgent.substring(0, 100)
+      });
+    }
+
+    res.cookie("jwt", token, cookieOptions);
 
     res.status(201).json({ success: true, user: newUser });
   } catch (error) {
@@ -83,13 +98,29 @@ export async function login(req, res) {
       expiresIn: "7d",
     });
 
-    res.cookie("jwt", token, {
+    // Mobile-friendly cookie settings
+    const cookieOptions = {
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true, // prevent XSS attacks,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // More permissive for development
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser handle domain
-    });
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/", // Ensure cookie is sent for all paths
+    };
+
+    // For mobile debugging
+    const userAgent = req.get('User-Agent') || '';
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    if (isMobile) {
+      console.log('Setting login cookie for mobile device:', {
+        userId: user._id,
+        email: user.email,
+        cookieOptions,
+        userAgent: userAgent.substring(0, 100)
+      });
+    }
+
+    res.cookie("jwt", token, cookieOptions);
 
     res.status(200).json({ success: true, user });
   } catch (error) {
