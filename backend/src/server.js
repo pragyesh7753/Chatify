@@ -16,14 +16,12 @@ const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
 // Updated CORS configuration for production
-app.use(
-  cors({
-    origin: process.env.NODE_ENV === "production"
-      ? ["https://chatify.pragyesh.tech"]
-      : "http://localhost:5173",
-    credentials: true,  // Allow cookies to be sent with requests
-  })
-);
+app.use(cors({
+  origin: ['https://chatify.pragyesh.tech', 'http://localhost:5173'], // Add localhost for development
+  credentials: true, // If you're using cookies/sessions
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json());
 app.use(cookieParser());
