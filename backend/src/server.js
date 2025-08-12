@@ -17,10 +17,26 @@ const __dirname = path.resolve();
 
 // Updated CORS configuration for production
 app.use(cors({
-  origin: ['https://chatify.pragyesh.tech', 'http://localhost:5173'], // Add localhost for development
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://chatify.pragyesh.tech', 
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true, // If you're using cookies/sessions
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 app.use(express.json());
@@ -29,6 +45,17 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
+
+// Add a health check endpoint for debugging
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    userAgent: req.get('User-Agent'),
+    origin: req.get('Origin'),
+    cookies: req.cookies
+  });
+});
 
 // Remove static file serving since frontend will be on Vercel
 // if (process.env.NODE_ENV === "production") {

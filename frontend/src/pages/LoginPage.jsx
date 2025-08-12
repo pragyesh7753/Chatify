@@ -1,13 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShipWheelIcon } from "lucide-react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
+import { debugDeviceInfo, testCookieSupport } from "../lib/mobile-utils";
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
   });
+
+  // Debug mobile issues on component mount
+  useEffect(() => {
+    const deviceInfo = debugDeviceInfo();
+    const cookieSupport = testCookieSupport();
+    console.log('Cookie support:', cookieSupport);
+    
+    if (!cookieSupport && deviceInfo.isMobile) {
+      console.warn('Mobile device detected with limited cookie support');
+    }
+  }, []);
 
   // This is how we did it at first, without using our custom hook
   // const queryClient = useQueryClient();
@@ -47,7 +59,11 @@ const LoginPage = () => {
           {/* ERROR MESSAGE DISPLAY */}
           {error && (
             <div className="alert alert-error mb-4">
-              <span>{error.response.data.message}</span>
+              <span>
+                {error.response?.data?.message || 
+                 error.message || 
+                 "Login failed. Please check your connection and try again."}
+              </span>
             </div>
           )}
 

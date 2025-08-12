@@ -6,8 +6,13 @@ export const signup = async (signupData) => {
 };
 
 export const login = async (loginData) => {
-  const response = await axiosInstance.post("/auth/login", loginData);
-  return response.data;
+  try {
+    const response = await axiosInstance.post("/auth/login", loginData);
+    return response.data;
+  } catch (error) {
+    console.error("Login error:", error.response?.data || error.message);
+    throw error;
+  }
 };
 export const logout = async () => {
   const response = await axiosInstance.post("/auth/logout");
