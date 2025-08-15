@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(to bottom, #c9e8c9, #b7e7bb);
+  background: oklch(var(--b1));
   height: 100%;
 }
 
@@ -20,10 +20,11 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  background: oklch(var(--b1));
 }
 
 .str-chat__list {
-  background-color: #ffffff;
+  background-color: oklch(var(--b1));
   padding: 12px;
 }
 
