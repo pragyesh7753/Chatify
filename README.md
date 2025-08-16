@@ -1,9 +1,5 @@
-<h1 align="center">✨ Fullstack Chat & Video Calling App ✨</h1>
-
-![Demo App](/frontend/public/screenshot-for-readme.png)
-
 <div align="center">
-	<h1>Chatify</h1>
+	<h1>✨ Chatify ✨</h1>
 	<p><strong>Real‑time chat & video calling web app with onboarding, friend system, theming & Stream integration</strong></p>
 	<img src="frontend/public/screenshot-for-readme.png" alt="Chatify Screenshot" width="850" />
 	<br/>
