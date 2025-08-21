@@ -8,6 +8,7 @@ import FriendsPage from "./pages/FriendsPage";
 import CallPage from "./pages/CallPage";
 import ChatPage from "./pages/ChatPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import EmailVerificationPage from "./pages/EmailVerificationPage";
 
 import { Toaster } from "react-hot-toast";
 
@@ -51,6 +52,10 @@ const App = () => {
           element={
             !isAuthenticated ? <LoginPage /> : <Navigate to={isOnboarded ? "/" : "/onboarding"} />
           }
+        />
+        <Route
+          path="/verify-email"
+          element={<EmailVerificationPage />}
         />
         <Route
           path="/friends"

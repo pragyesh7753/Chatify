@@ -5,6 +5,16 @@ export const signup = async (signupData) => {
   return response.data;
 };
 
+export const verifyEmail = async (token) => {
+  const response = await axiosInstance.get(`/auth/verify-email/${token}`);
+  return response.data;
+};
+
+export const resendVerificationEmail = async (email) => {
+  const response = await axiosInstance.post("/auth/resend-verification", { email });
+  return response.data;
+};
+
 export const login = async (loginData) => {
   try {
     const response = await axiosInstance.post("/auth/login", loginData);
