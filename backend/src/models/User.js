@@ -41,6 +41,19 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Add verification fields
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      default: null,
+    },
+    verificationTokenExpires: {
+      type: Date,
+      default: null,
+    },
     friends: [
       {
         type: mongoose.Schema.Types.ObjectId,

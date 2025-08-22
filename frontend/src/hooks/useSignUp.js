@@ -6,7 +6,10 @@ const useSignUp = () => {
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: signup,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["authUser"] }),
+    onSuccess: (data) => {
+      // Don't invalidate auth user since they're not logged in yet
+      // The signup response now includes verification info
+    },
   });
 
   return { isPending, error, signupMutation: mutate };
