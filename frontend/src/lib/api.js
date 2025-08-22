@@ -6,8 +6,14 @@ export const signup = async (signupData) => {
 };
 
 export const verifyEmail = async (token) => {
-  const response = await axiosInstance.get(`/auth/verify-email/${token}`);
-  return response.data;
+  try {
+    const response = await axiosInstance.get(`/auth/verify-email/${token}`);
+    console.log("Verify email response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Verify email API error:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 export const resendVerificationEmail = async (email) => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { verifyEmail, resendVerificationEmail } from "../lib/api";
@@ -10,20 +10,29 @@ const EmailVerificationPage = () => {
     const queryClient = useQueryClient();
     const [verificationStatus, setVerificationStatus] = useState("verifying");
     const [email, setEmail] = useState("");
+    const hasVerified = useRef(false);
 
     const token = searchParams.get("token");
 
     const verifyMutation = useMutation({
         mutationFn: verifyEmail,
-        onSuccess: () => {
-            setVerificationStatus("success");
-            queryClient.invalidateQueries({ queryKey: ["authUser"] });
-            setTimeout(() => navigate("/"), 3000);
+        onSuccess: (data) => {
+            console.log("Verification successful:", data);
+            if (data && data.success) {
+                setVerificationStatus("success");
+                queryClient.invalidateQueries({ queryKey: ["authUser"] });
+                setTimeout(() => navigate("/"), 3000);
+            } else {
+                console.error("Verification response indicates failure:", data);
+                setVerificationStatus("error");
+            }
         },
         onError: (error) => {
-            setVerificationStatus("error");
             console.error("Verification error:", error);
+            console.error("Error response:", error.response?.data);
+            setVerificationStatus("error");
         },
+        retry: false,
     });
 
     const resendMutation = useMutation({
@@ -37,9 +46,12 @@ const EmailVerificationPage = () => {
     });
 
     useEffect(() => {
-        if (token) {
+        if (token && !hasVerified.current) {
+            console.log("Starting verification with token:", token);
+            hasVerified.current = true;
             verifyMutation.mutate(token);
-        } else {
+        } else if (!token) {
+            console.log("No token found in URL");
             setVerificationStatus("no-token");
         }
     }, [token]);

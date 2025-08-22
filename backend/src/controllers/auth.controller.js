@@ -76,7 +76,9 @@ export async function verifyEmail(req, res) {
     });
 
     if (!user) {
+      console.log("Verification failed: Invalid or expired token:", token);
       return res.status(400).json({
+        success: false,
         message: "Invalid or expired verification token"
       });
     }
@@ -110,6 +112,8 @@ export async function verifyEmail(req, res) {
       secure: process.env.NODE_ENV === "production",
     });
 
+    console.log("Email verification successful for user:", user.email);
+    
     return res.status(200).json({
       success: true,
       message: "Email verified successfully!",
