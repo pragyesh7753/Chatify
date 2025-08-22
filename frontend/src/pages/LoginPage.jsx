@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
 import { debugDeviceInfo, testCookieSupport } from "../lib/mobile-utils";
+import PasswordInput from "../components/PasswordInput";
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({
@@ -14,7 +15,7 @@ const LoginPage = () => {
     const deviceInfo = debugDeviceInfo();
     const cookieSupport = testCookieSupport();
     console.log('Cookie support:', cookieSupport);
-    
+
     if (!cookieSupport && deviceInfo.isMobile) {
       console.warn('Mobile device detected with limited cookie support');
     }
@@ -59,9 +60,9 @@ const LoginPage = () => {
           {error && (
             <div className="alert alert-error mb-4">
               <span>
-                {error.response?.data?.message || 
-                 error.message || 
-                 "Login failed. Please check your connection and try again."}
+                {error.response?.data?.message ||
+                  error.message ||
+                  "Login failed. Please check your connection and try again."}
               </span>
             </div>
           )}
@@ -95,9 +96,8 @@ const LoginPage = () => {
                     <label className="label">
                       <span className="label-text">Password</span>
                     </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
+                    <PasswordInput
+                      placeholder="********"
                       className="input input-bordered w-full"
                       value={loginData.password}
                       onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}

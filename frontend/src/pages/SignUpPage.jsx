@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import useSignUp from "../hooks/useSignUp";
 
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
+import PasswordInput from "../components/PasswordInput";
 
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
@@ -106,8 +107,7 @@ const SignUpPage = () => {
                       <label className="label">
                         <span className="label-text">Password</span>
                       </label>
-                      <input
-                        type="password"
+                      <PasswordInput
                         placeholder="********"
                         className="input input-bordered w-full"
                         value={signupData.password}
@@ -117,6 +117,27 @@ const SignUpPage = () => {
                       <p className="text-xs opacity-70 mt-1">
                         Password must be at least 8 characters long
                       </p>
+                    </div>
+
+                    {/* CONFIRM PASSWORD */}
+                    <div className="form-control w-full">
+                      <label className="label">
+                        <span className="label-text">Confirm Password</span>
+                      </label>
+                      <PasswordInput
+                        placeholder="********"
+                        className="input input-bordered w-full"
+                        value={signupData.confirmPassword}
+                        onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                        required
+                      />
+                      {signupData.password && signupData.confirmPassword && (
+                        signupData.password !== signupData.confirmPassword ? (
+                          <p className="text-xs text-error mt-1">Passwords do not match</p>
+                        ) : (
+                          <p className="text-xs text-success mt-1">Passwords match</p>
+                        )
+                      )}
                     </div>
 
                     <div className="form-control">
