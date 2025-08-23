@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useThemeStore } from '../store/useThemeStore';
 
 const PWAUpdateNotification = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [registration, setRegistration] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { theme } = useThemeStore();
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -16,29 +19,63 @@ const PWAUpdateNotification = () => {
           
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('New service worker installed, update available');
               setUpdateAvailable(true);
             }
           });
         });
+
+        // Check if there's already a waiting worker
+        if (reg.waiting) {
+          console.log('Service worker already waiting, update available');
+          setUpdateAvailable(true);
+        }
       });
 
       // Listen for messages from service worker
       navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data.type === 'UPDATE_AVAILABLE') {
+        if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+          console.log('Received UPDATE_AVAILABLE message');
           setUpdateAvailable(true);
         }
+      });
+
+      // Listen for controlling service worker change
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('Service worker controller changed, reloading page');
+        window.location.reload();
       });
     }
   }, []);
 
-  const handleUpdate = () => {
-    if (registration && registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  const handleUpdate = async () => {
+    console.log('Update button clicked');
+    setIsUpdating(true);
+    
+    try {
+      if (registration && registration.waiting) {
+        console.log('Posting SKIP_WAITING message to service worker');
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        
+        // Wait a bit for the service worker to take control
+        setTimeout(() => {
+          console.log('Reloading page after update');
+          window.location.reload();
+        }, 500);
+      } else {
+        console.log('No waiting service worker found, forcing page reload');
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error during update:', error);
+      setIsUpdating(false);
+      // Fallback: force reload
       window.location.reload();
     }
   };
 
   const handleDismiss = () => {
+    console.log('Update notification dismissed');
     setUpdateAvailable(false);
   };
 
@@ -47,20 +84,21 @@ const PWAUpdateNotification = () => {
   }
 
   return (
-    <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50">
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+    <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50" data-theme={theme}>
+      <div className="bg-info/10 border border-info/20 rounded-lg p-4 shadow-lg backdrop-blur-sm">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+            <h3 className="text-sm font-semibold text-info mb-1">
               Update Available
             </h3>
-            <p className="text-xs text-blue-700 dark:text-blue-200 mb-3">
-              A new version of Chatify is available. Refresh to get the latest features.
+            <p className="text-xs text-info/80 mb-3">
+              A new version of Chatify is available. Update now to get the latest features and improvements.
             </p>
           </div>
           <button
             onClick={handleDismiss}
-            className="ml-2 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200"
+            className="ml-2 text-info/60 hover:text-info transition-colors"
+            disabled={isUpdating}
           >
             <XMarkIcon className="h-4 w-4" />
           </button>
@@ -69,14 +107,25 @@ const PWAUpdateNotification = () => {
         <div className="flex gap-2">
           <button
             onClick={handleUpdate}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors"
+            disabled={isUpdating}
+            className="flex-1 btn btn-info btn-sm text-xs flex items-center justify-center gap-1"
           >
-            <ArrowPathIcon className="h-3 w-3" />
-            Update Now
+            {isUpdating ? (
+              <>
+                <span className="loading loading-spinner loading-xs"></span>
+                Updating...
+              </>
+            ) : (
+              <>
+                <ArrowPathIcon className="h-3 w-3" />
+                Update Now
+              </>
+            )}
           </button>
           <button
             onClick={handleDismiss}
-            className="px-3 py-2 text-xs text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 transition-colors"
+            disabled={isUpdating}
+            className="btn btn-ghost btn-sm text-xs text-info/80 hover:text-info disabled:opacity-50"
           >
             Later
           </button>

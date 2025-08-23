@@ -15,7 +15,7 @@ import { Toaster } from "react-hot-toast";
 import PageLoader from "./components/PageLoader";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import PWAUpdateNotification from "./components/PWAUpdateNotification";
-import OfflineIndicator from "./components/OfflineIndicator";
+import ConnectionStatus from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout";
@@ -129,7 +129,7 @@ const App = () => {
       <Toaster />
       <PWAInstallPrompt />
       <PWAUpdateNotification />
-      <OfflineIndicator />
+      <ConnectionStatus />
     </div>
     </ErrorBoundary>
   );
