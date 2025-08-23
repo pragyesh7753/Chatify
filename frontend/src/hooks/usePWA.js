@@ -15,16 +15,35 @@ export const usePWA = () => {
 
     checkInstallStatus();
 
-    // Listen for online/offline events
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    // Enhanced online/offline detection
+    const handleOnline = () => {
+      console.log('🌐 Connection restored');
+      setIsOnline(true);
+    };
+    
+    const handleOffline = () => {
+      console.log('📵 Connection lost');
+      setIsOnline(false);
+    };
 
+    // Listen for network events
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
+    // Additional check with network information API if available
+    if ('connection' in navigator) {
+      const connection = navigator.connection;
+      const updateConnectionStatus = () => {
+        setIsOnline(navigator.onLine && connection.effectiveType !== 'slow-2g');
+      };
+      
+      connection.addEventListener('change', updateConnectionStatus);
+    }
 
     // Listen for app installed event
     const handleAppInstalled = () => {
       setIsInstalled(true);
+      console.log('📱 App installed successfully');
     };
 
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -33,6 +52,10 @@ export const usePWA = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      
+      if ('connection' in navigator) {
+        navigator.connection.removeEventListener('change', () => {});
+      }
     };
   }, []);
 
