@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { resendVerificationEmail } from "../lib/api";
 import { EnvelopeIcon } from "@heroicons/react/24/outline";
@@ -10,17 +10,24 @@ const EmailVerificationNotice = ({ email, onClose }) => {
         mutationFn: resendVerificationEmail,
         onSuccess: () => {
             setCountdown(60);
+        },
+    });
+
+    // Use useEffect to handle countdown cleanup
+    useEffect(() => {
+        if (countdown > 0) {
             const timer = setInterval(() => {
                 setCountdown((prev) => {
                     if (prev <= 1) {
-                        clearInterval(timer);
                         return 0;
                     }
                     return prev - 1;
                 });
             }, 1000);
-        },
-    });
+
+            return () => clearInterval(timer);
+        }
+    }, [countdown]);
 
     const handleResend = () => {
         resendMutation.mutate(email);

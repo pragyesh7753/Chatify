@@ -13,6 +13,10 @@ import EmailVerificationPage from "./pages/EmailVerificationPage";
 import { Toaster } from "react-hot-toast";
 
 import PageLoader from "./components/PageLoader";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import PWAUpdateNotification from "./components/PWAUpdateNotification";
+import OfflineIndicator from "./components/OfflineIndicator";
+import ErrorBoundary from "./components/ErrorBoundary";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout";
 import { useThemeStore } from "./store/useThemeStore.js";
@@ -27,8 +31,9 @@ const App = () => {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="h-screen" data-theme={theme}>
-      <Routes>
+    <ErrorBoundary>
+      <div className="h-screen" data-theme={theme}>
+        <Routes>
         <Route
           path="/"
           element={
@@ -122,7 +127,11 @@ const App = () => {
       </Routes>
 
       <Toaster />
+      <PWAInstallPrompt />
+      <PWAUpdateNotification />
+      <OfflineIndicator />
     </div>
+    </ErrorBoundary>
   );
 };
 export default App;
