@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { WifiIcon, ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { toast } from 'react-hot-toast';
 import usePWA from '../hooks/usePWA';
 
 const ConnectionStatus = () => {
@@ -12,35 +11,23 @@ const ConnectionStatus = () => {
     if (!isOnline) {
       setWasOffline(true);
       setShowBackOnline(false);
-      // Show offline toast
-      toast.error('Connection lost - You\'re offline', {
-        id: 'offline-status',
-        duration: Infinity,
-        icon: '📵',
-      });
     } else if (isOnline && wasOffline) {
-      // Dismiss offline toast
-      toast.dismiss('offline-status');
-      
       // Show "Back Online" notification
       setShowBackOnline(true);
       setWasOffline(false);
-      
-      // Show back online toast
-      toast.success('Back online!', {
-        id: 'online-status',
-        duration: 3000,
-        icon: '🌐',
-      });
-      
-      // Hide the banner after 3 seconds
+    }
+  }, [isOnline, wasOffline]);
+
+  // Separate useEffect for hiding the back online banner
+  useEffect(() => {
+    if (showBackOnline) {
       const timer = setTimeout(() => {
         setShowBackOnline(false);
       }, 3000);
 
       return () => clearTimeout(timer);
     }
-  }, [isOnline, wasOffline]);
+  }, [showBackOnline]);
 
   // Show offline indicator
   if (!isOnline) {
