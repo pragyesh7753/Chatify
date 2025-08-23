@@ -17,12 +17,14 @@ const PWAUpdateNotification = () => {
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('New service worker installed, update available');
-              setUpdateAvailable(true);
-            }
-          });
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('New service worker installed, update available');
+                setUpdateAvailable(true);
+              }
+            });
+          }
         });
 
         // Check if there's already a waiting worker
@@ -32,7 +34,7 @@ const PWAUpdateNotification = () => {
         }
       });
 
-      // Listen for messages from service worker
+      // Listen for messages from service worker (Vite PWA plugin)
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
           console.log('Received UPDATE_AVAILABLE message');
@@ -45,6 +47,22 @@ const PWAUpdateNotification = () => {
         console.log('Service worker controller changed, reloading page');
         window.location.reload();
       });
+
+      // Check for Vite PWA update available
+      if (window.workbox && window.workbox.messageSkipWaiting) {
+        setUpdateAvailable(true);
+      }
+    }
+
+    // For testing purposes - remove in production
+    if (import.meta.env.DEV) {
+      // Auto show update notification after 5 seconds in dev mode for testing
+      const devTimer = setTimeout(() => {
+        console.log('Dev mode: Showing update notification for testing');
+        setUpdateAvailable(true);
+      }, 5000);
+
+      return () => clearTimeout(devTimer);
     }
   }, []);
 
@@ -53,6 +71,15 @@ const PWAUpdateNotification = () => {
     setIsUpdating(true);
     
     try {
+      // Try Vite PWA plugin method first
+      if (window.workbox && window.workbox.messageSkipWaiting) {
+        console.log('Using Vite PWA plugin update method');
+        window.workbox.messageSkipWaiting();
+        window.location.reload();
+        return;
+      }
+
+      // Fallback to manual service worker method
       if (registration && registration.waiting) {
         console.log('Posting SKIP_WAITING message to service worker');
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -61,16 +88,26 @@ const PWAUpdateNotification = () => {
         setTimeout(() => {
           console.log('Reloading page after update');
           window.location.reload();
-        }, 500);
+        }, 1000);
+      } else if (registration) {
+        console.log('No waiting service worker, checking for updates...');
+        // Try to update the registration
+        await registration.update();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
-        console.log('No waiting service worker found, forcing page reload');
+        console.log('No service worker registration found, forcing page reload');
         window.location.reload();
       }
     } catch (error) {
       console.error('Error during update:', error);
       setIsUpdating(false);
-      // Fallback: force reload
-      window.location.reload();
+      // Fallback: force reload after showing error
+      setTimeout(() => {
+        console.log('Fallback: Force reloading page');
+        window.location.reload();
+      }, 1000);
     }
   };
 
@@ -84,8 +121,8 @@ const PWAUpdateNotification = () => {
   }
 
   return (
-    <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50" data-theme={theme}>
-      <div className="bg-info/10 border border-info/20 rounded-lg p-4 shadow-lg backdrop-blur-sm">
+    <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50">
+      <div className="bg-info/10 border border-info/20 rounded-lg p-4 shadow-lg backdrop-blur-sm" data-theme={theme}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-info mb-1">
@@ -130,6 +167,15 @@ const PWAUpdateNotification = () => {
             Later
           </button>
         </div>
+        
+        {/* Development helper - remove in production */}
+        {import.meta.env.DEV && (
+          <div className="mt-2 pt-2 border-t border-info/20">
+            <p className="text-xs text-info/60">
+              Dev Mode: Update notification will auto-appear after 5 seconds for testing
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
