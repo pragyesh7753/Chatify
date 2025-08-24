@@ -146,3 +146,75 @@ export async function getOutgoingFriendReqs(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+export async function updateProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const updateData = req.body;
+
+    // Remove sensitive fields that shouldn't be updated through this endpoint
+    delete updateData.password;
+    delete updateData.email;
+    delete updateData.friends;
+    delete updateData.isVerified;
+    delete updateData.verificationToken;
+    delete updateData.verificationTokenExpires;
+    delete updateData.isOnboarded;
+
+    // Validate fullName if provided
+    if (updateData.fullName && updateData.fullName.trim().length < 2) {
+      return res.status(400).json({ message: "Full name must be at least 2 characters long" });
+    }
+
+    // Validate profilePic URL if provided
+    if (updateData.profilePic && updateData.profilePic.trim()) {
+      try {
+        new URL(updateData.profilePic);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid profile picture URL" });
+      }
+    }
+
+    // Trim string values
+    Object.keys(updateData).forEach(key => {
+      if (typeof updateData[key] === 'string') {
+        updateData[key] = updateData[key].trim();
+      }
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error("Error in updateProfile controller", error.message);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function getUserProfile(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error in getUserProfile controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}

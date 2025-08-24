@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { BellIcon, LogOutIcon } from "lucide-react";
+import { BellIcon, LogOutIcon, UserIcon, SettingsIcon } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
 import useLogout from "../hooks/useLogout";
 
@@ -44,16 +44,46 @@ const Navbar = () => {
           {/* TODO */}
           <ThemeSelector />
 
-          <div className="avatar">
-            <div className="w-9 rounded-full">
-              <img src={authUser?.profilePic} alt="User Avatar" rel="noreferrer" />
+          {/* Profile Dropdown */}
+          <div className="dropdown dropdown-end">
+            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+              <div className="w-9 rounded-full">
+                <img 
+                  src={authUser?.profilePic} 
+                  alt="User Avatar" 
+                  rel="noreferrer"
+                  onError={(e) => {
+                    e.target.src = "/default-avatar.svg";
+                  }}
+                />
+              </div>
             </div>
+            <ul tabIndex={0} className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+              <li>
+                <Link to="/profile" className="justify-between">
+                  <span className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4" />
+                    Profile
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <a className="justify-between">
+                  <span className="flex items-center gap-2">
+                    <SettingsIcon className="h-4 w-4" />
+                    Settings
+                  </span>
+                  <span className="badge">New</span>
+                </a>
+              </li>
+              <li>
+                <a onClick={logoutMutation} className="text-error">
+                  <LogOutIcon className="h-4 w-4" />
+                  Logout
+                </a>
+              </li>
+            </ul>
           </div>
-
-          {/* Logout button */}
-          <button className="btn btn-ghost btn-circle" onClick={logoutMutation}>
-            <LogOutIcon className="h-6 w-6 text-base-content opacity-70" />
-          </button>
         </div>
       </div>
     </nav>
