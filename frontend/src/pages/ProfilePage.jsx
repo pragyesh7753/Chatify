@@ -214,10 +214,6 @@ const ProfilePage = () => {
                 ) : (
                   <>
                     <h2 className="card-title text-xl">{userProfile?.fullName}</h2>
-                    <div className="flex items-center gap-2 text-base-content/70">
-                      <MailIcon className="w-4 h-4" />
-                      <span className="text-sm">{userProfile?.email}</span>
-                    </div>
                     <div className="text-sm text-base-content/60">
                       Member since {new Date(userProfile?.createdAt).toLocaleDateString()}
                     </div>
