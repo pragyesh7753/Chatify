@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
 
 import { connectDB } from "./lib/db.js";
+import { cleanupExpiredTokens } from "./lib/cleanup.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -57,6 +58,24 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Manual cleanup endpoint (for admin purposes)
+app.post("/api/cleanup", async (req, res) => {
+  try {
+    await cleanupExpiredTokens();
+    res.json({ 
+      status: "success", 
+      message: "Cleanup completed",
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Manual cleanup failed:", error);
+    res.status(500).json({ 
+      status: "error", 
+      message: "Cleanup failed" 
+    });
+  }
+});
+
 // Remove static file serving since frontend will be on Vercel
 // if (process.env.NODE_ENV === "production") {
 //   app.use(express.static(path.join(__dirname, "../frontend/dist")));
@@ -68,4 +87,12 @@ app.get("/api/health", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   connectDB();
+  
+  // Run initial cleanup
+  cleanupExpiredTokens();
+  
+  // Schedule cleanup to run every hour
+  setInterval(() => {
+    cleanupExpiredTokens();
+  }, 60 * 60 * 1000); // 1 hour in milliseconds
 });

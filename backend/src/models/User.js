@@ -60,6 +60,19 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Email change verification fields
+    pendingEmail: {
+      type: String,
+      default: null,
+    },
+    emailChangeToken: {
+      type: String,
+      default: null,
+    },
+    emailChangeTokenExpires: {
+      type: Date,
+      default: null,
+    },
     friends: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -1,5 +1,7 @@
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
+import { sendVerificationEmail, generateVerificationToken, sendEmailChangeVerification } from "../lib/email.js";
+import { cleanupExpiredEmailChanges } from "../lib/cleanup.js";
 
 export async function getRecommendedUsers(req, res) {
   try {
@@ -151,15 +153,58 @@ export async function updateProfile(req, res) {
   try {
     const userId = req.user.id;
     const updateData = req.body;
+    
+    // Get current user
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    // Remove sensitive fields that shouldn't be updated through this endpoint
+    // Handle email changes separately
+    let emailChanged = false;
+    if (updateData.email && updateData.email !== currentUser.email) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(updateData.email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      // Check if email already exists
+      const existingUser = await User.findOne({ email: updateData.email });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+
+      // Generate email change token
+      const emailChangeToken = generateVerificationToken();
+      const emailChangeTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Set pending email change
+      currentUser.pendingEmail = updateData.email;
+      currentUser.emailChangeToken = emailChangeToken;
+      currentUser.emailChangeTokenExpires = emailChangeTokenExpires;
+
+      // Send verification email to new email address
+      try {
+        await sendEmailChangeVerification(updateData.email, emailChangeToken, currentUser.fullName);
+        emailChanged = true;
+      } catch (emailError) {
+        console.error("Failed to send email change verification:", emailError);
+        return res.status(500).json({ message: "Failed to send verification email. Please try again." });
+      }
+    }
+
+    // Remove sensitive fields that shouldn't be updated directly
+    delete updateData.email; // Handle email separately above
     delete updateData.password;
-    delete updateData.email;
     delete updateData.friends;
     delete updateData.isVerified;
     delete updateData.verificationToken;
     delete updateData.verificationTokenExpires;
     delete updateData.isOnboarded;
+    delete updateData.pendingEmail;
+    delete updateData.emailChangeToken;
+    delete updateData.emailChangeTokenExpires;
 
     // Validate fullName if provided
     if (updateData.fullName && updateData.fullName.trim().length < 2) {
@@ -203,17 +248,36 @@ export async function updateProfile(req, res) {
       }
     });
 
+    // Update other profile fields
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       updateData,
       { new: true, runValidators: true }
-    ).select("-password");
+    );
 
-    if (!updatedUser) {
+    // If email was changed, also save the email change data
+    if (emailChanged) {
+      await currentUser.save();
+    }
+
+    // Get the final user data to return
+    const finalUser = await User.findById(userId).select("-password");
+
+    if (!finalUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(updatedUser);
+    // Provide appropriate response message
+    let message = "Profile updated successfully!";
+    if (emailChanged) {
+      message = "Profile updated successfully! Please check your new email to verify the email change.";
+    }
+
+    res.status(200).json({
+      message,
+      user: finalUser,
+      emailChanged
+    });
   } catch (error) {
     console.error("Error in updateProfile controller", error.message);
     if (error.name === 'ValidationError') {
@@ -227,6 +291,9 @@ export async function getUserProfile(req, res) {
   try {
     const userId = req.user.id;
 
+    // Run cleanup to remove any expired pending email changes
+    await cleanupExpiredEmailChanges();
+
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
@@ -236,6 +303,152 @@ export async function getUserProfile(req, res) {
     res.status(200).json(user);
   } catch (error) {
     console.error("Error in getUserProfile controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Request email change
+export async function requestEmailChange(req, res) {
+  try {
+    const userId = req.user.id;
+    const { newEmail } = req.body;
+
+    if (!newEmail) {
+      return res.status(400).json({ message: "New email is required" });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email: newEmail });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    // Check if user is requesting to change to the same email
+    const currentUser = await User.findById(userId);
+    if (currentUser.email === newEmail) {
+      return res.status(400).json({ message: "New email is the same as current email" });
+    }
+
+    // Generate email change token
+    const emailChangeToken = generateVerificationToken();
+    const emailChangeTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update user with pending email change
+    currentUser.pendingEmail = newEmail;
+    currentUser.emailChangeToken = emailChangeToken;
+    currentUser.emailChangeTokenExpires = emailChangeTokenExpires;
+    await currentUser.save();
+
+    // Send verification email to new email address
+    try {
+      await sendEmailChangeVerification(newEmail, emailChangeToken, currentUser.fullName);
+    } catch (emailError) {
+      console.error("Failed to send email change verification:", emailError);
+      // Clear the pending change if email sending fails
+      currentUser.pendingEmail = null;
+      currentUser.emailChangeToken = null;
+      currentUser.emailChangeTokenExpires = null;
+      await currentUser.save();
+      return res.status(500).json({ message: "Failed to send verification email. Please try again." });
+    }
+
+    res.status(200).json({
+      message: "Verification email sent to new email address. Please check your email to confirm the change.",
+      pendingEmail: newEmail
+    });
+  } catch (error) {
+    console.error("Error in requestEmailChange controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Verify email change
+export async function verifyEmailChange(req, res) {
+  try {
+    const { token } = req.params;
+
+    // Run cleanup before verification to ensure we don't have stale tokens
+    await cleanupExpiredEmailChanges();
+
+    const user = await User.findOne({
+      emailChangeToken: token,
+      emailChangeTokenExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid or expired email change token"
+      });
+    }
+
+    // Update email and clear pending change
+    user.email = user.pendingEmail;
+    user.pendingEmail = null;
+    user.emailChangeToken = null;
+    user.emailChangeTokenExpires = null;
+    // Set email as unverified since it's a new email
+    user.isVerified = false;
+    
+    await user.save();
+
+    res.status(200).json({
+      message: "Email changed successfully. Please verify your new email address.",
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        profilePic: user.profilePic,
+        isVerified: user.isVerified,
+        isOnboarded: user.isOnboarded,
+      },
+    });
+  } catch (error) {
+    console.error("Error in verifyEmailChange controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Resend email verification for current email
+export async function resendEmailVerification(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+
+    // Generate new verification token
+    const verificationToken = generateVerificationToken();
+    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpires = verificationTokenExpires;
+    await user.save();
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(user.email, verificationToken, user.fullName);
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+      return res.status(500).json({ message: "Failed to send verification email. Please try again." });
+    }
+
+    res.status(200).json({
+      message: "Verification email sent successfully!"
+    });
+  } catch (error) {
+    console.error("Error in resendEmailVerification controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

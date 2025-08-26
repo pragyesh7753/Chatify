@@ -12,8 +12,10 @@ export const useUserProfile = () => {
 
   const updateProfileMutation = useMutation({
     mutationFn: updateUserProfile,
-    onSuccess: () => {
-      toast.success("Profile updated successfully!");
+    onSuccess: (data) => {
+      // Handle the new response format
+      const message = data.message || "Profile updated successfully!";
+      toast.success(message);
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },

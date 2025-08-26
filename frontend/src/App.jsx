@@ -9,6 +9,7 @@ import CallPage from "./pages/CallPage";
 import ChatPage from "./pages/ChatPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
+import EmailChangeVerificationPage from "./pages/EmailChangeVerificationPage";
 import ProfilePage from "./pages/ProfilePage";
 
 import { Toaster } from "react-hot-toast";
@@ -61,6 +62,10 @@ const App = () => {
         <Route
           path="/verify-email"
           element={<EmailVerificationPage />}
+        />
+        <Route
+          path="/verify-email-change"
+          element={<EmailChangeVerificationPage />}
         />
         <Route
           path="/friends"

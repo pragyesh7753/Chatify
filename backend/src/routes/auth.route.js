@@ -1,5 +1,6 @@
 import express from "express";
 import { login, logout, onboard, signup, verifyEmail, resendVerificationEmail } from "../controllers/auth.controller.js";
+import { verifyEmailChange } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -11,6 +12,7 @@ router.post("/logout", logout);
 router.post("/onboarding", protectRoute, onboard);
 
 router.get("/verify-email/:token", verifyEmail);
+router.get("/verify-email-change/:token", verifyEmailChange);
 router.post("/resend-verification", resendVerificationEmail);
 
 // check if user is logged in

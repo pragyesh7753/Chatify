@@ -94,3 +94,23 @@ export async function updateUserProfile(profileData) {
   const response = await axiosInstance.put("/users/profile", profileData);
   return response.data;
 }
+
+export async function requestEmailChange(newEmail) {
+  const response = await axiosInstance.post("/users/change-email", { newEmail });
+  return response.data;
+}
+
+export async function verifyEmailChange(token) {
+  try {
+    const response = await axiosInstance.get(`/auth/verify-email-change/${token}`);
+    return response.data;
+  } catch (error) {
+    console.error("Verify email change API error:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+export async function resendEmailVerification() {
+  const response = await axiosInstance.post("/users/verify-email");
+  return response.data;
+}

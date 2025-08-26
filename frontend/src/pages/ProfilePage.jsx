@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { resendEmailVerification } from "../lib/api";
+import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { UserIcon, MailIcon, GlobeIcon, MapPinIcon, EditIcon, SaveIcon, XIcon, AtSignIcon } from "lucide-react";
 
@@ -8,6 +10,7 @@ const ProfilePage = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
+    email: "",
     bio: "",
     profilePic: "",
     nativeLanguage: "",
@@ -16,11 +19,23 @@ const ProfilePage = () => {
 
   const { profile: userProfile, isLoading, error, updateProfile, isUpdating } = useUserProfile();
 
+  // Email verification resend mutation
+  const resendVerificationMutation = useMutation({
+    mutationFn: resendEmailVerification,
+    onSuccess: () => {
+      toast.success("Verification email sent!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to send verification email");
+    },
+  });
+
   useEffect(() => {
     if (userProfile) {
       setFormData({
         fullName: userProfile.fullName || "",
         username: userProfile.username || "",
+        email: userProfile.email || "",
         bio: userProfile.bio || "",
         profilePic: userProfile.profilePic || "",
         nativeLanguage: userProfile.nativeLanguage || "",
@@ -70,6 +85,18 @@ const ProfilePage = () => {
       toast.error("Username can only contain letters, numbers, and underscores");
       return;
     }
+
+    // Validate email
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
     
     // Validate URL if provided
     if (formData.profilePic.trim()) {
@@ -90,6 +117,7 @@ const ProfilePage = () => {
       setFormData({
         fullName: userProfile.fullName || "",
         username: userProfile.username || "",
+        email: userProfile.email || "",
         bio: userProfile.bio || "",
         profilePic: userProfile.profilePic || "",
         nativeLanguage: userProfile.nativeLanguage || "",
@@ -356,7 +384,7 @@ const ProfilePage = () => {
                     )}
                   </div>
 
-                  {/* Email (Read-only) */}
+                  {/* Email */}
                   <div className="form-control">
                     <label className="label">
                       <span className="label-text flex items-center gap-2">
@@ -364,10 +392,54 @@ const ProfilePage = () => {
                         Email
                       </span>
                     </label>
-                    <div className="p-3 bg-base-300 rounded-lg text-base-content/60">
-                      {userProfile?.email}
-                      <span className="text-xs ml-2">(Cannot be changed)</span>
-                    </div>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="input input-bordered w-full"
+                          required
+                        />
+                        {userProfile?.email !== formData.email && (
+                          <div className="text-xs text-warning">
+                            ⚠️ Changing email will require verification of the new email address
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-base-100 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div>{userProfile?.email || "Not set"}</div>
+                            {userProfile?.pendingEmail && (
+                              <div className="text-xs text-warning mt-1">
+                                Pending change to: {userProfile.pendingEmail}
+                              </div>
+                            )}
+                          </div>
+                          {!userProfile?.isVerified && (
+                            <button
+                              onClick={() => resendVerificationMutation.mutate()}
+                              disabled={resendVerificationMutation.isPending}
+                              className="btn btn-warning btn-xs ml-2"
+                            >
+                              {resendVerificationMutation.isPending ? (
+                                <span className="loading loading-spinner loading-xs"></span>
+                              ) : (
+                                "Verify"
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        {!userProfile?.isVerified && (
+                          <div className="text-xs text-warning mt-2">
+                            ⚠️ Email not verified - Click "Verify" to resend verification email
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </form>
               </div>

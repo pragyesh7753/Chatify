@@ -9,6 +9,9 @@ import {
   getUserProfile,
   sendFriendRequest,
   updateProfile,
+  requestEmailChange,
+  verifyEmailChange,
+  resendEmailVerification,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
@@ -20,6 +23,10 @@ router.get("/", getRecommendedUsers);
 router.get("/friends", getMyFriends);
 router.get("/profile", getUserProfile);
 router.put("/profile", updateProfile);
+
+// Email change routes
+router.post("/change-email", requestEmailChange);
+router.post("/verify-email", resendEmailVerification);
 
 router.post("/friend-request/:id", sendFriendRequest);
 router.put("/friend-request/:id/accept", acceptFriendRequest);

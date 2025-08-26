@@ -55,3 +55,46 @@ export const sendVerificationEmail = async (email, verificationToken, fullName) 
 export const generateVerificationToken = () => {
   return crypto.randomBytes(32).toString("hex");
 };
+
+export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fullName) => {
+  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email-change?token=${emailChangeToken}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: newEmail,
+    subject: "Verify Your New Email Address - Chatify",
+    html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <div
+            style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 30px; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #2563eb; text-align: center;">Verify Your New Email Address</h2>
+            <p>Hi ${fullName},</p>
+            <p>You have requested to change your email address on Chatify. Please verify your new email address to complete the change.</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${verificationUrl}"
+                    style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                    Verify New Email Address
+                </a>
+            </div>
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #6b7280;">${verificationUrl}</p>
+            <p>This verification link will expire in 24 hours.</p>
+            <p>If you didn't request this email change, please ignore this email and your account will remain unchanged.</p>
+            <br>
+            <p>This is an system generated email. Please do not reply to this email.</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px;">
+                Best regards,<br>The Chatify Team
+            </p>
+        </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Email change verification sent successfully");
+  } catch (error) {
+    console.error("Error sending email change verification:", error);
+    throw new Error("Failed to send email change verification");
+  }
+};
