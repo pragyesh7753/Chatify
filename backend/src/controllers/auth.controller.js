@@ -29,6 +29,27 @@ export async function signup(req, res) {
     const idx = Math.floor(Math.random() * 100) + 1;
     const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
 
+    // Generate a unique username based on the full name
+    let baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (baseUsername.length < 3) {
+      baseUsername = 'user' + Math.floor(Math.random() * 10000);
+    }
+    if (baseUsername.length > 15) {
+      baseUsername = baseUsername.substring(0, 15);
+    }
+
+    let username = baseUsername;
+    let counter = 1;
+    
+    // Ensure username is unique
+    while (await User.findOne({ username })) {
+      username = baseUsername + counter;
+      counter++;
+      if (username.length > 20) {
+        username = baseUsername.substring(0, 15) + counter;
+      }
+    }
+
     // Generate verification token and expiration date
     const verificationToken = generateVerificationToken();
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);  // 24 hours
@@ -36,6 +57,7 @@ export async function signup(req, res) {
     const newUser = await User.create({
       email,
       fullName,
+      username,
       password,
       profilePic: randomAvatar,
       verificationToken,
@@ -220,24 +242,39 @@ export function logout(req, res) {
 export async function onboard(req, res) {
   try {
     const userId = req.user._id;
-    const { fullName, bio, nativeLanguage, learningLanguage, location } = req.body;
+    const { fullName, username, bio, nativeLanguage, location } = req.body;
 
-    if (!fullName || !bio || !nativeLanguage || !learningLanguage || !location) {
+    if (!fullName || !username || !bio || !nativeLanguage || !location) {
       return res.status(400).json({
         message: "All fields are required",
         missingFields: [
           !fullName && "fullName",
+          !username && "username",
           !bio && "bio",
           !nativeLanguage && "nativeLanguage",
-          !learningLanguage && "learningLanguage",
           !location && "location",
         ].filter(Boolean),
       });
     }
 
+    // Validate username
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ message: "Username must be between 3 and 20 characters" });
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return res.status(400).json({ message: "Username can only contain letters, numbers, and underscores" });
+    }
+
+    // Check if username already exists
+    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    if (existingUser && existingUser._id.toString() !== userId.toString()) {
+      return res.status(400).json({ message: "Username already taken" });
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { ...req.body, isOnboarded: true },
+      { ...req.body, username: username.toLowerCase(), isOnboarded: true },
       { new: true }
     );
 

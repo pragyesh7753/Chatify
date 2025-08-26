@@ -131,8 +131,7 @@ const HomePage = () => {
                           Native: {capitialize(user.nativeLanguage)}
                         </span>
                         <span className="badge badge-outline">
-                          {getLanguageFlag(user.learningLanguage)}
-                          Learning: {capitialize(user.learningLanguage)}
+                          @{user.username}
                         </span>
                       </div>
 

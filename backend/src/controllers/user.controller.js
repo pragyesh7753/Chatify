@@ -24,7 +24,7 @@ export async function getMyFriends(req, res) {
   try {
     const user = await User.findById(req.user.id)
       .select("friends")
-      .populate("friends", "fullName profilePic nativeLanguage learningLanguage");
+      .populate("friends", "fullName profilePic nativeLanguage username");
 
     res.status(200).json(user.friends);
   } catch (error) {
@@ -119,7 +119,7 @@ export async function getFriendRequests(req, res) {
     const incomingReqs = await FriendRequest.find({
       recipient: req.user.id,
       status: "pending",
-    }).populate("sender", "fullName profilePic nativeLanguage learningLanguage");
+    }).populate("sender", "fullName profilePic nativeLanguage username");
 
     const acceptedReqs = await FriendRequest.find({
       sender: req.user.id,
@@ -138,7 +138,7 @@ export async function getOutgoingFriendReqs(req, res) {
     const outgoingRequests = await FriendRequest.find({
       sender: req.user.id,
       status: "pending",
-    }).populate("recipient", "fullName profilePic nativeLanguage learningLanguage");
+    }).populate("recipient", "fullName profilePic nativeLanguage username");
 
     res.status(200).json(outgoingRequests);
   } catch (error) {
@@ -164,6 +164,27 @@ export async function updateProfile(req, res) {
     // Validate fullName if provided
     if (updateData.fullName && updateData.fullName.trim().length < 2) {
       return res.status(400).json({ message: "Full name must be at least 2 characters long" });
+    }
+
+    // Validate username if provided
+    if (updateData.username) {
+      const username = updateData.username.trim().toLowerCase();
+      
+      if (username.length < 3 || username.length > 20) {
+        return res.status(400).json({ message: "Username must be between 3 and 20 characters" });
+      }
+
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        return res.status(400).json({ message: "Username can only contain letters, numbers, and underscores" });
+      }
+
+      // Check if username already exists
+      const existingUser = await User.findOne({ username });
+      if (existingUser && existingUser._id.toString() !== userId) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      updateData.username = username;
     }
 
     // Validate profilePic URL if provided

@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUserProfile } from "../hooks/useUserProfile";
 import toast from "react-hot-toast";
-import { UserIcon, MailIcon, GlobeIcon, MapPinIcon, EditIcon, SaveIcon, XIcon } from "lucide-react";
+import { UserIcon, MailIcon, GlobeIcon, MapPinIcon, EditIcon, SaveIcon, XIcon, AtSignIcon } from "lucide-react";
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
+    username: "",
     bio: "",
     profilePic: "",
     nativeLanguage: "",
-    learningLanguage: "",
     location: "",
   });
 
@@ -20,31 +20,14 @@ const ProfilePage = () => {
     if (userProfile) {
       setFormData({
         fullName: userProfile.fullName || "",
+        username: userProfile.username || "",
         bio: userProfile.bio || "",
         profilePic: userProfile.profilePic || "",
         nativeLanguage: userProfile.nativeLanguage || "",
-        learningLanguage: userProfile.learningLanguage || "",
         location: userProfile.location || "",
       });
     }
   }, [userProfile]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape" && isEditing) {
-        handleCancel();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === "s" && isEditing) {
-        e.preventDefault();
-        handleSubmit(e);
-      }
-    };
-
-    if (isEditing) {
-      document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
-    }
-  }, [isEditing]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +50,26 @@ const ProfilePage = () => {
       toast.error("Full name must be at least 2 characters long");
       return;
     }
+
+    if (!formData.username.trim()) {
+      toast.error("Username is required");
+      return;
+    }
+    
+    if (formData.username.trim().length < 3) {
+      toast.error("Username must be at least 3 characters long");
+      return;
+    }
+
+    if (formData.username.trim().length > 20) {
+      toast.error("Username must be less than 20 characters long");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(formData.username.trim())) {
+      toast.error("Username can only contain letters, numbers, and underscores");
+      return;
+    }
     
     // Validate URL if provided
     if (formData.profilePic.trim()) {
@@ -86,15 +89,32 @@ const ProfilePage = () => {
     if (userProfile) {
       setFormData({
         fullName: userProfile.fullName || "",
+        username: userProfile.username || "",
         bio: userProfile.bio || "",
         profilePic: userProfile.profilePic || "",
         nativeLanguage: userProfile.nativeLanguage || "",
-        learningLanguage: userProfile.learningLanguage || "",
         location: userProfile.location || "",
       });
     }
     setIsEditing(false);
   }, [userProfile]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && isEditing) {
+        handleCancel();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "s" && isEditing) {
+        e.preventDefault();
+        handleSubmit(e);
+      }
+    };
+
+    if (isEditing) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [isEditing, handleCancel, handleSubmit]);
 
   if (isLoading) {
     return (
@@ -244,6 +264,34 @@ const ProfilePage = () => {
                     )}
                   </div>
 
+                  {/* Username */}
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text flex items-center gap-2">
+                        <AtSignIcon className="w-4 h-4" />
+                        Username
+                      </span>
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleInputChange}
+                        placeholder="e.g., john_doe"
+                        className="input input-bordered w-full"
+                        pattern="^[a-zA-Z0-9_]+$"
+                        minLength="3"
+                        maxLength="20"
+                        required
+                      />
+                    ) : (
+                      <div className="p-3 bg-base-100 rounded-lg">
+                        @{userProfile?.username || "Not set"}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Bio */}
                   <div className="form-control">
                     <label className="label">
@@ -264,53 +312,28 @@ const ProfilePage = () => {
                     )}
                   </div>
 
-                  {/* Languages */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text flex items-center gap-2">
-                          <GlobeIcon className="w-4 h-4" />
-                          Native Language
-                        </span>
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="nativeLanguage"
-                          value={formData.nativeLanguage}
-                          onChange={handleInputChange}
-                          placeholder="e.g., English"
-                          className="input input-bordered w-full"
-                        />
-                      ) : (
-                        <div className="p-3 bg-base-100 rounded-lg">
-                          {userProfile?.nativeLanguage || "Not set"}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text flex items-center gap-2">
-                          <GlobeIcon className="w-4 h-4" />
-                          Learning Language
-                        </span>
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="learningLanguage"
-                          value={formData.learningLanguage}
-                          onChange={handleInputChange}
-                          placeholder="e.g., Spanish"
-                          className="input input-bordered w-full"
-                        />
-                      ) : (
-                        <div className="p-3 bg-base-100 rounded-lg">
-                          {userProfile?.learningLanguage || "Not set"}
-                        </div>
-                      )}
-                    </div>
+                  {/* Native Language */}
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text flex items-center gap-2">
+                        <GlobeIcon className="w-4 h-4" />
+                        Native Language
+                      </span>
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="nativeLanguage"
+                        value={formData.nativeLanguage}
+                        onChange={handleInputChange}
+                        placeholder="e.g., English"
+                        className="input input-bordered w-full"
+                      />
+                    ) : (
+                      <div className="p-3 bg-base-100 rounded-lg">
+                        {userProfile?.nativeLanguage || "Not set"}
+                      </div>
+                    )}
                   </div>
 
                   {/* Location */}

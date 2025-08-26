@@ -25,11 +25,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    nativeLanguage: {
+    username: {
       type: String,
-      default: "",
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 20,
+      match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores']
     },
-    learningLanguage: {
+    nativeLanguage: {
       type: String,
       default: "",
     },
