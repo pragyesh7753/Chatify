@@ -189,18 +189,27 @@ export async function resendVerificationEmail(req, res) {
 // Login
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const { emailOrUsername, password } = req.body;
 
-    if (!email || !password)
+    if (!emailOrUsername || !password)
       return res.status(400).json({ message: "All fields are required" });
 
-    const user = await User.findOne({ email });
+    // Check if the input is an email or username
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrUsername);
+    
+    // Find user by email or username
+    const user = await User.findOne(
+      isEmail 
+        ? { email: emailOrUsername } 
+        : { username: emailOrUsername.toLowerCase() }
+    );
+    
     if (!user)
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid email/username or password" });
 
     const isPasswordCorrect = await user.matchPassword(password);
     if (!isPasswordCorrect)
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid email/username or password" });
 
     // Check if user is verified
     if (!user.isVerified) {
