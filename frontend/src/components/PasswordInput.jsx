@@ -18,7 +18,7 @@ const PasswordInput = ({
     };
 
     return (
-        <div className="relative">
+        <div className="relative z-0">
             <input
                 type={showPassword ? "text" : "password"}
                 value={value}
@@ -27,14 +27,15 @@ const PasswordInput = ({
                 name={name}
                 id={id}
                 required={required}
-                className={`pr-10 ${className}`}
+                className={`pr-12 ${className}`}
                 {...props}
             />
             <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="absolute inset-y-0 right-0 flex items-center justify-center w-12 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 z-10 bg-transparent"
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex="-1"
             >
                 {showPassword ? (
                     <EyeSlashIcon className="h-5 w-5" />
