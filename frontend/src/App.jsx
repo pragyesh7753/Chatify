@@ -23,6 +23,8 @@ import Layout from "./components/Layout";
 import { useThemeStore } from "./store/useThemeStore.js";
 import { useOnlineStatus } from "./hooks/useOnlineStatus.js";
 
+import { SpeedInsights } from "@vercel/speed-insights/react"
+
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
   const { theme } = useThemeStore();
@@ -150,6 +152,7 @@ const App = () => {
       <Toaster />
       <PWAInstallPrompt />
       <ConnectionStatus />
+      <SpeedInsights />
     </div>
     </ErrorBoundary>
   );
