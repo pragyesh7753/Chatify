@@ -21,6 +21,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout";
 import { useThemeStore } from "./store/useThemeStore.js";
+import { useOnlineStatus } from "./hooks/useOnlineStatus.js";
 
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
@@ -28,6 +29,9 @@ const App = () => {
 
   const isAuthenticated = Boolean(authUser);
   const isOnboarded = authUser?.isOnboarded;
+
+  // Handle online status for authenticated users
+  useOnlineStatus(isAuthenticated && isOnboarded);
 
   if (isLoading) return <PageLoader />;
 

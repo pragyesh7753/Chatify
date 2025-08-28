@@ -100,6 +100,16 @@ export async function requestEmailChange(newEmail) {
   return response.data;
 }
 
+export async function updateOnlineStatus(isOnline) {
+  const response = await axiosInstance.put("/users/online-status", { isOnline });
+  return response.data;
+}
+
+export async function setUserOffline() {
+  const response = await axiosInstance.post("/users/offline");
+  return response.data;
+}
+
 export async function verifyEmailChange(token) {
   try {
     const response = await axiosInstance.get(`/auth/verify-email-change/${token}`);

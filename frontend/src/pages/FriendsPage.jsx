@@ -7,6 +7,8 @@ const FriendsPage = () => {
   const { data: friends = [], isLoading } = useQuery({
     queryKey: ["friends"],
     queryFn: getUserFriends,
+    refetchInterval: 10000, // Refetch every 10 seconds to update online status
+    refetchIntervalInBackground: true, // Continue refetching when tab is not active
   });
 
   return (

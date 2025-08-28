@@ -12,6 +12,8 @@ import {
   requestEmailChange,
   verifyEmailChange,
   resendEmailVerification,
+  updateOnlineStatus,
+  setUserOffline,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
@@ -23,6 +25,10 @@ router.get("/", getRecommendedUsers);
 router.get("/friends", getMyFriends);
 router.get("/profile", getUserProfile);
 router.put("/profile", updateProfile);
+
+// Online status routes
+router.put("/online-status", updateOnlineStatus);
+router.post("/offline", setUserOffline);
 
 // Email change routes
 router.post("/change-email", requestEmailChange);
