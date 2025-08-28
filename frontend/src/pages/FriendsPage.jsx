@@ -16,7 +16,7 @@ const FriendsPage = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Your Friends</h1>
             <p className="text-base-content opacity-70 mt-2">
-              Connect and chat with your language learning partners
+              Connect and chat with your friends
             </p>
           </div>
         </div>
