@@ -4,22 +4,25 @@
   themes: all;
 }
 
+/* Stream Chat layout tweaks to fill remaining viewport height */
+.str-chat__chat,
+.str-chat,
+.str-chat__channel,
+.str-chat__container,
+.str-chat__window {
+  height: 100% !important;
+}
+
 .str-chat__channel {
   display: flex;
-  align-items: center;
-  justify-content: center;
   background: oklch(var(--b1));
-  height: 100%;
 }
 
 .str-chat__container {
-  max-width: 1200px;
   width: 100%;
-  height: 80% !important;
-  margin: 0 auto !important;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  margin: 0 !important;
+  border-radius: 0;
+  box-shadow: none;
   background: oklch(var(--b1));
 }
 
@@ -34,4 +37,9 @@
 
 .str-chat__message-input {
   border-top: 1px solid #ddd;
+}
+
+/* Ensure message list can scroll within full-height layout */
+.str-chat__list {
+  overflow-y: auto;
 }
