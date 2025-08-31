@@ -60,7 +60,11 @@ const Navbar = () => {
             </div>
             <ul tabIndex={0} className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
               <li>
-                <Link to="/profile" className="justify-between">
+                <Link 
+                  to="/profile" 
+                  className="justify-between"
+                  onClick={() => document.activeElement?.blur()}
+                >
                   <span className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4" />
                     Profile
@@ -68,16 +72,13 @@ const Navbar = () => {
                 </Link>
               </li>
               <li>
-                <a className="justify-between">
-                  <span className="flex items-center gap-2">
-                    <SettingsIcon className="h-4 w-4" />
-                    Settings
-                  </span>
-                  <span className="badge">New</span>
-                </a>
-              </li>
-              <li>
-                <a onClick={logoutMutation} className="text-error">
+                <a 
+                  onClick={() => {
+                    document.activeElement?.blur();
+                    logoutMutation();
+                  }} 
+                  className="text-error"
+                >
                   <LogOutIcon className="h-4 w-4" />
                   Logout
                 </a>
