@@ -224,12 +224,6 @@ export async function login(req, res) {
       expiresIn: "7d",
     });
 
-    // Set user as online
-    await User.findByIdAndUpdate(user._id, { 
-      isOnline: true,
-      lastSeen: new Date()
-    });
-
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true, // prevent XSS attacks,
@@ -247,14 +241,6 @@ export async function login(req, res) {
 // Logout
 export async function logout(req, res) {
   try {
-    // Set user as offline if they're authenticated
-    if (req.user) {
-      await User.findByIdAndUpdate(req.user.id, { 
-        isOnline: false,
-        lastSeen: new Date()
-      });
-    }
-
     res.clearCookie("jwt", {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",

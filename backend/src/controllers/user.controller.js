@@ -26,7 +26,7 @@ export async function getMyFriends(req, res) {
   try {
     const user = await User.findById(req.user.id)
       .select("friends")
-      .populate("friends", "fullName profilePic nativeLanguage username isOnline lastSeen");
+      .populate("friends", "fullName profilePic nativeLanguage username");
 
     res.status(200).json(user.friends);
   } catch (error) {
@@ -449,41 +449,6 @@ export async function resendEmailVerification(req, res) {
     });
   } catch (error) {
     console.error("Error in resendEmailVerification controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
-
-export async function updateOnlineStatus(req, res) {
-  try {
-    const userId = req.user.id;
-    const { isOnline } = req.body;
-
-    const updateData = { isOnline };
-    if (!isOnline) {
-      updateData.lastSeen = new Date();
-    }
-
-    await User.findByIdAndUpdate(userId, updateData);
-
-    res.status(200).json({ message: "Online status updated successfully" });
-  } catch (error) {
-    console.error("Error in updateOnlineStatus controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
-
-export async function setUserOffline(req, res) {
-  try {
-    const userId = req.user.id;
-
-    await User.findByIdAndUpdate(userId, {
-      isOnline: false,
-      lastSeen: new Date()
-    });
-
-    res.status(200).json({ message: "User set to offline" });
-  } catch (error) {
-    console.error("Error in setUserOffline controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
