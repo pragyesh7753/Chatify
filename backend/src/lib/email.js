@@ -1,19 +1,13 @@
-import nodemailer from "nodemailer";
+import { Resend } from 'resend';
 import crypto from "crypto";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail", // or your preferred email service
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD, // Use app password for Gmail
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (email, verificationToken, fullName) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  const emailData = {
+    from: 'Chatify <chatify-noreply@pragyesh.tech>',
     to: email,
     subject: "Verify Your Chatify Account",
     html: `
@@ -44,8 +38,9 @@ export const sendVerificationEmail = async (email, verificationToken, fullName) 
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Verification email sent successfully");
+    const result = await resend.emails.send(emailData);
+    console.log("Verification email sent successfully:", result);
+    return result;
   } catch (error) {
     console.error("Error sending verification email:", error);
     throw new Error("Failed to send verification email");
@@ -59,8 +54,8 @@ export const generateVerificationToken = () => {
 export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fullName) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email-change?token=${emailChangeToken}`;
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  const emailData = {
+    from: 'Chatify <chatify-noreply@pragyesh.tech>',
     to: newEmail,
     subject: "Verify Your New Email Address - Chatify",
     html: `
@@ -91,8 +86,9 @@ export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fu
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Email change verification sent successfully");
+    const result = await resend.emails.send(emailData);
+    console.log("Email change verification sent successfully:", result);
+    return result;
   } catch (error) {
     console.error("Error sending email change verification:", error);
     throw new Error("Failed to send email change verification");
