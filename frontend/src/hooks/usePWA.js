@@ -31,9 +31,10 @@ export const usePWA = () => {
     window.addEventListener('offline', handleOffline);
 
     // Additional check with network information API if available
+    let updateConnectionStatus;
     if ('connection' in navigator) {
       const connection = navigator.connection;
-      const updateConnectionStatus = () => {
+      updateConnectionStatus = () => {
         setIsOnline(navigator.onLine && connection.effectiveType !== 'slow-2g');
       };
       
@@ -53,8 +54,8 @@ export const usePWA = () => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('appinstalled', handleAppInstalled);
       
-      if ('connection' in navigator) {
-        navigator.connection.removeEventListener('change', () => {});
+      if ('connection' in navigator && updateConnectionStatus) {
+        navigator.connection.removeEventListener('change', updateConnectionStatus);
       }
     };
   }, []);

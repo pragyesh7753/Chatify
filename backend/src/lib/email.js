@@ -1,10 +1,19 @@
 import { Resend } from 'resend';
 import crypto from "crypto";
 
+if (!process.env.RESEND_API_KEY) {
+  console.error("RESEND_API_KEY is not set in environment variables");
+}
+
+if (!process.env.FRONTEND_URL) {
+  console.error("FRONTEND_URL is not set in environment variables");
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (email, verificationToken, fullName) => {
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
   const emailData = {
     from: 'Chatify <chatify-noreply@pragyesh.tech>',
@@ -52,7 +61,8 @@ export const generateVerificationToken = () => {
 };
 
 export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fullName) => {
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email-change?token=${emailChangeToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const verificationUrl = `${frontendUrl}/verify-email-change?token=${emailChangeToken}`;
 
   const emailData = {
     from: 'Chatify <chatify-noreply@pragyesh.tech>',

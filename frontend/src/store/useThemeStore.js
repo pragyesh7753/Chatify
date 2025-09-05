@@ -1,9 +1,11 @@
 import { create } from "zustand";
 
 export const useThemeStore = create((set) => ({
-  theme: localStorage.getItem("chatify-theme") || "coffee",
+  theme: typeof window !== "undefined" ? localStorage.getItem("chatify-theme") || "coffee" : "coffee",
   setTheme: (theme) => {
-    localStorage.setItem("chatify-theme", theme);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("chatify-theme", theme);
+    }
     set({ theme });
   },
 }));

@@ -245,7 +245,9 @@ export async function login(req, res) {
       secure: process.env.NODE_ENV === "production",
     });
 
-    return res.status(200).json({ success: true, user });
+    // Return user without password
+    const { password: userPassword, ...userWithoutPassword } = user.toObject();
+    return res.status(200).json({ success: true, user: userWithoutPassword });
   } catch (error) {
     console.log("Error in login controller", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
