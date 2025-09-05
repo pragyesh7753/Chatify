@@ -92,6 +92,8 @@ export async function verifyEmail(req, res) {
   try {
     const { token } = req.params;
 
+    console.log("Starting email verification for token:", token);
+
     const user = await User.findOne({
       verificationToken: token,
       verificationTokenExpires: { $gt: new Date() },
@@ -105,11 +107,23 @@ export async function verifyEmail(req, res) {
       });
     }
 
+    console.log("Found user for verification:", { 
+      email: user.email, 
+      isVerified: user.isVerified,
+      userId: user._id 
+    });
+
     // Verify the user
     user.isVerified = true;
     user.verificationToken = null;
     user.verificationTokenExpires = null;
     await user.save();
+
+    console.log("User verification completed:", { 
+      email: user.email, 
+      isVerified: user.isVerified,
+      userId: user._id 
+    });
 
     // Create Stream user after verification
     try {

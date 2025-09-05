@@ -373,6 +373,8 @@ export async function verifyEmailChange(req, res) {
   try {
     const { token } = req.params;
 
+    console.log("Starting email change verification for token:", token);
+
     // Run cleanup before verification to ensure we don't have stale tokens
     await cleanupExpiredEmailChanges();
 
@@ -382,23 +384,47 @@ export async function verifyEmailChange(req, res) {
     });
 
     if (!user) {
+      console.log("Email change verification failed: Invalid or expired token:", token);
       return res.status(400).json({
         message: "Invalid or expired email change token"
       });
     }
 
+    // Store the new email before updating
+    const newEmail = user.pendingEmail;
+    const oldEmail = user.email;
+
+    console.log("Email change verification found user:", { 
+      userId: user._id,
+      oldEmail: oldEmail,
+      newEmail: newEmail,
+      currentIsVerified: user.isVerified 
+    });
+
     // Update email and clear pending change
-    user.email = user.pendingEmail;
+    user.email = newEmail;
     user.pendingEmail = null;
     user.emailChangeToken = null;
     user.emailChangeTokenExpires = null;
-    // Set email as unverified since it's a new email
-    user.isVerified = false;
+    
+    // Since the user has verified ownership of the new email by clicking the verification link,
+    // we can set them as verified. No need for a second verification step.
+    user.isVerified = true;
+    
+    // Clear any existing verification tokens since email is now verified
+    user.verificationToken = null;
+    user.verificationTokenExpires = null;
     
     await user.save();
 
+    console.log("Email change completed successfully:", {
+      userId: user._id,
+      newEmail: newEmail,
+      isVerified: user.isVerified
+    });
+
     res.status(200).json({
-      message: "Email changed successfully. Please verify your new email address.",
+      message: "Email changed and verified successfully!",
       user: {
         _id: user._id,
         fullName: user.fullName,

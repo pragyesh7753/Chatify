@@ -52,7 +52,7 @@ const EmailChangeVerificationPage = () => {
                 return {
                     icon: <CheckCircleIcon className="w-16 h-16 text-success" />,
                     title: "Email Changed Successfully!",
-                    message: "Your email address has been updated. You will be redirected to your profile shortly.",
+                    message: "Your email address has been updated and verified. You can now use your new email to sign in.",
                     bgColor: "bg-success/10",
                 };
             case "error":
