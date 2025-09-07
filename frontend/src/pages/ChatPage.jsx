@@ -18,6 +18,7 @@ import toast from "react-hot-toast";
 
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
+import TypingIndicator from "../components/TypingIndicator";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -103,6 +104,7 @@ const ChatPage = () => {
             <Window>
               <ChannelHeader />
               <MessageList />
+              <TypingIndicator channel={channel} authUser={authUser} />
               <MessageInput focus />
             </Window>
           </div>

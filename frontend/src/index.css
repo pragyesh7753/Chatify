@@ -43,3 +43,13 @@
 .str-chat__list {
   overflow-y: auto;
 }
+
+/* Hide default Stream timestamps */
+.str-chat__message-timestamp {
+  display: none !important;
+}
+
+/* Hide default Stream typing indicator */
+.str-chat__typing-indicator {
+  display: none !important;
+}
