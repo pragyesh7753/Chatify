@@ -2,6 +2,7 @@ import { upsertStreamUser } from "../lib/stream.js";
 import { sendVerificationEmail, generateVerificationToken } from "../lib/email.js";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import cloudinary from "../lib/cloudinary.js";
 
 // Sign up (creates unverified user and sends verification email)
 export async function signup(req, res) {
@@ -306,9 +307,42 @@ export async function onboard(req, res) {
       return res.status(400).json({ message: "Username already taken" });
     }
 
+    let profilePicUrl = req.body.profilePic;
+
+    // Handle custom photo upload
+    if (req.file) {
+      try {
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              resource_type: 'image',
+              folder: 'chatify/profiles',
+              transformation: [
+                { width: 400, height: 400, crop: 'fill' },
+                { quality: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(req.file.buffer);
+        });
+        profilePicUrl = result.secure_url;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({ message: 'Failed to upload image' });
+      }
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { ...req.body, username: username.toLowerCase(), isOnboarded: true },
+      { 
+        ...req.body, 
+        username: username.toLowerCase(), 
+        profilePic: profilePicUrl,
+        isOnboarded: true 
+      },
       { new: true }
     );
 

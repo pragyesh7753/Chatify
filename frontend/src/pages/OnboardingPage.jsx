@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { completeOnboarding } from "../lib/api";
-import { LoaderIcon, MapPinIcon, ShipWheelIcon, ShuffleIcon } from "lucide-react";
+import { LoaderIcon, MapPinIcon, ShipWheelIcon, ShuffleIcon, CameraIcon, UploadIcon } from "lucide-react";
 import { LANGUAGES } from "../constants";
 
 const OnboardingPage = () => {
   const { authUser } = useAuthUser();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef(null);
 
   const [formState, setFormState] = useState({
     fullName: authUser?.fullName || "",
@@ -18,6 +19,9 @@ const OnboardingPage = () => {
     location: authUser?.location || "",
     profilePic: authUser?.profilePic || "",
   });
+  
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const { mutate: onboardingMutation, isPending } = useMutation({
     mutationFn: completeOnboarding,
@@ -34,15 +38,49 @@ const OnboardingPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    onboardingMutation(formState);
+    const submitData = { ...formState };
+    if (selectedFile) {
+      submitData.profilePic = selectedFile;
+    }
+
+    onboardingMutation(submitData);
   };
 
   const handleRandomAvatar = () => {
-    const idx = Math.floor(Math.random() * 100) + 1; // 1-100 included
+    const idx = Math.floor(Math.random() * 100) + 1;
     const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
 
     setFormState({ ...formState, profilePic: randomAvatar });
+    setSelectedFile(null);
+    setPreviewUrl(null);
     toast.success("Random profile picture generated!");
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+        setFormState({ ...formState, profilePic: '' }); // Clear random avatar
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -56,9 +94,9 @@ const OnboardingPage = () => {
             <div className="flex flex-col items-center justify-center space-y-4">
               {/* IMAGE PREVIEW */}
               <div className="size-32 rounded-full bg-base-300 overflow-hidden">
-                {formState.profilePic ? (
+                {previewUrl || formState.profilePic ? (
                   <img
-                    src={formState.profilePic}
+                    src={previewUrl || formState.profilePic}
                     alt="Profile Preview"
                     className="w-full h-full object-cover"
                   />
@@ -69,13 +107,30 @@ const OnboardingPage = () => {
                 )}
               </div>
 
-              {/* Generate Random Avatar BTN */}
+              {/* Upload and Random Avatar Buttons */}
               <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button type="button" onClick={handleUploadClick} className="btn btn-primary">
+                  <UploadIcon className="size-4 mr-2" />
+                  Upload Photo
+                </button>
                 <button type="button" onClick={handleRandomAvatar} className="btn btn-accent">
                   <ShuffleIcon className="size-4 mr-2" />
-                  Generate Random Avatar
+                  Random Avatar
                 </button>
               </div>
+              
+              {selectedFile && (
+                <p className="text-sm text-base-content opacity-70">
+                  Selected: {selectedFile.name}
+                </p>
+              )}
             </div>
 
             {/* FULL NAME */}

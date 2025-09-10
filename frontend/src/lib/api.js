@@ -46,7 +46,20 @@ export const getAuthUser = async () => {
 };
 
 export const completeOnboarding = async (userData) => {
-  const response = await axiosInstance.post("/auth/onboarding", userData);
+  const formData = new FormData();
+  
+  // Add all form fields to FormData
+  Object.keys(userData).forEach(key => {
+    if (userData[key] !== null && userData[key] !== undefined) {
+      formData.append(key, userData[key]);
+    }
+  });
+  
+  const response = await axiosInstance.post("/auth/onboarding", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 
