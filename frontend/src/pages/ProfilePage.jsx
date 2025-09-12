@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { resendEmailVerification } from "../lib/api";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { UserIcon, MailIcon, GlobeIcon, MapPinIcon, EditIcon, SaveIcon, XIcon, AtSignIcon } from "lucide-react";
+import { UserIcon, MailIcon, GlobeIcon, MapPinIcon, EditIcon, SaveIcon, XIcon, AtSignIcon, CameraIcon, UploadIcon, ShuffleIcon } from "lucide-react";
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -98,19 +101,14 @@ const ProfilePage = () => {
       return;
     }
     
-    // Validate URL if provided
-    if (formData.profilePic.trim()) {
-      try {
-        new URL(formData.profilePic);
-      } catch {
-        toast.error("Please enter a valid profile picture URL");
-        return;
-      }
+    const submitData = { ...formData };
+    if (selectedFile) {
+      submitData.profilePic = selectedFile;
     }
     
-    updateProfile(formData);
+    updateProfile(submitData);
     setIsEditing(false);
-  }, [formData, updateProfile]);
+  }, [formData, selectedFile, updateProfile]);
 
   const handleCancel = useCallback(() => {
     if (userProfile) {
@@ -124,8 +122,47 @@ const ProfilePage = () => {
         location: userProfile.location || "",
       });
     }
+    setSelectedFile(null);
+    setPreviewUrl(null);
     setIsEditing(false);
   }, [userProfile]);
+
+  const handleRandomAvatar = () => {
+    const idx = Math.floor(Math.random() * 100) + 1;
+    const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+
+    setFormData({ ...formData, profilePic: randomAvatar });
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    toast.success("Random profile picture generated!");
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+        setFormData({ ...formData, profilePic: '' }); // Clear URL
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -216,7 +253,7 @@ const ProfilePage = () => {
                 <div className="avatar mb-4">
                   <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                     <img 
-                      src={formData.profilePic || "/default-avatar.svg"} 
+                      src={previewUrl || formData.profilePic || "/default-avatar.svg"} 
                       alt="Profile" 
                       onError={(e) => {
                         e.target.src = "/default-avatar.svg";
@@ -226,18 +263,29 @@ const ProfilePage = () => {
                 </div>
                 
                 {isEditing ? (
-                  <div className="form-control w-full max-w-xs">
-                    <label className="label">
-                      <span className="label-text">Profile Picture URL</span>
-                    </label>
+                  <div className="space-y-4">
                     <input
-                      type="url"
-                      name="profilePic"
-                      value={formData.profilePic}
-                      onChange={handleInputChange}
-                      placeholder="Enter image URL"
-                      className="input input-bordered w-full max-w-xs"
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept="image/*"
+                      className="hidden"
                     />
+                    <div className="flex flex-col gap-2">
+                      <button type="button" onClick={handleUploadClick} className="btn btn-primary btn-sm">
+                        <UploadIcon className="size-4 mr-2" />
+                        Upload Photo
+                      </button>
+                      <button type="button" onClick={handleRandomAvatar} className="btn btn-accent btn-sm">
+                        <ShuffleIcon className="size-4 mr-2" />
+                        Random Avatar
+                      </button>
+                    </div>
+                    {selectedFile && (
+                      <p className="text-xs text-base-content opacity-70">
+                        Selected: {selectedFile.name}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <>

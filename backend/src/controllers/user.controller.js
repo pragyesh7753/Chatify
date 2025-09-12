@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 import { sendVerificationEmail, generateVerificationToken, sendEmailChangeVerification } from "../lib/email.js";
 import { cleanupExpiredEmailChanges } from "../lib/cleanup.js";
+import cloudinary from "../lib/cloudinary.js";
 
 export async function getRecommendedUsers(req, res) {
   try {
@@ -158,6 +159,32 @@ export async function updateProfile(req, res) {
     const currentUser = await User.findById(userId);
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Handle custom photo upload
+    if (req.file) {
+      try {
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              resource_type: 'image',
+              folder: 'chatify/profiles',
+              transformation: [
+                { width: 400, height: 400, crop: 'fill' },
+                { quality: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(req.file.buffer);
+        });
+        updateData.profilePic = result.secure_url;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({ message: 'Failed to upload image' });
+      }
     }
 
     // Handle email changes separately

@@ -104,7 +104,20 @@ export async function getUserProfile() {
 }
 
 export async function updateUserProfile(profileData) {
-  const response = await axiosInstance.put("/users/profile", profileData);
+  const formData = new FormData();
+  
+  // Add all form fields to FormData
+  Object.keys(profileData).forEach(key => {
+    if (profileData[key] !== null && profileData[key] !== undefined) {
+      formData.append(key, profileData[key]);
+    }
+  });
+  
+  const response = await axiosInstance.put("/users/profile", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 }
 
