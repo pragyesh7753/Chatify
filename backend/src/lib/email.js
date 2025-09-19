@@ -104,3 +104,48 @@ export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fu
     throw new Error("Failed to send email change verification");
   }
 };
+
+export const sendPasswordResetEmail = async (email, resetToken, fullName) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+  const emailData = {
+    from: 'Chatify <chatify-noreply@pragyesh.tech>',
+    to: email,
+    subject: "Reset Your Chatify Password",
+    html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <div
+            style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 30px; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #2563eb; text-align: center;">Reset Your Password</h2>
+            <p>Hi ${fullName},</p>
+            <p>You have requested to reset your password for your Chatify account. Click the button below to reset your password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}"
+                    style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                    Reset Password
+                </a>
+            </div>
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #6b7280;">${resetUrl}</p>
+            <p>This reset link will expire in 1 hour for security reasons.</p>
+            <p>If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
+            <br>
+            <p>This is an system generated email. Please do not reply to this email.</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px;">
+                Best regards,<br>The Chatify Team
+            </p>
+        </div>
+    `,
+  };
+
+  try {
+    const result = await resend.emails.send(emailData);
+    console.log("Password reset email sent successfully:", result);
+    return result;
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw new Error("Failed to send password reset email");
+  }
+};

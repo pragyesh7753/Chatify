@@ -11,6 +11,9 @@ import OnboardingPage from "./pages/OnboardingPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
 import EmailChangeVerificationPage from "./pages/EmailChangeVerificationPage";
 import ProfilePage from "./pages/ProfilePage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SettingsPage from "./pages/SettingsPage";
 
 import { Toaster } from "react-hot-toast";
 
@@ -70,6 +73,14 @@ const App = () => {
           element={<EmailChangeVerificationPage />}
         />
         <Route
+          path="/forgot-password"
+          element={!isAuthenticated ? <ForgotPasswordPage /> : <Navigate to={isOnboarded ? "/" : "/onboarding"} />}
+        />
+        <Route
+          path="/reset-password"
+          element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to={isOnboarded ? "/" : "/onboarding"} />}
+        />
+        <Route
           path="/friends"
           element={
             isAuthenticated && isOnboarded ? (
@@ -99,6 +110,18 @@ const App = () => {
             isAuthenticated && isOnboarded ? (
               <Layout showSidebar={true}>
                 <ProfilePage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSidebar={true}>
+                <SettingsPage />
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />

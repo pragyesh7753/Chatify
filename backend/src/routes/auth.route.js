@@ -1,5 +1,5 @@
 import express from "express";
-import { login, logout, onboard, signup, verifyEmail, resendVerificationEmail } from "../controllers/auth.controller.js";
+import { login, logout, onboard, signup, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword, changePassword } from "../controllers/auth.controller.js";
 import { verifyEmailChange } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { optionalProtectRoute } from "../middleware/optionalAuth.middleware.js";
@@ -24,6 +24,9 @@ router.post("/onboarding", protectRoute, upload.single('profilePic'), (error, re
 router.get("/verify-email/:token", verifyEmail);
 router.get("/verify-email-change/:token", verifyEmailChange);
 router.post("/resend-verification", resendVerificationEmail);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
+router.post("/change-password", protectRoute, changePassword);
 
 // check if user is logged in
 router.get("/me", protectRoute, (req, res) => {

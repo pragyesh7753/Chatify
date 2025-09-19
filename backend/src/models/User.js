@@ -73,6 +73,15 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Password reset fields
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+    passwordResetTokenExpires: {
+      type: Date,
+      default: null,
+    },
     friends: [
       {
         type: mongoose.Schema.Types.ObjectId,

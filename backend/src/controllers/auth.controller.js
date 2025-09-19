@@ -1,5 +1,5 @@
 import { upsertStreamUser } from "../lib/stream.js";
-import { sendVerificationEmail, generateVerificationToken } from "../lib/email.js";
+import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail } from "../lib/email.js";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../lib/cloudinary.js";
@@ -362,6 +362,117 @@ export async function onboard(req, res) {
     return res.status(200).json({ success: true, user: updatedUser });
   } catch (error) {
     console.error("Onboarding error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Forgot Password
+export async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "If an account with that email exists, we've sent a password reset link." 
+      });
+    }
+
+    const resetToken = generateVerificationToken();
+    const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    user.passwordResetToken = resetToken;
+    user.passwordResetTokenExpires = resetTokenExpires;
+    await user.save();
+
+    await sendPasswordResetEmail(user.email, resetToken, user.fullName);
+
+    return res.status(200).json({
+      success: true,
+      message: "If an account with that email exists, we've sent a password reset link."
+    });
+  } catch (error) {
+    console.error("Error in forgotPassword:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Reset Password
+export async function resetPassword(req, res) {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
+    const user = await User.findOne({
+      passwordResetToken: token,
+      passwordResetTokenExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+
+    user.password = password;
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpires = null;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully"
+    });
+  } catch (error) {
+    console.error("Error in resetPassword:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Change Password (for authenticated users)
+export async function changePassword(req, res) {
+  try {
+    const userId = req.user._id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "New password must be at least 8 characters" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isCurrentPasswordCorrect = await user.matchPassword(currentPassword);
+    if (!isCurrentPasswordCorrect) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully"
+    });
+  } catch (error) {
+    console.error("Error in changePassword:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }
