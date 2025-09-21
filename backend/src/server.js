@@ -25,7 +25,8 @@ app.use(cors({
     const allowedOrigins = [
       'https://chatify.pragyesh.tech', 
       'http://localhost:5173',
-      'http://localhost:3000'
+      'http://localhost:3000',
+      'http://localhost:4173'
     ];
     
     if (allowedOrigins.includes(origin)) {
