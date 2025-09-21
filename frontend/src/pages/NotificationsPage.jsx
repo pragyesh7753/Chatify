@@ -50,12 +50,14 @@ const NotificationsPage = () => {
                       <div className="card-body p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="avatar w-14 h-14 rounded-full bg-base-300">
-                              <img 
-                                src={request.sender?.profilePic || "/default-avatar.svg"} 
-                                alt={request.sender?.fullName || "User"} 
-                                onError={(e) => { e.target.src = "/default-avatar.svg"; }}
-                              />
+                            <div className="avatar w-14 h-14">
+                              <div className="rounded-full bg-base-300">
+                                <img 
+                                  src={request.sender?.profilePic || "/default-avatar.svg"} 
+                                  alt={request.sender?.fullName || "User"} 
+                                  onError={(e) => { e.target.src = "/default-avatar.svg"; }}
+                                />
+                              </div>
                             </div>
                             <div>
                               <h3 className="font-semibold">{request.sender?.fullName || "Unknown User"}</h3>
@@ -98,12 +100,14 @@ const NotificationsPage = () => {
                     <div key={notification._id} className="card bg-base-200 shadow-sm">
                       <div className="card-body p-4">
                         <div className="flex items-start gap-3">
-                          <div className="avatar mt-1 size-10 rounded-full">
-                            <img
-                              src={notification.recipient?.profilePic || "/default-avatar.svg"}
-                              alt={notification.recipient?.fullName || "User"}
-                              onError={(e) => { e.target.src = "/default-avatar.svg"; }}
-                            />
+                          <div className="avatar mt-1 size-10">
+                            <div className="rounded-full">
+                              <img
+                                src={notification.recipient?.profilePic || "/default-avatar.svg"}
+                                alt={notification.recipient?.fullName || "User"}
+                                onError={(e) => { e.target.src = "/default-avatar.svg"; }}
+                              />
+                            </div>
                           </div>
                           <div className="flex-1">
                             <h3 className="font-semibold">{notification.recipient?.fullName || "Unknown User"}</h3>
