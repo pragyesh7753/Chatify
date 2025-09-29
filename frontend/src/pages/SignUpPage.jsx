@@ -11,6 +11,7 @@ const SignUpPage = () => {
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [showVerificationNotice, setShowVerificationNotice] = useState(false);
