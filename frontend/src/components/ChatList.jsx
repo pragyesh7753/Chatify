@@ -18,7 +18,7 @@ const ChatList = ({ friends = [] }) => {
   const activeChatId = currentPath.startsWith("/chat/") ? currentPath.split("/chat/")[1] : null;
 
   return (
-    <div className="w-full lg:w-[400px] bg-base-200 border-r border-base-300 flex flex-col h-screen transition-colors duration-200">
+    <div className="w-full bg-base-200 flex flex-col h-full transition-colors duration-200">
       {/* Header */}
       <div className="bg-base-200 px-4 py-3 flex items-center justify-between transition-colors duration-200">
         <div className="flex items-center gap-3">

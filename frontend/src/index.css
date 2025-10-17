@@ -207,3 +207,13 @@
 *::-webkit-scrollbar-thumb:hover {
   background: oklch(from var(--bc) l c h / 0.3);
 }
+
+/* Resizable Splitter - Prevent text selection while dragging */
+.resizing * {
+  user-select: none !important;
+  pointer-events: none !important;
+}
+
+.resizing {
+  cursor: col-resize !important;
+}
