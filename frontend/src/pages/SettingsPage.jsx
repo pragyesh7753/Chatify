@@ -356,12 +356,12 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="h-full overflow-y-auto bg-base-100 transition-colors duration-200">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-base-content/70 mt-2">
+          <h1 className="text-3xl font-bold text-base-content">Settings</h1>
+          <p className="text-base-content opacity-70 mt-2">
             Manage your account settings and preferences
           </p>
         </div>

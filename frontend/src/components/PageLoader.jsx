@@ -4,7 +4,7 @@ import { useThemeStore } from "../store/useThemeStore";
 const PageLoader = () => {
   const { theme } = useThemeStore();
   return (
-    <div className="min-h-screen flex items-center justify-center" data-theme={theme}>
+    <div className="min-h-screen flex items-center justify-center bg-base-100 transition-colors duration-200" data-theme={theme}>
       <LoaderIcon className="animate-spin size-10 text-primary" />
     </div>
   );

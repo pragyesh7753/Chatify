@@ -96,10 +96,10 @@ const ChatPage = () => {
   if (loading || !chatClient || !channel) return <ChatLoader />;
 
   return (
-    <div className="h-[calc(100dvh-4rem)] overflow-hidden">
+    <div className="h-screen overflow-hidden bg-base-100 transition-colors duration-200">
       <Chat client={chatClient}>
         <Channel channel={channel}>
-          <div className="w-full relative">
+          <div className="w-full h-full relative flex flex-col whatsapp-chat">
             <CallButton handleVideoCall={handleVideoCall} />
             <Window>
               <ChannelHeader />

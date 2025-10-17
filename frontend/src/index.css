@@ -4,6 +4,38 @@
   themes: all;
 }
 
+/* WhatsApp Web Color Variables - Work with any DaisyUI theme */
+:root {
+  --wa-primary: var(--p);
+  --wa-bg: var(--b1);
+  --wa-panel: var(--b2);
+  --wa-border: var(--bc);
+  --wa-text-primary: var(--bc);
+  --wa-text-secondary: var(--bc);
+  --wa-chat-bg: var(--b1);
+  --wa-message-in: var(--b2);
+  --wa-message-out: var(--p);
+}
+
+/* Override for light/dark specific colors */
+[data-theme] {
+  /* Chat list background */
+  --chat-list-bg: oklch(var(--b2));
+  --chat-list-header: oklch(var(--b2));
+  --chat-item-hover: oklch(var(--b3));
+  --chat-item-active: oklch(var(--b3));
+  
+  /* Chat area background */
+  --chat-area-bg: oklch(var(--b1));
+  --chat-header-bg: oklch(var(--b2));
+  
+  /* Message colors */
+  --message-incoming-bg: oklch(var(--b2));
+  --message-outgoing-bg: oklch(var(--p));
+  --message-incoming-text: oklch(var(--bc));
+  --message-outgoing-text: oklch(var(--pc));
+}
+
 /* Stream Chat layout tweaks to fill remaining viewport height */
 .str-chat__chat,
 .str-chat,
@@ -15,7 +47,7 @@
 
 .str-chat__channel {
   display: flex;
-  background: oklch(var(--b1));
+  background: var(--chat-area-bg);
 }
 
 .str-chat__container {
@@ -23,20 +55,114 @@
   margin: 0 !important;
   border-radius: 0;
   box-shadow: none;
-  background: oklch(var(--b1));
+  background: var(--chat-area-bg);
 }
 
+/* WhatsApp Background Pattern */
 .str-chat__list {
-  background-color: oklch(var(--b1));
-  padding: 12px;
+  background-color: var(--chat-area-bg);
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 35px, oklch(from var(--b1) l c h / 0.03) 35px, oklch(from var(--b1) l c h / 0.03) 70px);
+  padding: 20px 8%;
+  overflow-y: auto;
+}
+
+/* WhatsApp Message Styling - Uses theme colors */
+.str-chat__message-simple {
+  margin-bottom: 12px !important;
+}
+
+/* Outgoing messages (my messages) */
+.str-chat__message-simple--me .str-chat__message-simple__message {
+  background-color: var(--message-outgoing-bg) !important;
+  border-radius: 7.5px !important;
+  box-shadow: 0 1px 0.5px oklch(from var(--bc) l c h / 0.13);
+}
+
+/* Incoming messages */
+.str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-simple__message {
+  background-color: var(--message-incoming-bg) !important;
+  border-radius: 7.5px !important;
+  box-shadow: 0 1px 0.5px oklch(from var(--bc) l c h / 0.13);
+}
+
+/* Message Text Color */
+.str-chat__message-simple--me .str-chat__message-text-inner {
+  color: var(--message-outgoing-text) !important;
+}
+
+.str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-text-inner {
+  color: var(--message-incoming-text) !important;
 }
 
 .str-chat__list-notifications {
   display: none;
 }
 
+/* WhatsApp Header Styling - Uses theme colors */
+.str-chat__header-livestream {
+  background: var(--chat-header-bg) !important;
+  border-bottom: 1px solid oklch(from var(--bc) l c h / 0.1) !important;
+  padding: 10px 16px !important;
+  height: 60px !important;
+}
+
+.str-chat__header-livestream-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.str-chat__header-livestream-left h2,
+.str-chat__header-livestream-left p,
+.str-chat__header-livestream-left span {
+  color: oklch(var(--bc)) !important;
+}
+
+/* WhatsApp Input Styling - Uses theme colors */
 .str-chat__message-input {
-  border-top: 1px solid #ddd;
+  background: var(--chat-header-bg) !important;
+  border-top: none !important;
+  padding: 10px 16px !important;
+}
+
+.str-chat__textarea textarea {
+  background: oklch(var(--b1)) !important;
+  border-radius: 8px !important;
+  border: 1px solid oklch(from var(--bc) l c h / 0.2) !important;
+  padding: 9px 12px !important;
+  color: oklch(var(--bc)) !important;
+}
+
+.str-chat__textarea textarea::placeholder {
+  color: oklch(from var(--bc) l c h / 0.5) !important;
+}
+
+.str-chat__textarea textarea:focus {
+  border-color: oklch(var(--p)) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px oklch(from var(--p) l c h / 0.2) !important;
+}
+
+/* WhatsApp Send Button - Uses primary theme color */
+.str-chat__send-button {
+  background: oklch(var(--p)) !important;
+  border-radius: 50% !important;
+  width: 42px !important;
+  height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s !important;
+}
+
+.str-chat__send-button svg {
+  fill: oklch(var(--pc)) !important;
+}
+
+.str-chat__send-button:hover {
+  background: oklch(from var(--p) calc(l * 0.9) c h) !important;
+  transform: scale(1.05);
 }
 
 /* Ensure message list can scroll within full-height layout */
@@ -52,4 +178,32 @@
 /* Hide default Stream typing indicator */
 .str-chat__typing-indicator {
   display: none !important;
+}
+
+/* Avatar Styling */
+.str-chat__avatar {
+  border-radius: 50% !important;
+}
+
+/* Scrollbar Styling - Uses theme colors */
+.str-chat__list::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.str-chat__list::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.str-chat__list::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  background: oklch(from var(--bc) l c h / 0.2);
+  border-radius: 3px;
+}
+
+.str-chat__list::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background: oklch(from var(--bc) l c h / 0.3);
 }

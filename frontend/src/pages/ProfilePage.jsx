@@ -206,11 +206,11 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="h-full overflow-y-auto bg-base-100 transition-colors duration-200">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <h1 className="text-3xl font-bold">My Profile</h1>
+          <h1 className="text-3xl font-bold text-base-content">My Profile</h1>
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}

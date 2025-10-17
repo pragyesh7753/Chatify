@@ -1,16 +1,15 @@
-import Sidebar from "./Sidebar";
-import Navbar from "./Navbar";
+import ChatList from "./ChatList";
 
-const Layout = ({ children, showSidebar = false }) => {
+const Layout = ({ children, showChatList = false, friends = [] }) => {
   return (
-    <div className="min-h-screen bg-base-100">
-      <div className="flex">
-        {showSidebar && <Sidebar />}
+    <div className="h-screen bg-base-100 overflow-hidden transition-colors duration-200">
+      <div className="flex h-full">
+        {/* Chat List Sidebar - WhatsApp style */}
+        {showChatList && <ChatList friends={friends} />}
 
-        <div className="flex-1 flex flex-col">
-          <Navbar />
-
-          <main className="flex-1 min-h-0 overflow-y-auto bg-base-100">{children}</main>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col bg-base-100 transition-colors duration-200">
+          <main className="flex-1 h-full overflow-hidden">{children}</main>
         </div>
       </div>
     </div>
