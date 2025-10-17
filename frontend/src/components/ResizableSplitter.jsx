@@ -13,11 +13,20 @@ const ResizableSplitter = ({
     return saved ? parseInt(saved, 10) : defaultLeftWidth;
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const containerRef = useRef(null);
+  const lastClickTimeRef = useRef(0);
 
   const startDragging = useCallback((e) => {
+    // Don't start dragging if this is part of a double-click
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < 300) {
+      return; // This is a double-click, don't start dragging
+    }
+    
     e.preventDefault();
     setIsDragging(true);
+    lastClickTimeRef.current = now;
   }, []);
 
   useEffect(() => {
@@ -35,8 +44,10 @@ const ResizableSplitter = ({
     const handleMouseUp = () => {
       if (isDragging) {
         setIsDragging(false);
-        // Save to localStorage
-        localStorage.setItem("chatify-sidebar-width", leftWidth.toString());
+        // Save to localStorage after a short delay to get the final width
+        setTimeout(() => {
+          localStorage.setItem("chatify-sidebar-width", leftWidth.toString());
+        }, 0);
       }
     };
 
@@ -62,9 +73,20 @@ const ResizableSplitter = ({
   }, [isDragging, leftWidth, minLeftWidth, maxLeftWidth]);
 
   // Handle double-click to reset to default width
-  const handleDoubleClick = useCallback(() => {
+  const handleDoubleClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Double-click detected! Resetting to default width:", defaultLeftWidth);
+    
+    // Visual feedback
+    setIsResetting(true);
     setLeftWidth(defaultLeftWidth);
     localStorage.setItem("chatify-sidebar-width", defaultLeftWidth.toString());
+    
+    // Remove visual feedback after animation
+    setTimeout(() => {
+      setIsResetting(false);
+    }, 300);
   }, [defaultLeftWidth]);
 
   return (
@@ -72,7 +94,7 @@ const ResizableSplitter = ({
       {/* Left Panel (Chat List) */}
       <div 
         style={{ width: `${leftWidth}px` }} 
-        className="flex-shrink-0 h-full overflow-hidden"
+        className={`flex-shrink-0 h-full overflow-hidden transition-all ${isResetting ? "duration-300" : "duration-0"}`}
       >
         {leftPanel}
       </div>
@@ -85,9 +107,10 @@ const ResizableSplitter = ({
           w-1 bg-base-300 hover:bg-primary cursor-col-resize 
           flex-shrink-0 transition-colors duration-200 relative group
           ${isDragging ? "bg-primary w-1.5" : ""}
+          ${isResetting ? "bg-success w-2" : ""}
         `}
         style={{ cursor: "col-resize" }}
-        title="Drag to resize, double-click to reset"
+        title="Drag to resize, double-click to reset to default"
       >
         {/* Visual indicator on hover */}
         <div className={`
