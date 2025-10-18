@@ -121,8 +121,10 @@
 }
 
 /* WhatsApp Header Styling - Uses theme colors */
-.str-chat__header-livestream {
-  background: var(--chat-header-bg) !important;
+.str-chat__header-livestream,
+.str-chat__header-livestream.str-chat__channel-header {
+  background: oklch(var(--b2)) !important;
+  background-color: oklch(var(--b2)) !important;
   border-bottom: 1px solid oklch(from var(--bc) l c h / 0.1) !important;
   padding: 10px 16px !important;
   height: 60px !important;
@@ -154,6 +156,20 @@
   max-width: 100%;
 }
 
+/* Header avatar and user info */
+.str-chat__avatar,
+.str-chat__channel-header .str-chat__avatar {
+  border-radius: 50% !important;
+}
+
+/* Override Stream Chat's default header background */
+.str-chat__channel-header,
+.str-chat__header,
+.str-chat .str-chat__header-livestream {
+  background: oklch(var(--b2)) !important;
+  background-color: oklch(var(--b2)) !important;
+}
+
 /* Header right side (for actions) */
 .str-chat__header-livestream-right {
   margin-left: auto;
@@ -161,8 +177,10 @@
 }
 
 /* WhatsApp Input Styling - Uses theme colors */
-.str-chat__message-input {
-  background: var(--chat-header-bg) !important;
+.str-chat__message-input,
+.str-chat__input-flat {
+  background: oklch(var(--b2)) !important;
+  background-color: oklch(var(--b2)) !important;
   border-top: none !important;
   padding: 10px 16px !important;
 }
@@ -224,6 +242,18 @@
 /* Avatar Styling */
 .str-chat__avatar {
   border-radius: 50% !important;
+}
+
+/* Override any Stream Chat white backgrounds */
+.str-chat__header-livestream *,
+.str-chat__channel-header *,
+.str-chat__message-input * {
+  background-color: inherit;
+}
+
+/* Ensure all Stream Chat components follow theme */
+.str-chat__main-panel {
+  background: oklch(var(--b1)) !important;
 }
 
 /* Scrollbar Styling - Uses theme colors */
