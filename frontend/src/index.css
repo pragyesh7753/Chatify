@@ -244,6 +244,15 @@
   border-radius: 50% !important;
 }
 
+/* Collapsible Sidebar Transition */
+.chat-list-container {
+  transition: width 0.3s ease-in-out;
+}
+
+.chat-list-container * {
+  transition: opacity 0.3s ease-in-out;
+}
+
 /* Override any Stream Chat white backgrounds */
 .str-chat__header-livestream *,
 .str-chat__channel-header *,

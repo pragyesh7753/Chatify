@@ -1,12 +1,12 @@
-import ChatList from "./ChatList";
+import Sidebar from "./Sidebar";
 import ResizableSplitter from "./ResizableSplitter";
 
-const Layout = ({ children, showChatList = false, friends = [] }) => {
+const Layout = ({ children, showSidebar = false, friends = [] }) => {
   return (
     <div className="h-screen bg-base-100 overflow-hidden transition-colors duration-200">
-      {showChatList ? (
+      {showSidebar ? (
         <ResizableSplitter
-          leftPanel={<ChatList friends={friends} />}
+          leftPanel={<Sidebar friends={friends} />}
           rightPanel={
             <div className="h-full bg-base-100 transition-colors duration-200">
               <main className="h-full overflow-hidden">{children}</main>

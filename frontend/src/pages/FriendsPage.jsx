@@ -7,9 +7,7 @@ import {
   sendFriendRequest,
 } from "../lib/api";
 import { CheckCircleIcon, MapPinIcon, UserPlusIcon } from "lucide-react";
-import { capitalize } from "../lib/utils";
 import FriendCard from "../components/FriendCard";
-import { getLanguageFlag } from "../lib/flags";
 import NoFriendsFound from "../components/NoFriendsFound";
 
 const FriendsPage = () => {
@@ -131,16 +129,15 @@ const FriendsPage = () => {
                           </div>
                         </div>
 
-                        {/* Languages with flags */}
+                        {/* Languages with flags
                         <div className="flex flex-wrap gap-1.5">
                           <span className="badge badge-secondary">
-                            {getLanguageFlag(user.nativeLanguage)}
                             Native: {capitalize(user.nativeLanguage)}
                           </span>
                           <span className="badge badge-outline">
                             @{user.username}
                           </span>
-                        </div>
+                        </div> */}
 
                         {user.bio && <p className="text-sm text-base-content opacity-70">{user.bio}</p>}
 

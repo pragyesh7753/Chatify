@@ -24,7 +24,7 @@ import ConnectionStatus from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout";
-import LayoutWithChatList from "./components/LayoutWithChatList";
+import LayoutWithSidebar from "./components/LayoutWithSidebar";
 import { useThemeStore } from "./store/useThemeStore.js";
 
 import { SpeedInsights } from "@vercel/speed-insights/react"
@@ -60,9 +60,9 @@ const App = () => {
           path="/"
           element={
             isAuthenticated && isOnboarded ? (
-              <LayoutWithChatList>
+              <LayoutWithSidebar>
                 <HomePage />
-              </LayoutWithChatList>
+              </LayoutWithSidebar>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
@@ -100,9 +100,9 @@ const App = () => {
           path="/friends"
           element={
             isAuthenticated && isOnboarded ? (
-              <LayoutWithChatList>
+              <LayoutWithSidebar>
                 <FriendsPage />
-              </LayoutWithChatList>
+              </LayoutWithSidebar>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
@@ -112,9 +112,9 @@ const App = () => {
           path="/notifications"
           element={
             isAuthenticated && isOnboarded ? (
-              <LayoutWithChatList>
+              <LayoutWithSidebar>
                 <NotificationsPage />
-              </LayoutWithChatList>
+              </LayoutWithSidebar>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
@@ -124,9 +124,9 @@ const App = () => {
           path="/profile"
           element={
             isAuthenticated && isOnboarded ? (
-              <LayoutWithChatList>
+              <LayoutWithSidebar>
                 <ProfilePage />
-              </LayoutWithChatList>
+              </LayoutWithSidebar>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
@@ -136,9 +136,9 @@ const App = () => {
           path="/settings"
           element={
             isAuthenticated && isOnboarded ? (
-              <LayoutWithChatList>
+              <LayoutWithSidebar>
                 <SettingsPage />
-              </LayoutWithChatList>
+              </LayoutWithSidebar>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
@@ -159,9 +159,9 @@ const App = () => {
           path="/chat/:id"
           element={
             isAuthenticated && isOnboarded ? (
-              <LayoutWithChatList>
+              <LayoutWithSidebar>
                 <ChatPage />
-              </LayoutWithChatList>
+              </LayoutWithSidebar>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
