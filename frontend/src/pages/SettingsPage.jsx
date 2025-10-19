@@ -11,12 +11,15 @@ import {
   BellIcon, 
   ShieldIcon,
   EyeIcon,
-  EyeOffIcon
+  EyeOffIcon,
+  LogOutIcon
 } from "lucide-react";
 import PasswordInput from "../components/PasswordInput";
+import useLogout from "../hooks/useLogout";
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
+  const { logoutMutation, isPending: isLoggingOut } = useLogout();
   const [activeSection, setActiveSection] = useState("account");
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -58,6 +61,33 @@ const SettingsPage = () => {
     changePasswordMutation({
       currentPassword: passwordData.currentPassword,
       newPassword: passwordData.newPassword,
+    });
+  };
+
+  const handleLogout = () => {
+    toast((t) => (
+      <div className="flex flex-col gap-2">
+        <span>Are you sure you want to logout?</span>
+        <div className="flex gap-2">
+          <button
+            className="btn btn-error btn-sm"
+            onClick={() => {
+              toast.dismiss(t.id);
+              logoutMutation();
+            }}
+          >
+            Logout
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 3000,
     });
   };
 
@@ -186,6 +216,36 @@ const SettingsPage = () => {
                   </form>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="card bg-base-200 shadow-sm border-2 border-error/20">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-error">Logout</h4>
+                  <p className="text-sm text-base-content/70">
+                    Sign out of your account on this device
+                  </p>
+                </div>
+                <button 
+                  className="btn btn-error btn-sm"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs"></span>
+                      Logging out...
+                    </>
+                  ) : (
+                    <>
+                      <LogOutIcon className="w-4 h-4 mr-2" />
+                      Logout
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
