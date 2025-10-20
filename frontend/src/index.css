@@ -24,11 +24,11 @@
   --chat-list-header: oklch(var(--b2));
   --chat-item-hover: oklch(var(--b3));
   --chat-item-active: oklch(var(--b3));
-  
+
   /* Chat area background */
   --chat-area-bg: oklch(var(--b1));
   --chat-header-bg: oklch(var(--b2));
-  
+
   /* Message colors */
   --message-incoming-bg: oklch(var(--b2));
   --message-outgoing-bg: oklch(var(--p));
@@ -72,7 +72,7 @@
 /* WhatsApp Background Pattern */
 .str-chat__list {
   background-color: var(--chat-area-bg);
-  background-image: 
+  background-image:
     repeating-linear-gradient(45deg, transparent, transparent 35px, oklch(from var(--b1) l c h / 0.03) 35px, oklch(from var(--b1) l c h / 0.03) 70px);
   padding: 20px 8%;
   overflow-y: auto;
@@ -173,7 +173,8 @@
 /* Header right side (for actions) */
 .str-chat__header-livestream-right {
   margin-left: auto;
-  padding-right: 60px; /* Space for call button */
+  padding-right: 60px;
+  /* Space for call button */
 }
 
 /* WhatsApp Input Styling - Uses theme colors */
@@ -265,6 +266,17 @@
   background: oklch(var(--b1)) !important;
 }
 
+/* Smooth scrolling behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure body takes full height */
+body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* Scrollbar Styling - Uses theme colors */
 .str-chat__list::-webkit-scrollbar,
 *::-webkit-scrollbar {
@@ -296,4 +308,49 @@
 
 .resizing {
   cursor: col-resize !important;
+}
+
+/* Mobile Bottom Navigation */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Ensure content doesn't get hidden behind mobile nav */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Modern floating navigation animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    transform: scale(0.8);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-in {
+  animation: fade-in 0.3s ease-out, zoom-in 0.3s ease-out;
+}
+
+/* Glassmorphism effect for modern nav */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
 }

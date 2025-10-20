@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const ResizableSplitter = ({ 
-  leftPanel, 
-  rightPanel, 
-  defaultLeftWidth = 400, 
-  minLeftWidth = 280, 
+const ResizableSplitter = ({
+  leftPanel,
+  rightPanel,
+  defaultLeftWidth = 400,
+  minLeftWidth = 280,
   maxLeftWidth = 600,
-  collapsedWidth = 64 
+  collapsedWidth = 64
 }) => {
   const [leftWidth, setLeftWidth] = useState(() => {
     // Load saved width from localStorage or use default
@@ -21,6 +21,12 @@ const ResizableSplitter = ({
   const [isResetting, setIsResetting] = useState(false);
   const containerRef = useRef(null);
   const lastClickTimeRef = useRef(0);
+  const currentWidthRef = useRef(leftWidth);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    currentWidthRef.current = leftWidth;
+  }, [leftWidth]);
 
   // Listen for collapse state changes from localStorage
   useEffect(() => {
@@ -31,7 +37,7 @@ const ResizableSplitter = ({
 
     // Custom event listener for same-window localStorage changes
     window.addEventListener("storage", handleStorageChange);
-    
+
     // Also listen to a custom event for same-window updates
     const handleCustomEvent = (e) => {
       if (e.detail?.key === "chatify-sidebar-collapsed") {
@@ -52,7 +58,7 @@ const ResizableSplitter = ({
     if (now - lastClickTimeRef.current < 300) {
       return; // This is a double-click, don't start dragging
     }
-    
+
     e.preventDefault();
     setIsDragging(true);
     lastClickTimeRef.current = now;
@@ -73,10 +79,8 @@ const ResizableSplitter = ({
     const handleMouseUp = () => {
       if (isDragging) {
         setIsDragging(false);
-        // Save to localStorage after a short delay to get the final width
-        setTimeout(() => {
-          localStorage.setItem("chatify-sidebar-width", leftWidth.toString());
-        }, 0);
+        // Save the current width from ref to avoid stale closure
+        localStorage.setItem("chatify-sidebar-width", currentWidthRef.current.toString());
       }
     };
 
@@ -85,7 +89,7 @@ const ResizableSplitter = ({
       document.addEventListener("mouseup", handleMouseUp);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
-      
+
       // Add a class to the body to prevent text selection
       document.body.classList.add("resizing");
     } else {
@@ -99,19 +103,22 @@ const ResizableSplitter = ({
       document.body.style.userSelect = "";
       document.body.classList.remove("resizing");
     };
-  }, [isDragging, leftWidth, minLeftWidth, maxLeftWidth]);
+  }, [isDragging, minLeftWidth, maxLeftWidth]);
 
   // Handle double-click to reset to default width
   const handleDoubleClick = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("Double-click detected! Resetting to default width:", defaultLeftWidth);
-    
+
+    // Reset the last click time to prevent interference with next drag
+    lastClickTimeRef.current = 0;
+
     // Visual feedback
     setIsResetting(true);
     setLeftWidth(defaultLeftWidth);
     localStorage.setItem("chatify-sidebar-width", defaultLeftWidth.toString());
-    
+
     // Remove visual feedback after animation
     setTimeout(() => {
       setIsResetting(false);
@@ -123,20 +130,21 @@ const ResizableSplitter = ({
 
   return (
     <div ref={containerRef} className="flex h-full w-full overflow-hidden">
-      {/* Left Panel (Sidebar) */}
-      <div 
-        style={{ width: `${actualWidth}px` }} 
-        className={`flex-shrink-0 h-full overflow-hidden transition-all ${isResetting ? "duration-300" : isCollapsed ? "duration-300" : "duration-0"}`}
+      {/* Left Panel (Sidebar) - Hidden on mobile */}
+      <div
+        style={{ width: `${actualWidth}px` }}
+        className={`hidden md:block flex-shrink-0 h-full overflow-hidden transition-all ${isResetting ? "duration-300" : isCollapsed ? "duration-300" : "duration-0"}`}
       >
         {leftPanel}
       </div>
 
-      {/* Draggable Divider - Hide when collapsed */}
+      {/* Draggable Divider - Hide when collapsed or on mobile */}
       {!isCollapsed && (
         <div
           onMouseDown={startDragging}
           onDoubleClick={handleDoubleClick}
           className={`
+            hidden md:block
             w-1 bg-base-300 hover:bg-primary cursor-col-resize 
             flex-shrink-0 transition-colors duration-200 relative group
             ${isDragging ? "bg-primary w-1.5" : ""}
@@ -150,10 +158,10 @@ const ResizableSplitter = ({
             absolute inset-0 bg-primary transition-all duration-200
             ${isDragging ? "w-1.5 opacity-100" : "w-1 opacity-0 group-hover:opacity-100 group-hover:w-1.5"}
           `} />
-          
+
           {/* Larger hit area for easier dragging */}
           <div className="absolute inset-y-0 -left-2 -right-2 cursor-col-resize" />
-          
+
           {/* Three dots indicator (vertical ellipsis) */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none">
             <div className="w-0.5 h-0.5 bg-base-content rounded-full"></div>

@@ -1,5 +1,6 @@
 import Sidebar from "./Sidebar";
 import ResizableSplitter from "./ResizableSplitter";
+import MobileBottomNav from "./MobileBottomNav";
 
 const Layout = ({ children, showSidebar = false, friends = [] }) => {
   return (
@@ -9,7 +10,7 @@ const Layout = ({ children, showSidebar = false, friends = [] }) => {
           leftPanel={<Sidebar friends={friends} />}
           rightPanel={
             <div className="h-full bg-base-100 transition-colors duration-200">
-              <main className="h-full overflow-hidden">{children}</main>
+              <main className="h-full overflow-hidden pb-20 md:pb-0">{children}</main>
             </div>
           }
           defaultLeftWidth={400}
@@ -18,9 +19,10 @@ const Layout = ({ children, showSidebar = false, friends = [] }) => {
         />
       ) : (
         <div className="h-full bg-base-100 transition-colors duration-200">
-          <main className="h-full overflow-hidden">{children}</main>
+          <main className="h-full overflow-hidden pb-20 md:pb-0">{children}</main>
         </div>
       )}
+      <MobileBottomNav />
     </div>
   );
 };
