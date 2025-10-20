@@ -10,6 +10,28 @@ import {
     ChevronRight,
 } from "lucide-react";
 
+// Helper function to highlight only the FIRST match (case-insensitive)
+const HighlightText = ({ text, query }) => {
+    if (!query || !text) return <>{text}</>;
+
+    const textStr = String(text);
+    const qLower = String(query).toLowerCase();
+    const idx = textStr.toLowerCase().indexOf(qLower);
+    if (idx === -1) return <>{text}</>;
+
+    const before = textStr.slice(0, idx);
+    const match = textStr.slice(idx, idx + query.length);
+    const after = textStr.slice(idx + query.length);
+
+    return (
+        <>
+            {before}
+            <span className="bg-yellow-300 dark:bg-yellow-600 text-base-content font-semibold">{match}</span>
+            {after}
+        </>
+    );
+};
+
 const Sidebar = ({ friends = [] }) => {
     const location = useLocation();
     const currentPath = location.pathname;
@@ -18,6 +40,7 @@ const Sidebar = ({ friends = [] }) => {
         const saved = localStorage.getItem("chatify-sidebar-collapsed");
         return saved === "true";
     });
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Notify ResizableSplitter when collapse state changes
     useEffect(() => {
@@ -94,6 +117,8 @@ const Sidebar = ({ friends = [] }) => {
                             type="text"
                             placeholder="Search or start new chat"
                             className="w-full pl-10 pr-4 py-2 bg-base-100 border border-base-300 rounded-lg text-sm text-base-content placeholder:text-base-content placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary transition-colors duration-200"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </div>
@@ -134,9 +159,37 @@ const Sidebar = ({ friends = [] }) => {
                             </>
                         )}
                     </div>
-                ) : (
+                ) : (() => {
+                    const filteredFriends = friends.filter((friend) => {
+                        const query = searchQuery.toLowerCase().trim();
+                        if (!query) return true;
+                        return (
+                            friend.fullName?.toLowerCase().includes(query) ||
+                            friend.username?.toLowerCase().includes(query)
+                        );
+                    });
+
+                    if (filteredFriends.length === 0) {
+                        return (
+                            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                                <SearchIcon className={`${isCollapsed ? "h-8 w-8" : "h-16 w-16"} text-base-content opacity-30 mb-4`} />
+                                {!isCollapsed && (
+                                    <>
+                                        <h3 className="text-lg font-semibold text-base-content mb-2">
+                                            No results found
+                                        </h3>
+                                        <p className="text-sm text-base-content opacity-70">
+                                            Try searching with a different name or username
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    }
+
+                    return (
                     <div>
-                        {friends.map((friend) => {
+                        {filteredFriends.map((friend) => {
                             const isActive = activeChatId === friend._id;
                             return (
                                 <Link
@@ -162,14 +215,14 @@ const Sidebar = ({ friends = [] }) => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between mb-1">
                                                 <h3 className="font-semibold text-base-content truncate">
-                                                    {friend.fullName}
+                                                    <HighlightText text={friend.fullName} query={searchQuery.trim()} />
                                                 </h3>
                                                 <span className="text-xs text-base-content opacity-60">
                                                     {/* You can add timestamp here */}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-base-content opacity-70 truncate">
-                                                @{friend.username}
+                                                @<HighlightText text={friend.username} query={searchQuery.trim()} />
                                             </p>
                                         </div>
                                     )}
@@ -177,7 +230,8 @@ const Sidebar = ({ friends = [] }) => {
                             );
                         })}
                     </div>
-                )}
+                    );
+                })()}
             </div>
         </div>
     );
