@@ -40,8 +40,13 @@ export const getAuthUser = async () => {
     const res = await axiosInstance.get("/auth/me");
     return res.data;
   } catch (error) {
+    // If unauthorized (401), user is not authenticated
+    if (error.response?.status === 401) {
+      console.log("User not authenticated");
+      return null;
+    }
     console.log("Error in getAuthUser:", error);
-    return null;
+    throw error; // Throw other errors to let React Query handle them
   }
 };
 

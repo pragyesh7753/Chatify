@@ -25,7 +25,9 @@ const useLogout = () => {
         console.error("Error disconnecting from Stream Chat:", error);
       }
       
-      queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      // Clear the authUser query instead of invalidating to prevent refetch
+      queryClient.setQueryData(["authUser"], null);
+      queryClient.removeQueries({ queryKey: ["authUser"] });
     },
   });
 

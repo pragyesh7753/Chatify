@@ -259,15 +259,19 @@ export async function login(req, res) {
 export async function logout(req, res) {
   try {
     res.clearCookie("jwt", {
+      httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
+      path: '/',
     });
     return res.status(200).json({ success: true, message: "Logout successful" });
   } catch (error) {
     console.log("Error in logout controller", error.message);
     res.clearCookie("jwt", {
+      httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
+      path: '/',
     });
     return res.status(200).json({ success: true, message: "Logout successful" });
   }
