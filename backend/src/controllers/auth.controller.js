@@ -222,6 +222,13 @@ export async function login(req, res) {
     if (!user)
       return res.status(401).json({ message: "Invalid email/username or password" });
 
+    // Check if user signed up with Google OAuth
+    if (user.googleId && !user.password) {
+      return res.status(401).json({ 
+        message: "This account was created with Google. Please use 'Continue with Google' to sign in." 
+      });
+    }
+
     const isPasswordCorrect = await user.matchPassword(password);
     if (!isPasswordCorrect)
       return res.status(401).json({ message: "Invalid email/username or password" });
@@ -478,5 +485,40 @@ export async function changePassword(req, res) {
   } catch (error) {
     console.error("Error in changePassword:", error);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Google OAuth callback
+export async function googleCallback(req, res) {
+  try {
+    const user = req.user;
+    
+    if (!user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
+      expiresIn: "7d",
+    });
+
+    // Set cookie
+    res.cookie("jwt", token, {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    // Redirect to frontend
+    // If user is not onboarded, redirect to onboarding page, otherwise to home
+    const redirectUrl = user.isOnboarded 
+      ? `${process.env.FRONTEND_URL}/`
+      : `${process.env.FRONTEND_URL}/onboarding`;
+    
+    res.redirect(redirectUrl);
+  } catch (error) {
+    console.error("Error in googleCallback:", error);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
   }
 }

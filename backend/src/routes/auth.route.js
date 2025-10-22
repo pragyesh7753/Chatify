@@ -1,15 +1,23 @@
 import express from "express";
-import { login, logout, onboard, signup, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword, changePassword } from "../controllers/auth.controller.js";
+import { login, logout, onboard, signup, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword, changePassword, googleCallback } from "../controllers/auth.controller.js";
 import { verifyEmailChange } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { optionalProtectRoute } from "../middleware/optionalAuth.middleware.js";
 import { upload } from "../middleware/upload.js";
+import passport from "../lib/passport.js";
 
 const router = express.Router();
 
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", optionalProtectRoute, logout);
+
+// Google OAuth routes
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google/callback", 
+  passport.authenticate("google", { failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed` }),
+  googleCallback
+);
 
 router.post("/onboarding", protectRoute, upload.single('profilePic'), (error, req, res, next) => {
   if (error) {
