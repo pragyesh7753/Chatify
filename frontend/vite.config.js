@@ -12,9 +12,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'i.png'],
       manifest: {
-        name: 'Chatify - Real-time Chat App',
+        name: 'Chatify - Connect. Chat. Simplify.',
         short_name: 'Chatify',
-        description: 'A modern real-time chat application with video calling',
+        description: 'A modern, and feature-rich chatting application with video calling and much more',
         theme_color: '#3b82f6',
         background_color: '#ffffff',
         display: 'standalone',
