@@ -144,7 +144,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-base-100 transition-colors duration-200">
+    <div className="h-screen overflow-hidden bg-base-100 transition-colors duration-200 flex flex-col">
       <Chat client={chatClient}>
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col whatsapp-chat">

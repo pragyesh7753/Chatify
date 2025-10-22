@@ -50,6 +50,8 @@
   display: flex;
   background: var(--chat-area-bg);
   flex-direction: column;
+  max-height: 100vh;
+  max-height: 100dvh; /* Use dynamic viewport height on mobile */
 }
 
 .str-chat__container {
@@ -67,6 +69,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* WhatsApp Background Pattern */
@@ -132,6 +135,33 @@
   top: 0 !important;
   z-index: 20 !important;
   width: 100% !important;
+  flex-shrink: 0 !important;
+}
+
+/* Fixed header on mobile to prevent scrolling when keyboard opens */
+@media (max-width: 768px) {
+  .str-chat__header-livestream,
+  .str-chat__header-livestream.str-chat__channel-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 30 !important;
+  }
+  
+  /* Add padding to message list to account for fixed header */
+  .str-chat__list {
+    padding-top: 80px !important;
+  }
+
+  /* Ensure the chat container uses visual viewport height on mobile */
+  .str-chat__channel,
+  .whatsapp-chat {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
+    max-height: 100vh;
+    max-height: 100dvh;
+  }
 }
 
 .str-chat__header-livestream-left {
@@ -184,6 +214,7 @@
   background-color: oklch(var(--b2)) !important;
   border-top: none !important;
   padding: 10px 16px !important;
+  flex-shrink: 0 !important;
 }
 
 .str-chat__textarea textarea {
