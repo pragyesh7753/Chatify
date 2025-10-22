@@ -51,7 +51,8 @@
   background: var(--chat-area-bg);
   flex-direction: column;
   max-height: 100vh;
-  max-height: 100dvh; /* Use dynamic viewport height on mobile */
+  max-height: 100dvh;
+  /* Use dynamic viewport height on mobile */
 }
 
 .str-chat__container {
@@ -140,6 +141,7 @@
 
 /* Fixed header on mobile to prevent scrolling when keyboard opens */
 @media (max-width: 768px) {
+
   .str-chat__header-livestream,
   .str-chat__header-livestream.str-chat__channel-header {
     position: fixed !important;
@@ -148,7 +150,7 @@
     right: 0 !important;
     z-index: 30 !important;
   }
-  
+
   /* Add padding to message list to account for fixed header */
   .str-chat__list {
     padding-top: 80px !important;
@@ -158,7 +160,8 @@
   .str-chat__channel,
   .whatsapp-chat {
     height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for mobile browsers */
+    height: 100dvh;
+    /* Dynamic viewport height for mobile browsers */
     max-height: 100vh;
     max-height: 100dvh;
   }
@@ -207,9 +210,9 @@
 }
 
 /* Specifically target all possible text containers in header */
-.str-chat__channel-header > *,
-.str-chat__header-livestream > *,
-.str-chat__header-livestream-left > * {
+.str-chat__channel-header>*,
+.str-chat__header-livestream>*,
+.str-chat__header-livestream-left>* {
   color: oklch(var(--bc)) !important;
 }
 
@@ -238,8 +241,36 @@
   color: oklch(var(--bc)) !important;
 }
 
+/* Dark theme text color */
+[data-theme="dark"] .str-chat__textarea textarea,
+[data-theme="synthwave"] .str-chat__textarea textarea,
+[data-theme="halloween"] .str-chat__textarea textarea,
+[data-theme="forest"] .str-chat__textarea textarea,
+[data-theme="black"] .str-chat__textarea textarea,
+[data-theme="luxury"] .str-chat__textarea textarea,
+[data-theme="dracula"] .str-chat__textarea textarea,
+[data-theme="business"] .str-chat__textarea textarea,
+[data-theme="night"] .str-chat__textarea textarea,
+[data-theme="coffee"] .str-chat__textarea textarea {
+  color: #f3f4f6 !important;
+}
+
 .str-chat__textarea textarea::placeholder {
-  color: oklch(from var(--bc) l c h / 0.5) !important;
+  color: #9ca3af !important;
+}
+
+/* Dark theme placeholder */
+[data-theme="dark"] .str-chat__textarea textarea::placeholder,
+[data-theme="synthwave"] .str-chat__textarea textarea::placeholder,
+[data-theme="halloween"] .str-chat__textarea textarea::placeholder,
+[data-theme="forest"] .str-chat__textarea textarea::placeholder,
+[data-theme="black"] .str-chat__textarea textarea::placeholder,
+[data-theme="luxury"] .str-chat__textarea textarea::placeholder,
+[data-theme="dracula"] .str-chat__textarea textarea::placeholder,
+[data-theme="business"] .str-chat__textarea textarea::placeholder,
+[data-theme="night"] .str-chat__textarea textarea::placeholder,
+[data-theme="coffee"] .str-chat__textarea textarea::placeholder {
+  color: #d1d5db !important;
 }
 
 .str-chat__textarea textarea:focus {
@@ -345,7 +376,8 @@ html {
 }
 
 /* Ensure body takes full height */
-body, #root {
+body,
+#root {
   height: 100%;
   overflow: hidden;
 }
