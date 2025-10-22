@@ -46,7 +46,7 @@ const MobileBottomNav = () => {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
       <div className="px-4 pb-6 safe-area-inset-bottom">
-        <div className="relative bg-base-300/80 dark:bg-neutral/90 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-base-content/10 pointer-events-auto">
+        <div className="relative bg-base-300 dark:bg-neutral/90 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-base-content/10 pointer-events-auto">
           <div className="flex justify-around items-center h-16 px-2">
             {navItems.map((item, index) => {
               const Icon = item.icon;
@@ -64,11 +64,13 @@ const MobileBottomNav = () => {
                   )}
                   
                   {/* Icon */}
-                  <div className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-500 ease-out ${
-                    item.isActive
-                      ? "text-primary-content -translate-y-4 scale-110"
-                      : "text-base-content/70 hover:text-base-content active:scale-95"
-                  }`}>
+                  <div 
+                    className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full transition-all duration-500 ease-out ${
+                      item.isActive
+                        ? "text-primary-content -translate-y-4 scale-110"
+                        : "mobile-nav-icon active:scale-95"
+                    }`}
+                  >
                     <Icon
                       className={`transition-all duration-300 ${
                         item.isActive ? "h-6 w-6 stroke-[2.5]" : "h-5 w-5 stroke-2"

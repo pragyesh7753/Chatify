@@ -459,3 +459,20 @@ body,
     backdrop-filter: blur(20px);
   }
 }
+
+/* Mobile Bottom Nav - Ensure icons are always visible */
+.mobile-nav-icon {
+  color: #334155 !important;
+}
+
+.dark .mobile-nav-icon {
+  color: oklch(var(--bc) / 0.7) !important;
+}
+
+.mobile-nav-icon:hover {
+  color: #0f172a !important;
+}
+
+.dark .mobile-nav-icon:hover {
+  color: oklch(var(--bc)) !important;
+}
