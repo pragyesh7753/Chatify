@@ -174,7 +174,12 @@
 
 .str-chat__header-livestream-left h2,
 .str-chat__header-livestream-left p,
-.str-chat__header-livestream-left span {
+.str-chat__header-livestream-left span,
+.str-chat__header-livestream-left div,
+.str-chat__channel-header h2,
+.str-chat__channel-header p,
+.str-chat__channel-header span,
+.str-chat__channel-header div {
   color: oklch(var(--bc)) !important;
 }
 
@@ -198,6 +203,14 @@
 .str-chat .str-chat__header-livestream {
   background: oklch(var(--b2)) !important;
   background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Specifically target all possible text containers in header */
+.str-chat__channel-header > *,
+.str-chat__header-livestream > *,
+.str-chat__header-livestream-left > * {
+  color: oklch(var(--bc)) !important;
 }
 
 /* Header right side (for actions) */
@@ -290,6 +303,35 @@
 .str-chat__channel-header *,
 .str-chat__message-input * {
   background-color: inherit;
+}
+
+/* Ensure all header text elements are visible in dark mode */
+.str-chat__header-livestream *:not(svg):not(path):not(circle):not(rect),
+.str-chat__channel-header *:not(svg):not(path):not(circle):not(rect),
+.str-chat__channel-header-title,
+.str-chat__channel-header-info,
+.str-chat__channel-header-name {
+  color: oklch(var(--bc)) !important;
+}
+
+/* Force all nested elements in header to be visible */
+.str-chat__header-livestream * *,
+.str-chat__channel-header * * {
+  color: oklch(var(--bc)) !important;
+}
+
+/* Target all possible header text classes */
+[class*="str-chat__header"] *:not(svg):not(path):not(circle):not(rect),
+[class*="str-chat__channel-header"] *:not(svg):not(path):not(circle):not(rect) {
+  color: oklch(var(--bc)) !important;
+}
+
+/* Override any hardcoded white/black text colors in header */
+.str-chat__channel-header[style*="color"],
+.str-chat__header-livestream[style*="color"],
+.str-chat__channel-header *[style*="color"],
+.str-chat__header-livestream *[style*="color"] {
+  color: oklch(var(--bc)) !important;
 }
 
 /* Ensure all Stream Chat components follow theme */

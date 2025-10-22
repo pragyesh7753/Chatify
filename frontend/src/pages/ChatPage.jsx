@@ -127,11 +127,11 @@ const ChatPage = () => {
 
   const CustomChatHeader = () => {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 text-base-content">
         {/* Back button for mobile screens */}
         <button
           onClick={() => navigate(-1)}
-          className="md:hidden btn btn-ghost btn-sm btn-circle"
+          className="md:hidden btn btn-ghost btn-sm btn-circle text-base-content"
           aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5" />
