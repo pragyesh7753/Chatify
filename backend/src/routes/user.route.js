@@ -6,7 +6,7 @@ import {
   getFriendRequests,
   getMyFriends,
   getOutgoingFriendReqs,
-  getRecommendedUsers,
+  searchUsersByUsername,
   getUserProfile,
   sendFriendRequest,
   updateProfile,
@@ -19,7 +19,7 @@ const router = express.Router();
 // apply auth middleware to all routes
 router.use(protectRoute);
 
-router.get("/", getRecommendedUsers);
+router.get("/search", searchUsersByUsername);
 router.get("/friends", getMyFriends);
 router.get("/profile", getUserProfile);
 router.put("/profile", upload.single('profilePic'), (error, req, res, next) => {

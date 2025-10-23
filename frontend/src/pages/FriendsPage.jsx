@@ -2,17 +2,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   getOutgoingFriendReqs,
-  getRecommendedUsers,
+  searchUsersByUsername,
   getUserFriends,
   sendFriendRequest,
 } from "../lib/api";
-import { CheckCircleIcon, MapPinIcon, UserPlusIcon } from "lucide-react";
+import { CheckCircleIcon, MapPinIcon, UserPlusIcon, Search } from "lucide-react";
 import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
 
 const FriendsPage = () => {
   const queryClient = useQueryClient();
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   const { data: friends = [], isLoading } = useQuery({
     queryKey: ["friends"],
@@ -21,9 +23,10 @@ const FriendsPage = () => {
     refetchIntervalInBackground: true, // Continue refetching when tab is not active
   });
 
-  const { data: recommendedUsers = [], isLoading: loadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: getRecommendedUsers,
+  const { data: searchResults = [], isLoading: loadingSearch } = useQuery({
+    queryKey: ["userSearch", debouncedSearchQuery],
+    queryFn: () => searchUsersByUsername(debouncedSearchQuery),
+    enabled: debouncedSearchQuery.length >= 2, // Only search if query is at least 2 characters
   });
 
   const { data: outgoingFriendReqs } = useQuery({
@@ -45,6 +48,15 @@ const FriendsPage = () => {
       setOutgoingRequestsIds(outgoingIds);
     }
   }, [outgoingFriendReqs]);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   return (
     <div className="h-full overflow-y-auto bg-base-100 transition-colors duration-200">
@@ -76,35 +88,55 @@ const FriendsPage = () => {
             )}
           </section>
 
-          {/* SUGGESTED CONTACTS SECTION */}
+          {/* USER SEARCH SECTION */}
           <section>
             <div className="mb-6 sm:mb-8">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-base-content">
-                    Suggested Contacts
+                    Find Friends
                   </h2>
                   <p className="text-base-content opacity-70">
-                    Suggested friends you may know or want to connect with.
+                    Search for users by username and send friend requests
                   </p>
                 </div>
               </div>
             </div>
 
-            {loadingUsers ? (
+            {/* Search Input */}
+            <div className="mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-base-content/50" />
+                <input
+                  type="text"
+                  placeholder="Search by username..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="input input-bordered w-full pl-10 bg-base-200"
+                />
+              </div>
+              {searchQuery.length > 0 && searchQuery.length < 2 && (
+                <p className="text-sm text-base-content/60 mt-2">
+                  Please enter at least 2 characters to search
+                </p>
+              )}
+            </div>
+
+            {/* Search Results */}
+            {loadingSearch ? (
               <div className="flex justify-center py-12">
                 <span className="loading loading-spinner loading-lg text-primary" />
               </div>
-            ) : recommendedUsers.length === 0 ? (
+            ) : debouncedSearchQuery.length >= 2 && searchResults.length === 0 ? (
               <div className="card bg-base-200 p-6 text-center">
-                <h3 className="font-semibold text-lg mb-2 text-base-content">No recommendations available</h3>
+                <h3 className="font-semibold text-lg mb-2 text-base-content">No users found</h3>
                 <p className="text-base-content opacity-70">
-                  Check back later for new suggestions!
+                  Try searching with a different username
                 </p>
               </div>
-            ) : (
+            ) : debouncedSearchQuery.length >= 2 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {recommendedUsers.map((user) => {
+                {searchResults.map((user) => {
                   const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
 
                   return (
@@ -131,15 +163,11 @@ const FriendsPage = () => {
                           </div>
                         </div>
 
-                        {/* Languages with flags
                         <div className="flex flex-wrap gap-1.5">
-                          <span className="badge badge-secondary">
-                            Native: {capitalize(user.nativeLanguage)}
-                          </span>
                           <span className="badge badge-outline">
                             @{user.username}
                           </span>
-                        </div> */}
+                        </div>
 
                         {user.bio && <p className="text-sm text-base-content opacity-70">{user.bio}</p>}
 
@@ -167,6 +195,13 @@ const FriendsPage = () => {
                     </div>
                   );
                 })}
+              </div>
+            ) : (
+              <div className="card bg-base-200 p-6 text-center">
+                <h3 className="font-semibold text-lg mb-2 text-base-content">Start searching</h3>
+                <p className="text-base-content opacity-70">
+                  Enter a username above to find users and send friend requests
+                </p>
               </div>
             )}
           </section>

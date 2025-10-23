@@ -21,7 +21,7 @@
 Chatify is a full‑stack MERN application that lets authenticated users:
 1. Sign up / log in (JWT HttpOnly cookie auth)
 2. Complete onboarding (profile, languages, bio, location)
-3. Discover recommended users & send friend requests
+3. Search for users by username & send friend requests
 4. Accept requests and manage a friends list
 5. Start 1:1 real‑time chats (Stream Chat)
 6. Launch instant video calls (Stream Video SDK) directly from a chat
@@ -56,7 +56,7 @@ Dev/Deployment:
 - Secure authentication (signup/login/logout) with validation
 - Onboarding flow gating access to core app until profile completion
 - Random avatar assignment on signup
-- Friend system (send, accept requests, list friends, recommended users)
+- Friend system (search users by username, send & accept requests, list friends)
 - Real‑time chat (1:1 channels deterministically keyed by user IDs)
 - Video calling with auto generation & sharing of call URLs in chat
 - Theming & persistence via localStorage
@@ -160,7 +160,7 @@ Auth:
 - POST `/api/auth/onboarding`
 
 Users (protected):
-- GET  `/api/users` (recommended users)
+- GET  `/api/users/search?username=<query>` (search users by username)
 - GET  `/api/users/friends`
 - POST `/api/users/friend-request/:id`
 - PUT  `/api/users/friend-request/:id/accept`

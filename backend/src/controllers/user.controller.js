@@ -4,21 +4,29 @@ import { sendVerificationEmail, generateVerificationToken, sendEmailChangeVerifi
 import { cleanupExpiredEmailChanges } from "../lib/cleanup.js";
 import cloudinary from "../lib/cloudinary.js";
 
-export async function getRecommendedUsers(req, res) {
+export async function searchUsersByUsername(req, res) {
   try {
     const currentUserId = req.user.id;
     const currentUser = req.user;
+    const { username } = req.query;
 
-    const recommendedUsers = await User.find({
+    if (!username || username.trim().length === 0) {
+      return res.status(400).json({ message: "Username query is required" });
+    }
+
+    // Search for users by username (case-insensitive partial match)
+    const users = await User.find({
       $and: [
-        { _id: { $ne: currentUserId } }, //exclude current user
+        { _id: { $ne: currentUserId } }, // exclude current user
         { _id: { $nin: currentUser.friends } }, // exclude current user's friends
         { isOnboarded: true },
+        { username: { $regex: username.trim(), $options: "i" } }, // case-insensitive search
       ],
-    });
-    res.status(200).json(recommendedUsers);
+    }).select("fullName profilePic username nativeLanguage bio location");
+
+    res.status(200).json(users);
   } catch (error) {
-    console.error("Error in getRecommendedUsers controller", error.message);
+    console.error("Error in searchUsersByUsername controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
