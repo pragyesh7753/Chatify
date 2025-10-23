@@ -54,7 +54,7 @@ const EmailVerificationPage = () => {
             console.log("No token found in URL");
             setVerificationStatus("no-token");
         }
-    }, [token]);
+    }, [token, verifyMutation]);
 
     const handleResendEmail = () => {
         if (email) {
