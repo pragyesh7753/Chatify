@@ -142,9 +142,28 @@
 /* Fixed header on mobile to prevent scrolling when keyboard opens */
 @media (max-width: 768px) {
 
+  /* Prevent scrolling on the main chat container */
+  .whatsapp-chat {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: var(--app-vh, 100dvh) !important; /* visual viewport height if available */
+    max-height: var(--app-vh, 100dvh) !important;
+    overflow: hidden !important;
+  }
+
+  .str-chat__channel,
+  .str-chat__window {
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+
   .str-chat__header-livestream,
   .str-chat__header-livestream.str-chat__channel-header {
-    position: fixed !important;
+    position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
@@ -154,16 +173,8 @@
   /* Add padding to message list to account for fixed header */
   .str-chat__list {
     padding-top: 80px !important;
-  }
-
-  /* Ensure the chat container uses visual viewport height on mobile */
-  .str-chat__channel,
-  .whatsapp-chat {
-    height: 100vh;
-    height: 100dvh;
-    /* Dynamic viewport height for mobile browsers */
-    max-height: 100vh;
-    max-height: 100dvh;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 

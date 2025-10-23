@@ -111,6 +111,34 @@ const ChatPage = () => {
     initChannel();
   }, [chatClient, authUser, targetUserId]);
 
+  // Effect 3: Stabilize viewport height on mobile keyboards and prevent body scroll
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+
+    const setAppVh = () => {
+      const vh = window.visualViewport?.height || window.innerHeight;
+      root.style.setProperty("--app-vh", `${vh}px`);
+    };
+
+    // Lock body scroll while the chat screen is mounted
+    const prevOverflow = body.style.overflow;
+    body.style.overflow = "hidden";
+
+    setAppVh();
+    window.visualViewport?.addEventListener("resize", setAppVh);
+    window.visualViewport?.addEventListener("scroll", setAppVh);
+    window.addEventListener("orientationchange", setAppVh);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", setAppVh);
+      window.visualViewport?.removeEventListener("scroll", setAppVh);
+      window.removeEventListener("orientationchange", setAppVh);
+      body.style.overflow = prevOverflow;
+      root.style.removeProperty("--app-vh");
+    };
+  }, []);
+
   const handleVideoCall = () => {
     if (channel) {
       const callUrl = `${window.location.origin}/call/${channel.id}`;
@@ -144,7 +172,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-base-100 transition-colors duration-200 flex flex-col">
+    <div className="fixed inset-0 overflow-hidden bg-base-100 transition-colors duration-200">
       <Chat client={chatClient}>
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col whatsapp-chat">
