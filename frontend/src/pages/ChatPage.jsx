@@ -121,9 +121,12 @@ const ChatPage = () => {
       root.style.setProperty("--app-vh", `${vh}px`);
     };
 
-    // Lock body scroll while the chat screen is mounted
+    // Lock body scroll only on mobile while the chat screen is mounted
+    const isMobile = window.innerWidth < 768; // md breakpoint
     const prevOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
+    if (isMobile) {
+      body.style.overflow = "hidden";
+    }
 
     setAppVh();
     window.visualViewport?.addEventListener("resize", setAppVh);
@@ -134,7 +137,9 @@ const ChatPage = () => {
       window.visualViewport?.removeEventListener("resize", setAppVh);
       window.visualViewport?.removeEventListener("scroll", setAppVh);
       window.removeEventListener("orientationchange", setAppVh);
-      body.style.overflow = prevOverflow;
+      if (isMobile) {
+        body.style.overflow = prevOverflow;
+      }
       root.style.removeProperty("--app-vh");
     };
   }, []);
@@ -172,7 +177,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-base-100 transition-colors duration-200">
+    <div className="h-full overflow-hidden bg-base-100 transition-colors duration-200">
       <Chat client={chatClient}>
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col whatsapp-chat">
