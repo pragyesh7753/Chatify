@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import { UserService } from "../services/user.service.js";
 
 export const optionalProtectRoute = async (req, res, next) => {
   try {
@@ -10,7 +10,11 @@ export const optionalProtectRoute = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await UserService.findById(decoded.userId);
+    
+    if (user) {
+      delete user.password;
+    }
 
     if (user) {
       req.user = user;

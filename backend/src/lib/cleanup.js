@@ -1,29 +1,34 @@
-import User from "../models/User.js";
+import { UserService } from "../services/user.service.js";
+import { databases, DATABASE_ID, USERS_COLLECTION_ID, Query } from "./appwrite.js";
 
 export const cleanupExpiredEmailChanges = async () => {
   try {
     const now = new Date();
     
     // Find users with expired email change tokens
-    const result = await User.updateMany(
-      {
-        emailChangeTokenExpires: { $lt: now },
-        emailChangeToken: { $ne: null }
-      },
-      {
-        $unset: {
-          pendingEmail: "",
-          emailChangeToken: "",
-          emailChangeTokenExpires: ""
-        }
-      }
+    const allUsers = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.isNotNull("emailChangeToken")]
     );
 
-    if (result.modifiedCount > 0) {
-      console.log(`Cleaned up ${result.modifiedCount} expired email change requests`);
+    let count = 0;
+    for (const user of allUsers.documents) {
+      if (user.emailChangeTokenExpires && new Date(user.emailChangeTokenExpires) < now) {
+        await UserService.findByIdAndUpdate(user.$id, {
+          pendingEmail: null,
+          emailChangeToken: null,
+          emailChangeTokenExpires: null,
+        });
+        count++;
+      }
     }
 
-    return result.modifiedCount;
+    if (count > 0) {
+      console.log(`Cleaned up ${count} expired email change requests`);
+    }
+
+    return count;
   } catch (error) {
     console.error("Error cleaning up expired email changes:", error);
     throw error;
@@ -35,25 +40,29 @@ export const cleanupExpiredVerificationTokens = async () => {
   try {
     const now = new Date();
     
-    // Find users with expired verification tokens (but don't delete unverified users, just clear tokens)
-    const result = await User.updateMany(
-      {
-        verificationTokenExpires: { $lt: now },
-        verificationToken: { $ne: null }
-      },
-      {
-        $unset: {
-          verificationToken: "",
-          verificationTokenExpires: ""
-        }
-      }
+    // Find users with expired verification tokens
+    const allUsers = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.isNotNull("verificationToken")]
     );
 
-    if (result.modifiedCount > 0) {
-      console.log(`Cleaned up ${result.modifiedCount} expired verification tokens`);
+    let count = 0;
+    for (const user of allUsers.documents) {
+      if (user.verificationTokenExpires && new Date(user.verificationTokenExpires) < now) {
+        await UserService.findByIdAndUpdate(user.$id, {
+          verificationToken: null,
+          verificationTokenExpires: null,
+        });
+        count++;
+      }
     }
 
-    return result.modifiedCount;
+    if (count > 0) {
+      console.log(`Cleaned up ${count} expired verification tokens`);
+    }
+
+    return count;
   } catch (error) {
     console.error("Error cleaning up expired verification tokens:", error);
     throw error;

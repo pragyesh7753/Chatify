@@ -10,7 +10,7 @@ import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
 
-import { connectDB } from "./lib/db.js";
+import { connectAppwrite } from "./lib/appwrite.js";
 import { cleanupExpiredTokens } from "./lib/cleanup.js";
 
 const app = express();
@@ -106,7 +106,7 @@ app.post("/api/cleanup", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  connectDB();
+  connectAppwrite();
   
   // Run initial cleanup
   cleanupExpiredTokens();

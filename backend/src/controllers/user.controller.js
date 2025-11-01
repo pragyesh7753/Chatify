@@ -1,12 +1,12 @@
-import User from "../models/User.js";
-import FriendRequest from "../models/FriendRequest.js";
+import { UserService } from "../services/user.service.js";
+import { FriendRequestService } from "../services/friendRequest.service.js";
 import { sendVerificationEmail, generateVerificationToken, sendEmailChangeVerification } from "../lib/email.js";
 import { cleanupExpiredEmailChanges } from "../lib/cleanup.js";
 import cloudinary from "../lib/cloudinary.js";
 
 export async function searchUsersByUsername(req, res) {
   try {
-    const currentUserId = req.user.id;
+    const currentUserId = req.user._id;
     const currentUser = req.user;
     const { username } = req.query;
 
@@ -15,16 +15,26 @@ export async function searchUsersByUsername(req, res) {
     }
 
     // Search for users by username (case-insensitive partial match)
-    const users = await User.find({
+    const users = await UserService.find({
       $and: [
         { _id: { $ne: currentUserId } }, // exclude current user
         { _id: { $nin: currentUser.friends } }, // exclude current user's friends
         { isOnboarded: true },
-        { username: { $regex: username.trim(), $options: "i" } }, // case-insensitive search
+        { username: { $regex: username.trim() } }, // case-insensitive search
       ],
-    }).select("fullName profilePic username nativeLanguage bio location");
+    });
 
-    res.status(200).json(users);
+    const filtered = users.map(u => ({
+      _id: u._id,
+      fullName: u.fullName,
+      profilePic: u.profilePic,
+      username: u.username,
+      nativeLanguage: u.nativeLanguage,
+      bio: u.bio,
+      location: u.location,
+    }));
+
+    res.status(200).json(filtered);
   } catch (error) {
     console.error("Error in searchUsersByUsername controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -33,11 +43,28 @@ export async function searchUsersByUsername(req, res) {
 
 export async function getMyFriends(req, res) {
   try {
-    const user = await User.findById(req.user.id)
-      .select("friends")
-      .populate("friends", "fullName profilePic nativeLanguage username");
+    const user = await UserService.findById(req.user._id || req.user.id);
+    
+    if (!user || !user.friends || user.friends.length === 0) {
+      return res.status(200).json([]);
+    }
 
-    res.status(200).json(user.friends);
+    const friends = await Promise.all(
+      user.friends.map(async friendId => {
+        if (!friendId) return null;
+        const friend = await UserService.findById(friendId);
+        if (!friend) return null;
+        return {
+          _id: friend._id,
+          fullName: friend.fullName,
+          profilePic: friend.profilePic,
+          nativeLanguage: friend.nativeLanguage,
+          username: friend.username,
+        };
+      })
+    );
+
+    res.status(200).json(friends.filter(f => f !== null));
   } catch (error) {
     console.error("Error in getMyFriends controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -46,7 +73,7 @@ export async function getMyFriends(req, res) {
 
 export async function sendFriendRequest(req, res) {
   try {
-    const myId = req.user.id;
+    const myId = req.user._id;
     const { id: recipientId } = req.params;
 
     // prevent sending req to yourself
@@ -54,18 +81,18 @@ export async function sendFriendRequest(req, res) {
       return res.status(400).json({ message: "You can't send friend request to yourself" });
     }
 
-    const recipient = await User.findById(recipientId);
+    const recipient = await UserService.findById(recipientId);
     if (!recipient) {
       return res.status(404).json({ message: "Recipient not found" });
     }
 
     // check if user is already friends
-    if (recipient.friends.includes(myId)) {
+    if (recipient.friends && recipient.friends.includes(myId)) {
       return res.status(400).json({ message: "You are already friends with this user" });
     }
 
     // check if a req already exists
-    const existingRequest = await FriendRequest.findOne({
+    const existingRequest = await FriendRequestService.findOne({
       $or: [
         { sender: myId, recipient: recipientId },
         { sender: recipientId, recipient: myId },
@@ -78,7 +105,7 @@ export async function sendFriendRequest(req, res) {
         .json({ message: "A friend request already exists between you and this user" });
     }
 
-    const friendRequest = await FriendRequest.create({
+    const friendRequest = await FriendRequestService.create({
       sender: myId,
       recipient: recipientId,
     });
@@ -94,27 +121,26 @@ export async function acceptFriendRequest(req, res) {
   try {
     const { id: requestId } = req.params;
 
-    const friendRequest = await FriendRequest.findById(requestId);
+    const friendRequest = await FriendRequestService.findById(requestId);
 
     if (!friendRequest) {
       return res.status(404).json({ message: "Friend request not found" });
     }
 
     // Verify the current user is the recipient
-    if (friendRequest.recipient.toString() !== req.user.id) {
+    if (friendRequest.recipient !== req.user._id) {
       return res.status(403).json({ message: "You are not authorized to accept this request" });
     }
 
     friendRequest.status = "accepted";
-    await friendRequest.save();
+    await FriendRequestService.save(friendRequest);
 
     // add each user to the other's friends array
-    // $addToSet: adds elements to an array only if they do not already exist.
-    await User.findByIdAndUpdate(friendRequest.sender, {
+    await UserService.findByIdAndUpdate(friendRequest.sender, {
       $addToSet: { friends: friendRequest.recipient },
     });
 
-    await User.findByIdAndUpdate(friendRequest.recipient, {
+    await UserService.findByIdAndUpdate(friendRequest.recipient, {
       $addToSet: { friends: friendRequest.sender },
     });
 
@@ -127,17 +153,50 @@ export async function acceptFriendRequest(req, res) {
 
 export async function getFriendRequests(req, res) {
   try {
-    const incomingReqs = await FriendRequest.find({
-      recipient: req.user.id,
+    const incomingReqs = await FriendRequestService.find({
+      recipient: req.user._id,
       status: "pending",
-    }).populate("sender", "fullName profilePic nativeLanguage username");
+    });
 
-    const acceptedReqs = await FriendRequest.find({
-      sender: req.user.id,
+    const incomingWithSender = await Promise.all(
+      incomingReqs.map(async req => {
+        const sender = await UserService.findById(req.sender);
+        return {
+          ...req,
+          sender: sender ? {
+            _id: sender._id,
+            fullName: sender.fullName,
+            profilePic: sender.profilePic,
+            nativeLanguage: sender.nativeLanguage,
+            username: sender.username,
+          } : null
+        };
+      })
+    );
+
+    const acceptedReqs = await FriendRequestService.find({
+      sender: req.user._id,
       status: "accepted",
-    }).populate("recipient", "fullName profilePic");
+    });
 
-    res.status(200).json({ incomingReqs, acceptedReqs });
+    const acceptedWithRecipient = await Promise.all(
+      acceptedReqs.map(async req => {
+        const recipient = await UserService.findById(req.recipient);
+        return {
+          ...req,
+          recipient: recipient ? {
+            _id: recipient._id,
+            fullName: recipient.fullName,
+            profilePic: recipient.profilePic,
+          } : null
+        };
+      })
+    );
+
+    res.status(200).json({ 
+      incomingReqs: incomingWithSender.filter(r => r.sender !== null), 
+      acceptedReqs: acceptedWithRecipient.filter(r => r.recipient !== null) 
+    });
   } catch (error) {
     console.log("Error in getPendingFriendRequests controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -146,12 +205,28 @@ export async function getFriendRequests(req, res) {
 
 export async function getOutgoingFriendReqs(req, res) {
   try {
-    const outgoingRequests = await FriendRequest.find({
-      sender: req.user.id,
+    const outgoingRequests = await FriendRequestService.find({
+      sender: req.user._id,
       status: "pending",
-    }).populate("recipient", "fullName profilePic nativeLanguage username");
+    });
 
-    res.status(200).json(outgoingRequests);
+    const outgoingWithRecipient = await Promise.all(
+      outgoingRequests.map(async req => {
+        const recipient = await UserService.findById(req.recipient);
+        return {
+          ...req,
+          recipient: recipient ? {
+            _id: recipient._id,
+            fullName: recipient.fullName,
+            profilePic: recipient.profilePic,
+            nativeLanguage: recipient.nativeLanguage,
+            username: recipient.username,
+          } : null
+        };
+      })
+    );
+
+    res.status(200).json(outgoingWithRecipient.filter(r => r.recipient !== null));
   } catch (error) {
     console.log("Error in getOutgoingFriendReqs controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -160,11 +235,11 @@ export async function getOutgoingFriendReqs(req, res) {
 
 export async function updateProfile(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const updateData = req.body;
     
     // Get current user
-    const currentUser = await User.findById(userId);
+    const currentUser = await UserService.findById(userId);
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -205,7 +280,7 @@ export async function updateProfile(req, res) {
       }
 
       // Check if email already exists
-      const existingUser = await User.findOne({ email: updateData.email });
+      const existingUser = await UserService.findOne({ email: updateData.email });
       if (existingUser) {
         return res.status(400).json({ message: "Email already in use" });
       }
@@ -215,9 +290,11 @@ export async function updateProfile(req, res) {
       const emailChangeTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
       // Set pending email change
-      currentUser.pendingEmail = updateData.email;
-      currentUser.emailChangeToken = emailChangeToken;
-      currentUser.emailChangeTokenExpires = emailChangeTokenExpires;
+      await UserService.findByIdAndUpdate(userId, {
+        pendingEmail: updateData.email,
+        emailChangeToken,
+        emailChangeTokenExpires: emailChangeTokenExpires.toISOString(),
+      });
 
       // Send verification email to new email address
       try {
@@ -259,8 +336,8 @@ export async function updateProfile(req, res) {
       }
 
       // Check if username already exists
-      const existingUser = await User.findOne({ username });
-      if (existingUser && existingUser._id.toString() !== userId) {
+      const existingUser = await UserService.findOne({ username });
+      if (existingUser && existingUser._id !== userId) {
         return res.status(400).json({ message: "Username already taken" });
       }
 
@@ -284,19 +361,11 @@ export async function updateProfile(req, res) {
     });
 
     // Update other profile fields
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    // If email was changed, also save the email change data
-    if (emailChanged) {
-      await currentUser.save();
-    }
+    await UserService.findByIdAndUpdate(userId, updateData);
 
     // Get the final user data to return
-    const finalUser = await User.findById(userId).select("-password");
+    const finalUser = await UserService.findById(userId);
+    const { password, ...userWithoutPassword } = finalUser;
 
     if (!finalUser) {
       return res.status(404).json({ message: "User not found" });
@@ -310,32 +379,30 @@ export async function updateProfile(req, res) {
 
     res.status(200).json({
       message,
-      user: finalUser,
+      user: userWithoutPassword,
       emailChanged
     });
   } catch (error) {
     console.error("Error in updateProfile controller", error.message);
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
-    }
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
 
 export async function getUserProfile(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Run cleanup to remove any expired pending email changes
     await cleanupExpiredEmailChanges();
 
-    const user = await User.findById(userId).select("-password");
+    const user = await UserService.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(user);
+    const { password, ...userWithoutPassword } = user;
+    res.status(200).json(userWithoutPassword);
   } catch (error) {
     console.error("Error in getUserProfile controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -345,7 +412,7 @@ export async function getUserProfile(req, res) {
 // Request email change
 export async function requestEmailChange(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { newEmail } = req.body;
 
     if (!newEmail) {
@@ -359,13 +426,13 @@ export async function requestEmailChange(req, res) {
     }
 
     // Check if email already exists
-    const existingUser = await User.findOne({ email: newEmail });
+    const existingUser = await UserService.findOne({ email: newEmail });
     if (existingUser) {
       return res.status(400).json({ message: "Email already in use" });
     }
 
     // Check if user is requesting to change to the same email
-    const currentUser = await User.findById(userId);
+    const currentUser = await UserService.findById(userId);
     if (currentUser.email === newEmail) {
       return res.status(400).json({ message: "New email is the same as current email" });
     }
@@ -375,10 +442,11 @@ export async function requestEmailChange(req, res) {
     const emailChangeTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Update user with pending email change
-    currentUser.pendingEmail = newEmail;
-    currentUser.emailChangeToken = emailChangeToken;
-    currentUser.emailChangeTokenExpires = emailChangeTokenExpires;
-    await currentUser.save();
+    await UserService.findByIdAndUpdate(userId, {
+      pendingEmail: newEmail,
+      emailChangeToken,
+      emailChangeTokenExpires: emailChangeTokenExpires.toISOString(),
+    });
 
     // Send verification email to new email address
     try {
@@ -386,10 +454,11 @@ export async function requestEmailChange(req, res) {
     } catch (emailError) {
       console.error("Failed to send email change verification:", emailError);
       // Clear the pending change if email sending fails
-      currentUser.pendingEmail = null;
-      currentUser.emailChangeToken = null;
-      currentUser.emailChangeTokenExpires = null;
-      await currentUser.save();
+      await UserService.findByIdAndUpdate(userId, {
+        pendingEmail: null,
+        emailChangeToken: null,
+        emailChangeTokenExpires: null,
+      });
       return res.status(500).json({ message: "Failed to send verification email. Please try again." });
     }
 
@@ -413,10 +482,8 @@ export async function verifyEmailChange(req, res) {
     // Run cleanup before verification to ensure we don't have stale tokens
     await cleanupExpiredEmailChanges();
 
-    const user = await User.findOne({
-      emailChangeToken: token,
-      emailChangeTokenExpires: { $gt: new Date() },
-    });
+    const allUsers = await UserService.find({ emailChangeToken: token });
+    const user = allUsers.find(u => new Date(u.emailChangeTokenExpires) > new Date());
 
     if (!user) {
       console.log("Email change verification failed: Invalid or expired token:", token);
@@ -437,36 +504,33 @@ export async function verifyEmailChange(req, res) {
     });
 
     // Update email and clear pending change
-    user.email = newEmail;
-    user.pendingEmail = null;
-    user.emailChangeToken = null;
-    user.emailChangeTokenExpires = null;
-    
-    // Since the user has verified ownership of the new email by clicking the verification link,
-    // we can set them as verified. No need for a second verification step.
-    user.isVerified = true;
-    
-    // Clear any existing verification tokens since email is now verified
-    user.verificationToken = null;
-    user.verificationTokenExpires = null;
-    
-    await user.save();
+    await UserService.findByIdAndUpdate(user._id, {
+      email: newEmail,
+      pendingEmail: null,
+      emailChangeToken: null,
+      emailChangeTokenExpires: null,
+      isVerified: true,
+      verificationToken: null,
+      verificationTokenExpires: null,
+    });
 
     console.log("Email change completed successfully:", {
       userId: user._id,
       newEmail: newEmail,
-      isVerified: user.isVerified
+      isVerified: true
     });
+
+    const updatedUser = await UserService.findById(user._id);
 
     res.status(200).json({
       message: "Email changed and verified successfully!",
       user: {
-        _id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        profilePic: user.profilePic,
-        isVerified: user.isVerified,
-        isOnboarded: user.isOnboarded,
+        _id: updatedUser._id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        profilePic: updatedUser.profilePic,
+        isVerified: updatedUser.isVerified,
+        isOnboarded: updatedUser.isOnboarded,
       },
     });
   } catch (error) {
@@ -478,8 +542,8 @@ export async function verifyEmailChange(req, res) {
 // Resend email verification for current email
 export async function resendEmailVerification(req, res) {
   try {
-    const userId = req.user.id;
-    const user = await User.findById(userId);
+    const userId = req.user._id;
+    const user = await UserService.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -493,9 +557,10 @@ export async function resendEmailVerification(req, res) {
     const verificationToken = generateVerificationToken();
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    user.verificationToken = verificationToken;
-    user.verificationTokenExpires = verificationTokenExpires;
-    await user.save();
+    await UserService.findByIdAndUpdate(userId, {
+      verificationToken,
+      verificationTokenExpires: verificationTokenExpires.toISOString(),
+    });
 
     // Send verification email
     try {

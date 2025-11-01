@@ -1,6 +1,6 @@
 import { upsertStreamUser } from "../lib/stream.js";
 import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail } from "../lib/email.js";
-import User from "../models/User.js";
+import { UserService } from "../services/user.service.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../lib/cloudinary.js";
 
@@ -22,7 +22,7 @@ export async function signup(req, res) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await UserService.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email already exists, please use a different one" });
     }
@@ -43,7 +43,7 @@ export async function signup(req, res) {
     let counter = 1;
     
     // Ensure username is unique
-    while (await User.findOne({ username })) {
+    while (await UserService.findOne({ username })) {
       username = baseUsername + counter;
       counter++;
       if (username.length > 20) {
@@ -55,15 +55,27 @@ export async function signup(req, res) {
     const verificationToken = generateVerificationToken();
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);  // 24 hours
 
-    const newUser = await User.create({
+    const hashedPassword = await UserService.hashPassword(password);
+    
+    const newUser = await UserService.create({
       email,
       fullName,
       username,
-      password,
+      password: hashedPassword,
       profilePic: randomAvatar,
       verificationToken,
-      verificationTokenExpires,
+      verificationTokenExpires: verificationTokenExpires.toISOString(),
       isVerified: false,
+      bio: "",
+      nativeLanguage: "",
+      location: "",
+      isOnboarded: false,
+      googleId: null,
+      pendingEmail: null,
+      emailChangeToken: null,
+      emailChangeTokenExpires: null,
+      passwordResetToken: null,
+      passwordResetTokenExpires: null,
     });
 
     // Send Verification Email
@@ -72,7 +84,7 @@ export async function signup(req, res) {
     } catch (emailError) {
       console.error("Failed to send verification email:", emailError);
       // Delete the user if email sending fails
-      await User.findByIdAndDelete(newUser._id);
+      await UserService.findByIdAndDelete(newUser._id);
       return res.status(500).json({ message: "Failed to send verification email. Please try again." });
     }
 
@@ -95,10 +107,8 @@ export async function verifyEmail(req, res) {
 
     console.log("Starting email verification for token:", token);
 
-    const user = await User.findOne({
-      verificationToken: token,
-      verificationTokenExpires: { $gt: new Date() },
-    });
+    const allUsers = await UserService.find({ verificationToken: token });
+    const user = allUsers.find(u => new Date(u.verificationTokenExpires) > new Date());
 
     if (!user) {
       console.log("Verification failed: Invalid or expired token:", token);
@@ -115,14 +125,15 @@ export async function verifyEmail(req, res) {
     });
 
     // Verify the user
-    user.isVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpires = null;
-    await user.save();
+    await UserService.findByIdAndUpdate(user._id, {
+      isVerified: true,
+      verificationToken: null,
+      verificationTokenExpires: null,
+    });
 
     console.log("User verification completed:", { 
       email: user.email, 
-      isVerified: user.isVerified,
+      isVerified: true,
       userId: user._id 
     });
 
@@ -151,16 +162,18 @@ export async function verifyEmail(req, res) {
 
     console.log("Email verification successful for user:", user.email);
     
+    const updatedUser = await UserService.findById(user._id);
+    
     return res.status(200).json({
       success: true,
       message: "Email verified successfully!",
       user: {
-        _id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        profilePic: user.profilePic,
-        isVerified: user.isVerified,
-        isOnboarded: user.isOnboarded,
+        _id: updatedUser._id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        profilePic: updatedUser.profilePic,
+        isVerified: updatedUser.isVerified,
+        isOnboarded: updatedUser.isOnboarded,
       },
     });
   } catch (error) {
@@ -175,7 +188,7 @@ export async function resendVerificationEmail(req, res) {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email is required" });
 
-    const user = await User.findOne({ email });
+    const user = await UserService.findOne({ email });
 
     if (!user) return res.status(404).json({ message: "User not found." });
 
@@ -187,9 +200,10 @@ export async function resendVerificationEmail(req, res) {
     const verificationToken = generateVerificationToken();
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    user.verificationToken = verificationToken;
-    user.verificationTokenExpires = verificationTokenExpires;
-    await user.save();
+    await UserService.findByIdAndUpdate(user._id, {
+      verificationToken,
+      verificationTokenExpires: verificationTokenExpires.toISOString(),
+    });
 
     // Send Verification Email
     await sendVerificationEmail(user.email, verificationToken, user.fullName);
@@ -213,7 +227,7 @@ export async function login(req, res) {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrUsername);
     
     // Find user by email or username
-    const user = await User.findOne(
+    const user = await UserService.findOne(
       isEmail 
         ? { email: emailOrUsername } 
         : { username: emailOrUsername.toLowerCase() }
@@ -229,7 +243,7 @@ export async function login(req, res) {
       });
     }
 
-    const isPasswordCorrect = await user.matchPassword(password);
+    const isPasswordCorrect = await UserService.matchPassword(password, user.password);
     if (!isPasswordCorrect)
       return res.status(401).json({ message: "Invalid email/username or password" });
 
@@ -254,7 +268,7 @@ export async function login(req, res) {
     });
 
     // Return user without password
-    const { password: userPassword, ...userWithoutPassword } = user.toObject();
+    const { password: userPassword, ...userWithoutPassword } = user;
     return res.status(200).json({ success: true, user: userWithoutPassword });
   } catch (error) {
     console.log("Error in login controller", error.message);
@@ -313,8 +327,8 @@ export async function onboard(req, res) {
     }
 
     // Check if username already exists
-    const existingUser = await User.findOne({ username: username.toLowerCase() });
-    if (existingUser && existingUser._id.toString() !== userId.toString()) {
+    const existingUser = await UserService.findOne({ username: username.toLowerCase() });
+    if (existingUser && existingUser._id !== userId) {
       return res.status(400).json({ message: "Username already taken" });
     }
 
@@ -346,15 +360,14 @@ export async function onboard(req, res) {
       }
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
+    const updatedUser = await UserService.findByIdAndUpdate(
       userId,
       { 
         ...req.body, 
         username: username.toLowerCase(), 
         profilePic: profilePicUrl,
         isOnboarded: true 
-      },
-      { new: true }
+      }
     );
 
     if (!updatedUser) return res.status(404).json({ message: "User not found" });
@@ -386,7 +399,7 @@ export async function forgotPassword(req, res) {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await UserService.findOne({ email });
     if (!user) {
       return res.status(200).json({ 
         success: true, 
@@ -397,9 +410,10 @@ export async function forgotPassword(req, res) {
     const resetToken = generateVerificationToken();
     const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    user.passwordResetToken = resetToken;
-    user.passwordResetTokenExpires = resetTokenExpires;
-    await user.save();
+    await UserService.findByIdAndUpdate(user._id, {
+      passwordResetToken: resetToken,
+      passwordResetTokenExpires: resetTokenExpires.toISOString(),
+    });
 
     await sendPasswordResetEmail(user.email, resetToken, user.fullName);
 
@@ -427,19 +441,19 @@ export async function resetPassword(req, res) {
       return res.status(400).json({ message: "Password must be at least 8 characters" });
     }
 
-    const user = await User.findOne({
-      passwordResetToken: token,
-      passwordResetTokenExpires: { $gt: new Date() },
-    });
+    const allUsers = await UserService.find({ passwordResetToken: token });
+    const user = allUsers.find(u => new Date(u.passwordResetTokenExpires) > new Date());
 
     if (!user) {
       return res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
-    user.password = password;
-    user.passwordResetToken = null;
-    user.passwordResetTokenExpires = null;
-    await user.save();
+    const hashedPassword = await UserService.hashPassword(password);
+    await UserService.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+      passwordResetToken: null,
+      passwordResetTokenExpires: null,
+    });
 
     return res.status(200).json({
       success: true,
@@ -465,18 +479,18 @@ export async function changePassword(req, res) {
       return res.status(400).json({ message: "New password must be at least 8 characters" });
     }
 
-    const user = await User.findById(userId);
+    const user = await UserService.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const isCurrentPasswordCorrect = await user.matchPassword(currentPassword);
+    const isCurrentPasswordCorrect = await UserService.matchPassword(currentPassword, user.password);
     if (!isCurrentPasswordCorrect) {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
 
-    user.password = newPassword;
-    await user.save();
+    const hashedPassword = await UserService.hashPassword(newPassword);
+    await UserService.findByIdAndUpdate(userId, { password: hashedPassword });
 
     return res.status(200).json({
       success: true,

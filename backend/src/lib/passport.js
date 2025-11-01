@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js";
+import { UserService } from "../services/user.service.js";
 import { upsertStreamUser } from "./stream.js";
 
 passport.use(
@@ -14,7 +14,7 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         // Check if user already exists
-        let user = await User.findOne({ googleId: profile.id });
+        let user = await UserService.findOne({ googleId: profile.id });
 
         if (user) {
           // User exists, return the user
@@ -22,17 +22,17 @@ passport.use(
         }
 
         // Check if user with this email exists (from regular signup)
-        user = await User.findOne({ email: profile.emails[0].value });
+        user = await UserService.findOne({ email: profile.emails[0].value });
 
         if (user) {
           // Link Google account to existing user
-          user.googleId = profile.id;
-          user.isVerified = true; // Google accounts are pre-verified
-          if (!user.profilePic && profile.photos?.[0]?.value) {
-            user.profilePic = profile.photos[0].value;
-          }
-          await user.save();
-          return done(null, user);
+          await UserService.findByIdAndUpdate(user._id, {
+            googleId: profile.id,
+            isVerified: true,
+            profilePic: (!user.profilePic && profile.photos?.[0]?.value) ? profile.photos[0].value.replace(/=s\d+-c$/, '') : user.profilePic,
+          });
+          const updatedUser = await UserService.findById(user._id);
+          return done(null, updatedUser);
         }
 
         // Create new user
@@ -51,7 +51,7 @@ passport.use(
         let counter = 1;
         
         // Ensure username is unique
-        while (await User.findOne({ username })) {
+        while (await UserService.findOne({ username })) {
           username = baseUsername + counter;
           counter++;
           if (username.length > 20) {
@@ -59,14 +59,26 @@ passport.use(
           }
         }
 
-        const newUser = await User.create({
+        const newUser = await UserService.create({
           googleId: profile.id,
           email: profile.emails[0].value,
           fullName: fullName,
           username: username,
-          profilePic: profile.photos?.[0]?.value || `https://avatar.iran.liara.run/public/${Math.floor(Math.random() * 100) + 1}.png`,
-          isVerified: true, // Google accounts are pre-verified
-          isOnboarded: false, // They still need to complete onboarding
+          profilePic: (profile.photos?.[0]?.value || `https://avatar.iran.liara.run/public/${Math.floor(Math.random() * 100) + 1}.png`).replace(/=s\d+-c$/, ''),
+          isVerified: true,
+          isOnboarded: false,
+          bio: "",
+          nativeLanguage: "",
+          location: "",
+          password: null,
+          verificationToken: null,
+          verificationTokenExpires: null,
+          pendingEmail: null,
+          emailChangeToken: null,
+          emailChangeTokenExpires: null,
+          passwordResetToken: null,
+          passwordResetTokenExpires: null,
+          friends: [],
         });
 
         // Create Stream user for OAuth users
@@ -98,7 +110,7 @@ passport.serializeUser((user, done) => {
 // Deserialize user from the session
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await User.findById(id);
+    const user = await UserService.findById(id);
     done(null, user);
   } catch (error) {
     done(error, null);
