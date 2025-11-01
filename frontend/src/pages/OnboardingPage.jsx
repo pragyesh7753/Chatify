@@ -229,7 +229,7 @@ const OnboardingPage = () => {
               {!isPending ? (
                 <>
                   <ShipWheelIcon className="size-5 mr-2" />
-                  Complete Onboarding
+                  Submit
                 </>
               ) : (
                 <>
