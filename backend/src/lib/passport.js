@@ -13,10 +13,17 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log("Google Strategy executing:", {
+          profileId: profile.id,
+          email: profile.emails?.[0]?.value,
+          displayName: profile.displayName
+        });
+
         // Check if user already exists
         let user = await UserService.findOne({ googleId: profile.id });
 
         if (user) {
+          console.log("Existing Google user found:", user._id);
           // User exists, return the user
           return done(null, user);
         }
@@ -25,6 +32,7 @@ passport.use(
         user = await UserService.findOne({ email: profile.emails[0].value });
 
         if (user) {
+          console.log("Linking Google account to existing user:", user._id);
           // Link Google account to existing user
           await UserService.findByIdAndUpdate(user._id, {
             googleId: profile.id,
@@ -35,6 +43,7 @@ passport.use(
           return done(null, updatedUser);
         }
 
+        console.log("Creating new user from Google account");
         // Create new user
         const fullName = profile.displayName || `${profile.name?.givenName || ''} ${profile.name?.familyName || ''}`.trim();
         

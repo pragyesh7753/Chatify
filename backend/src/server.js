@@ -18,6 +18,9 @@ const PORT = process.env.PORT || 5000;
 
 const __dirname = path.resolve();
 
+// Trust proxy - CRITICAL for Railway deployment
+app.set('trust proxy', 1);
+
 // Updated CORS configuration for production
 app.use(cors({
   origin: function(origin, callback) {
@@ -51,6 +54,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Required for Railway
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
@@ -75,6 +79,22 @@ app.get("/api/health", (req, res) => {
     userAgent: req.get('User-Agent'),
     origin: req.get('Origin'),
     cookies: req.cookies
+  });
+});
+
+// OAuth configuration check endpoint
+app.get("/api/oauth-check", (req, res) => {
+  res.json({
+    status: "ok",
+    oauth: {
+      googleClientIdConfigured: !!process.env.GOOGLE_CLIENT_ID,
+      googleClientSecretConfigured: !!process.env.GOOGLE_CLIENT_SECRET,
+      googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,
+      frontendUrl: process.env.FRONTEND_URL,
+      nodeEnv: process.env.NODE_ENV,
+      sessionSecretConfigured: !!process.env.SESSION_SECRET,
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
