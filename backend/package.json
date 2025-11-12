@@ -21,12 +21,12 @@
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.2",
-    "node-appwrite": "^20.2.1",
     "multer": "^2.0.2",
+    "node-appwrite": "^20.2.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "resend": "^6.0.2",
-    "stream-chat": "^9.14.0"
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

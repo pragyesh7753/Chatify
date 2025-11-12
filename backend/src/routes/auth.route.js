@@ -60,7 +60,11 @@ router.post("/change-password", protectRoute, changePassword);
 
 // check if user is logged in
 router.get("/me", protectRoute, (req, res) => {
-  res.status(200).json({ success: true, user: req.user });
+  res.status(200).json({ 
+    success: true, 
+    user: req.user,
+    token: req.cookies.jwt // Include token for socket authentication
+  });
 });
 
 export default router;

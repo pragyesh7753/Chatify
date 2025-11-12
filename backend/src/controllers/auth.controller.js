@@ -1,4 +1,3 @@
-import { upsertStreamUser } from "../lib/stream.js";
 import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail } from "../lib/email.js";
 import { UserService } from "../services/user.service.js";
 import jwt from "jsonwebtoken";
@@ -88,7 +87,6 @@ export async function signup(req, res) {
       return res.status(500).json({ message: "Failed to send verification email. Please try again." });
     }
 
-    // Don't create Stream user here, only after email verification
     return res.status(201).json({
       success: true,
       message: "Account created successfully. Please check your email to verify your account.",
@@ -136,17 +134,6 @@ export async function verifyEmail(req, res) {
       isVerified: true,
       userId: user._id 
     });
-
-    // Create Stream user after verification
-    try {
-      await upsertStreamUser({
-        id: user._id.toString(),
-        name: user.fullName,
-        image: user.profilePic || "",
-      });
-    } catch (err) {
-      console.log("Error creating Stream user:", err);
-    }
 
     // Generate JWT token
     const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
@@ -371,17 +358,6 @@ export async function onboard(req, res) {
     );
 
     if (!updatedUser) return res.status(404).json({ message: "User not found" });
-
-    try {
-      await upsertStreamUser({
-        id: updatedUser._id.toString(),
-        name: updatedUser.fullName,
-        image: updatedUser.profilePic || "",
-      });
-      console.log(`Stream user updated after onboarding for ${updatedUser.fullName}`);
-    } catch (streamError) {
-      console.log("Error updating Stream user during onboarding:", streamError.message);
-    }
 
     return res.status(200).json({ success: true, user: updatedUser });
   } catch (error) {

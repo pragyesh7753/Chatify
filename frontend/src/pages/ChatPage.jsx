@@ -1,198 +1,342 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { useQuery } from "@tanstack/react-query";
-import { getStreamToken } from "../lib/api";
-
-import {
-  Channel,
-  ChannelHeader,
-  Chat,
-  MessageInput,
-  MessageList,
-  Thread,
-  Window,
-} from "stream-chat-react";
-import { StreamChat } from "stream-chat";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { 
+  createOrGetChannel, 
+  getChannelMessages, 
+  sendMessage as sendMessageApi,
+  getUserFriends
+} from "../lib/api";
+import { useSocket } from "../hooks/useSocket";
 import toast from "react-hot-toast";
-import { ArrowLeft } from "lucide-react";
-
+import { ArrowLeft, Send, Phone, Video, Smile, Paperclip } from "lucide-react";
 import ChatLoader from "../components/ChatLoader";
-import CallButton from "../components/CallButton";
-import TypingIndicator from "../components/TypingIndicator";
-
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
   const navigate = useNavigate();
-
-  const [chatClient, setChatClient] = useState(null);
-  const [channel, setChannel] = useState(null);
-  const [loading, setLoading] = useState(true);
+  
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [channelId, setChannelId] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
+  const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const { authUser } = useAuthUser();
+  const { socket, isConnected } = useSocket();
 
-  const { data: tokenData } = useQuery({
-    queryKey: ["streamToken"],
-    queryFn: getStreamToken,
-    enabled: !!authUser, // this will run only when authUser is available
+  // Get target user info from friends list
+  const { data: friends } = useQuery({
+    queryKey: ["friends"],
+    queryFn: getUserFriends,
+    enabled: !!authUser
   });
 
-  // Effect 1: Connect user once when token is available
+  const targetUser = friends?.find(f => f._id === targetUserId);
+
+  // Create or get channel
+  const { data: channel, isLoading: channelLoading } = useQuery({
+    queryKey: ["channel", targetUserId],
+    queryFn: () => createOrGetChannel(targetUserId),
+    enabled: !!authUser && !!targetUserId
+  });
+
+  // Get messages
+  const { data: initialMessages, isLoading: messagesLoading } = useQuery({
+    queryKey: ["messages", channel?.channelId],
+    queryFn: () => getChannelMessages(channel.channelId),
+    enabled: !!channel?.channelId
+  });
+
+  // Set channel ID and initial messages
   useEffect(() => {
-    const connectChatUser = async () => {
-      if (!tokenData?.token || !authUser) return;
-
-      try {
-        console.log("Connecting user to Stream Chat...");
-
-        const client = StreamChat.getInstance(STREAM_API_KEY);
-
-        // Check if user is already connected
-        if (client.userID === authUser._id) {
-          console.log("User already connected");
-          setChatClient(client);
-          return;
-        }
-
-        await client.connectUser(
-          {
-            id: authUser._id,
-            name: authUser.fullName,
-            image: authUser.profilePic,
-          },
-          tokenData.token
-        );
-
-        console.log("User connected successfully");
-        setChatClient(client);
-      } catch (error) {
-        console.error("Error connecting user:", error);
-        toast.error("Could not connect to chat. Please try again.");
-      }
-    };
-
-    connectChatUser();
-  }, [tokenData, authUser]);
-
-  // Effect 2: Create/watch channel when chatClient and targetUserId are available
-  useEffect(() => {
-    const initChannel = async () => {
-      if (!chatClient || !authUser || !targetUserId) return;
-
-      setLoading(true);
-
-      try {
-        console.log("Initializing channel...");
-
-        const channelId = [authUser._id, targetUserId].sort().join("-");
-
-        // you and me
-        // if i start the chat => channelId: [myId, yourId]
-        // if you start the chat => channelId: [yourId, myId]  => [myId,yourId]
-
-        const currChannel = chatClient.channel("messaging", channelId, {
-          members: [authUser._id, targetUserId],
-        });
-
-        await currChannel.watch();
-
-        setChannel(currChannel);
-        console.log("Channel initialized successfully");
-      } catch (error) {
-        console.error("Error initializing channel:", error);
-        toast.error("Could not load chat. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initChannel();
-  }, [chatClient, authUser, targetUserId]);
-
-  // Effect 3: Stabilize viewport height on mobile keyboards and prevent body scroll
-  useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-
-    const setAppVh = () => {
-      const vh = window.visualViewport?.height || window.innerHeight;
-      root.style.setProperty("--app-vh", `${vh}px`);
-    };
-
-    // Lock body scroll only on mobile while the chat screen is mounted
-    const isMobile = window.innerWidth < 768; // md breakpoint
-    const prevOverflow = body.style.overflow;
-    if (isMobile) {
-      body.style.overflow = "hidden";
+    if (channel?.channelId) {
+      setChannelId(channel.channelId);
     }
+  }, [channel]);
 
-    setAppVh();
-    window.visualViewport?.addEventListener("resize", setAppVh);
-    window.visualViewport?.addEventListener("scroll", setAppVh);
-    window.addEventListener("orientationchange", setAppVh);
+  useEffect(() => {
+    if (initialMessages) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
+
+  // Socket event listeners
+  useEffect(() => {
+    if (!socket || !channelId || !authUser) return;
+
+    // Join the channel
+    socket.emit("join-channel", channelId);
+
+    // Listen for new messages - only add if not from current user
+    const handleNewMessage = (data) => {
+      // If data has senderId, check if it's not from current user
+      if (data.senderId && data.senderId === authUser._id) {
+        return; // Ignore own messages from socket
+      }
+      
+      // Handle both formats: direct message or wrapped in data object
+      const message = data.message || data;
+      
+      setMessages((prev) => [...prev, message]);
+      scrollToBottom();
+    };
+
+    // Listen for typing indicators
+    const handleUserTyping = ({ userName }) => {
+      setIsTyping(true);
+      setTypingUser(userName);
+    };
+
+    const handleUserStoppedTyping = () => {
+      setIsTyping(false);
+      setTypingUser(null);
+    };
+
+    socket.on("new-message", handleNewMessage);
+    socket.on("user-typing", handleUserTyping);
+    socket.on("user-stopped-typing", handleUserStoppedTyping);
 
     return () => {
-      window.visualViewport?.removeEventListener("resize", setAppVh);
-      window.visualViewport?.removeEventListener("scroll", setAppVh);
-      window.removeEventListener("orientationchange", setAppVh);
-      if (isMobile) {
-        body.style.overflow = prevOverflow;
-      }
-      root.style.removeProperty("--app-vh");
+      socket.emit("leave-channel", channelId);
+      socket.off("new-message", handleNewMessage);
+      socket.off("user-typing", handleUserTyping);
+      socket.off("user-stopped-typing", handleUserStoppedTyping);
     };
-  }, []);
+  }, [socket, channelId, authUser]);
 
-  const handleVideoCall = () => {
-    if (channel) {
-      const callUrl = `${window.location.origin}/call/${channel.id}`;
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: sendMessageApi,
+    onSuccess: (data) => {
+      setMessages((prev) => [...prev, data]);
+      setNewMessage("");
+      scrollToBottom();
+    },
+    onError: (error) => {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    }
+  });
 
-      channel.sendMessage({
-        text: `I've started a video call. Join me here: ${callUrl}`,
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    
+    if (!newMessage.trim() || !channelId) return;
+
+    sendMessageMutation.mutate({
+      channelId,
+      text: newMessage.trim(),
+      attachments: []
+    });
+
+    // Stop typing indicator
+    if (socket) {
+      socket.emit("typing-stop", {
+        channelId,
+        userId: authUser._id
       });
-
-      toast.success("Video call link sent successfully!");
     }
   };
 
-  if (loading || !chatClient || !channel) return <ChatLoader />;
+  const handleTyping = (e) => {
+    setNewMessage(e.target.value);
 
-  const CustomChatHeader = () => {
-    return (
-      <div className="flex items-center gap-2 text-base-content">
-        {/* Back button for mobile screens */}
+    if (!socket || !channelId) return;
+
+    // Emit typing start
+    socket.emit("typing-start", {
+      channelId,
+      userId: authUser._id,
+      userName: authUser.fullName
+    });
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set timeout to stop typing indicator after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("typing-stop", {
+        channelId,
+        userId: authUser._id
+      });
+    }, 2000);
+  };
+
+  const handleVideoCall = () => {
+    if (!channelId || !targetUser) {
+      toast.error("Unable to start call");
+      return;
+    }
+    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}`);
+  };
+
+  if (channelLoading || messagesLoading || !targetUser) {
+    return <ChatLoader />;
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-base-100 transition-colors duration-200">
+      {/* Chat Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-base-300 bg-base-200">
         <button
           onClick={() => navigate(-1)}
-          className="md:hidden btn btn-ghost btn-sm btn-circle text-base-content"
+          className="md:hidden btn btn-ghost btn-sm btn-circle"
           aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
+        
+        <div className="avatar">
+          <div className="w-10 h-10 rounded-full">
+            <img src={targetUser.profilePic} alt={targetUser.fullName} />
+          </div>
+        </div>
+        
         <div className="flex-1">
-          <ChannelHeader />
+          <h2 className="font-semibold">{targetUser.fullName}</h2>
+          <p className="text-xs text-base-content/60">
+            {isConnected ? "Online" : "Offline"}
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            className="btn btn-ghost btn-sm btn-circle"
+            onClick={handleVideoCall}
+            aria-label="Voice call"
+          >
+            <Phone className="w-5 h-5" />
+          </button>
+          <button
+            className="btn btn-ghost btn-sm btn-circle"
+            onClick={handleVideoCall}
+            aria-label="Video call"
+          >
+            <Video className="w-5 h-5" />
+          </button>
         </div>
       </div>
-    );
-  };
 
-  return (
-    <div className="h-full overflow-hidden bg-base-100 transition-colors duration-200">
-      <Chat client={chatClient}>
-        <Channel channel={channel}>
-          <div className="w-full h-full relative flex flex-col whatsapp-chat">
-            <CallButton handleVideoCall={handleVideoCall} />
-            <Window>
-              <CustomChatHeader />
-              <MessageList />
-              <TypingIndicator channel={channel} authUser={authUser} />
-              <MessageInput focus />
-            </Window>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-base-content/60">
+            <p>No messages yet. Start the conversation!</p>
           </div>
-          <Thread />
-        </Channel>
-      </Chat>
+        ) : (
+          messages.map((message, index) => {
+            const isOwnMessage = message.senderId === authUser._id;
+            const showAvatar = 
+              index === 0 || 
+              messages[index - 1]?.senderId !== message.senderId;
+
+            return (
+              <div
+                key={message.$id || index}
+                className={`flex gap-2 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+              >
+                {!isOwnMessage && showAvatar && (
+                  <div className="avatar">
+                    <div className="w-8 h-8 rounded-full">
+                      <img src={message.senderImage} alt={message.senderName} />
+                    </div>
+                  </div>
+                )}
+                {!isOwnMessage && !showAvatar && <div className="w-8" />}
+                
+                <div
+                  className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                    isOwnMessage
+                      ? "bg-primary text-primary-content"
+                      : "bg-base-200 text-base-content"
+                  }`}
+                >
+                  {!isOwnMessage && showAvatar && (
+                    <p className="text-xs font-semibold mb-1 opacity-70">
+                      {message.senderName}
+                    </p>
+                  )}
+                  <p className="break-words">{message.text}</p>
+                  <p className="text-[10px] mt-1 opacity-60">
+                    {new Date(message.$createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
+        
+        {isTyping && typingUser && (
+          <div className="flex gap-2 items-center text-base-content/60 text-sm">
+            <div className="avatar">
+              <div className="w-8 h-8 rounded-full">
+                <img src={targetUser.profilePic} alt={targetUser.fullName} />
+              </div>
+            </div>
+            <span>{typingUser} is typing...</span>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Message Input */}
+      <form onSubmit={handleSendMessage} className="p-4 border-t border-base-300 bg-base-200">
+        <div className="flex gap-2 items-center">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-circle"
+            aria-label="Add emoji"
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+          
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-circle"
+            aria-label="Attach file"
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+
+          <input
+            type="text"
+            value={newMessage}
+            onChange={handleTyping}
+            placeholder="Type a message..."
+            className="input input-bordered flex-1"
+            disabled={!isConnected}
+          />
+
+          <button
+            type="submit"
+            className="btn btn-primary btn-circle"
+            disabled={!newMessage.trim() || sendMessageMutation.isPending || !isConnected}
+            aria-label="Send message"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
+
 export default ChatPage;

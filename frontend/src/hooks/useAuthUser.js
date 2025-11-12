@@ -11,6 +11,12 @@ const useAuthUser = () => {
     refetchOnReconnect: true, // Check auth when reconnecting
   });
 
-  return { isLoading: authUser.isLoading, authUser: authUser.data?.user };
+  return { 
+    isLoading: authUser.isLoading, 
+    authUser: authUser.data?.user ? {
+      ...authUser.data.user,
+      token: authUser.data.token
+    } : null
+  };
 };
 export default useAuthUser;

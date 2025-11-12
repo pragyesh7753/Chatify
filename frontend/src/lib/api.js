@@ -100,8 +100,26 @@ export async function acceptFriendRequest(requestId) {
   return response.data;
 }
 
-export async function getStreamToken() {
-  const response = await axiosInstance.get("/chat/token");
+// Chat API functions
+export async function getUserChannels() {
+  const response = await axiosInstance.get("/chat/channels");
+  return response.data;
+}
+
+export async function createOrGetChannel(targetUserId) {
+  const response = await axiosInstance.post("/chat/channels", { targetUserId });
+  return response.data;
+}
+
+export async function getChannelMessages(channelId, limit = 50, offset = 0) {
+  const response = await axiosInstance.get(`/chat/messages/${channelId}`, {
+    params: { limit, offset }
+  });
+  return response.data;
+}
+
+export async function sendMessage(messageData) {
+  const response = await axiosInstance.post("/chat/messages", messageData);
   return response.data;
 }
 

@@ -1,7 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { UserService } from "../services/user.service.js";
-import { upsertStreamUser } from "./stream.js";
 
 passport.use(
   new GoogleStrategy(
@@ -90,18 +89,7 @@ passport.use(
           friends: [],
         });
 
-        // Create Stream user for OAuth users
-        try {
-          await upsertStreamUser({
-            id: newUser._id.toString(),
-            name: newUser.fullName,
-            image: newUser.profilePic,
-          });
-        } catch (streamError) {
-          console.error("Failed to create Stream user for OAuth user:", streamError);
-          // Continue anyway - they can use regular chat features
-        }
-
+        // No external chat provider user creation required after migration to Socket.io
         return done(null, newUser);
       } catch (error) {
         console.error("Error in Google OAuth strategy:", error);

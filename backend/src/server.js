@@ -5,6 +5,7 @@ import cors from "cors";
 import path from "path";
 import session from "express-session";
 import passport from "./lib/passport.js";
+import { createServer } from "http";
 
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -12,8 +13,10 @@ import chatRoutes from "./routes/chat.route.js";
 
 import { connectAppwrite } from "./lib/appwrite.js";
 import { cleanupExpiredTokens } from "./lib/cleanup.js";
+import { initializeSocket } from "./lib/socket.js";
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
 
 const __dirname = path.resolve();
@@ -124,7 +127,10 @@ app.post("/api/cleanup", async (req, res) => {
 //   });
 // }
 
-app.listen(PORT, () => {
+// Initialize Socket.io
+initializeSocket(httpServer);
+
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   connectAppwrite();
   

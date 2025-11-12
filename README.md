@@ -1,6 +1,6 @@
 <div align="center">
 	<h1>✨ Chatify ✨</h1>
-	<p><strong>Real‑time chat & video calling web app with onboarding, friend system, theming & Stream integration</strong></p>
+	<p><strong>Real‑time chat & video calling web app with onboarding, friend system, and theming</strong></p>
 	<img src="frontend/public/screenshot-for-readme.png" alt="Chatify Screenshot" width="850" />
 	<br/>
 	<br/>
@@ -19,16 +19,16 @@
 
 ## 🚀 Overview
 Chatify is a full‑stack MERN application that lets authenticated users:
-1. Sign up / log in (JWT HttpOnly cookie auth)
+1. Sign up / log in (JWT HttpOnly cookie auth + Google OAuth)
 2. Complete onboarding (profile, languages, bio, location)
 3. Search for users by username & send friend requests
 4. Accept requests and manage a friends list
-5. Start 1:1 real‑time chats (Stream Chat)
-6. Launch instant video calls (Stream Video SDK) directly from a chat
-7. Persist user state & relationships in MongoDB
+5. Start 1:1 real‑time chats (Socket.io)
+6. Launch instant WebRTC video calls directly from a chat
+7. Persist user state & relationships in Appwrite
 8. Enjoy theme customization (Zustand + DaisyUI/Tailwind)
 
-Backend is deployed (Render) and frontend served via Vercel (custom domain allowed in CORS). Stream Chat & Video APIs power messaging & real‑time media.
+Backend is deployed on Railway and frontend served via Vercel with custom domain. Socket.io powers real-time messaging and WebRTC enables peer-to-peer video calls.
 
 ## 🧩 Tech Stack
 Frontend:
@@ -37,32 +37,43 @@ Frontend:
 - React Router v7
 - TanStack Query (server state & caching)
 - Zustand (lightweight client state)
-- Stream Chat React & Stream Video React SDK
+- Socket.io Client (real-time messaging)
+- WebRTC (peer-to-peer video calls)
 - Axios (API layer) & react-hot-toast (UX feedback)
+- Vite PWA (Progressive Web App support)
 
 Backend:
 - Node.js (ESM) + Express 5
-- MongoDB + Mongoose 8
+- Appwrite (Database, Collections & Authentication)
 - JWT (jsonwebtoken) for auth (HttpOnly cookie)
 - bcryptjs for password hashing
-- Stream Chat (server SDK) for user upsert + token issuing
-- CORS, cookie-parser, dotenv
+- Socket.io (real-time messaging & signaling)
+- Passport.js (Google OAuth 2.0)
+- Cloudinary (image uploads)
+- Resend (email service)
+- CORS, cookie-parser, dotenv, express-session
 
 Dev/Deployment:
-- Vercel (frontend), Render (backend) *(inferred from code)*
+- Vercel (frontend), Railway (backend)
 - Nodemon for backend dev
 
 ## ✨ Features
 - Secure authentication (signup/login/logout) with validation
+- Google OAuth 2.0 integration for quick sign-in
+- Email verification system with Resend
+- Password reset & change functionality
 - Onboarding flow gating access to core app until profile completion
 - Random avatar assignment on signup
+- Profile picture upload with Cloudinary
 - Friend system (search users by username, send & accept requests, list friends)
-- Real‑time chat (1:1 channels deterministically keyed by user IDs)
-- Video calling with auto generation & sharing of call URLs in chat
-- Theming & persistence via localStorage
+- Real‑time chat with Socket.io (1:1 channels, typing indicators, online status)
+- WebRTC-based peer-to-peer video calling with camera/mic controls
+- Theming & persistence via localStorage (20+ DaisyUI themes)
 - Robust Axios instance with request/response interceptors & error logging
 - Production‑aware CORS & cookie settings (SameSite, secure flags)
 - Health check endpoint `/api/health`
+- Progressive Web App (PWA) support
+- Mobile-responsive design with bottom navigation
 
 ## 🗂 Folder Structure (Top Level)
 ```
@@ -70,58 +81,90 @@ chatify/
 	backend/
 		src/
 			controllers/      # Route handlers
-			lib/              # DB & Stream helpers
-			middleware/       # Auth guard
-			models/           # Mongoose schemas
+			lib/              # Appwrite, Socket.io, Cloudinary helpers
+			middleware/       # Auth guards & file upload
 			routes/           # Express routers
+			services/         # Business logic layer
 			server.js         # App entry
 	frontend/
 		src/
 			components/       # Reusable UI components
 			pages/            # Route-level screens
-			hooks/            # React Query + auth logic
+			hooks/            # React Query + custom hooks
 			lib/              # API & axios abstraction
 			store/            # Zustand store(s)
-			constants/        # (language/theme constants etc.)
+			context/          # Socket context
+			constants/        # Language/theme constants
 ```
 
 ## 🔐 Authentication Flow
-1. User signs up → password hashed (pre save hook) → JWT cookie set (7d) → Stream user upserted
-2. Protected routes use `protectRoute` middleware → reads `jwt` cookie → verifies & attaches `req.user`
-3. `GET /api/auth/me` returns current sanitized user (excludes password)
+1. User signs up → password hashed (bcryptjs) → JWT cookie set (7d) → email verification sent
+2. Google OAuth → creates/links account → auto-verified → JWT cookie set
+3. Protected routes use `protectRoute` middleware → reads `jwt` cookie → verifies & attaches `req.user`
+4. `GET /api/auth/me` returns current sanitized user (excludes password) + token for Socket.io auth
 
 ## 👥 Friend Request Lifecycle
-1. `POST /api/users/friend-request/:id` creates a pending request (duplicate/self checks)
+1. `POST /api/users/friend-request/:id` creates a pending request (duplicate/self checks in Appwrite)
 2. Recipient fetches pending via `GET /api/users/friend-requests`
-3. `PUT /api/users/friend-request/:id/accept` marks accepted & performs reciprocal `$addToSet` friend updates
+3. `PUT /api/users/friend-request/:id/accept` marks accepted & updates both users' friend arrays
 4. Friends listed via `GET /api/users/friends`
 
 ## 💬 Chat & 📹 Video
-- Chat token: frontend calls `GET /api/chat/token` (protected) → server generates Stream token via secret
-- Channel ID: sorted pair of user IDs → ensures idempotent 1:1 channel regardless of who initiates
-- Video call: builds `/call/{channelId}` URL; message includes join link. Video client joins a `default` call with same ID.
+- Real-time messaging: Socket.io with channel-based rooms (channelId = sorted user IDs)
+- Messages stored in Appwrite messages collection
+- Typing indicators and online status via Socket.io events
+- Video call: WebRTC peer-to-peer connection with Socket.io for signaling
+- Call controls: mute/unmute, video on/off, end call
+- STUN servers for NAT traversal
 
 ## ⚙️ Environment Variables
 Create `backend/.env`:
-```
+```env
 PORT=5000
-MONGO_URI=YOUR_MONGODB_URI
-JWT_SECRET_KEY=supersecret_jwt_key
-STREAM_API_KEY=your_stream_api_key
-STREAM_API_SECRET=your_stream_api_secret
-NODE_ENV=development
+JWT_SECRET_KEY=your_jwt_secret_key
+SESSION_SECRET=your_session_secret
+
+# Frontend URL
+FRONTEND_URL=http://localhost:5173
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
+
+# Resend Email Service
+RESEND_API_KEY=your_resend_api_key
+
+# Appwrite Configuration
+APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+APPWRITE_PROJECT_ID=your_project_id
+APPWRITE_API_KEY=your_api_key
+APPWRITE_DATABASE_ID=your_database_id
+APPWRITE_USERS_COLLECTION_ID=your_users_collection_id
+APPWRITE_FRIEND_REQUESTS_COLLECTION_ID=your_friend_requests_collection_id
+APPWRITE_MESSAGES_COLLECTION_ID=your_messages_collection_id
+APPWRITE_CHANNELS_COLLECTION_ID=your_channels_collection_id
 ```
+
 Frontend `vite` variables (create `frontend/.env`):
+```env
+VITE_API_URL=http://localhost:5000
 ```
-VITE_STREAM_API_KEY=your_stream_api_key
-```
+
 Optional (deployment):
-```
+```env
 NODE_ENV=production
+FRONTEND_URL=https://your-domain.com
 ```
+
 Notes:
-- No frontend base URL var needed; axios selects by `import.meta.env.MODE`.
-- Ensure production domain (`https://chatify.pragyesh.tech`) is whitelisted in CORS & Stream dashboard.
+- Ensure production domain is whitelisted in CORS settings
+- Use secure, randomly generated secrets for JWT and session
 
 ## 🏁 Quick Start
 Clone & install:
@@ -132,13 +175,14 @@ cd Chatify
 # Backend
 cd backend
 npm install
-cp .env.example .env  # (create manually if example not present)
+cp .env.example .env  # Configure all environment variables
 
 # Frontend
 cd ../frontend
 npm install
-cp .env.example .env  # (create & add VITE_STREAM_API_KEY)
+cp .env.example .env  # Add VITE_API_URL
 ```
+
 Run dev servers (two terminals):
 ```bash
 # Terminal 1
@@ -149,91 +193,124 @@ npm run dev
 cd frontend
 npm run dev
 ```
+
 Open: http://localhost:5173
 
 ## 🔌 API Endpoints (Summary)
 Auth:
-- POST `/api/auth/signup`
-- POST `/api/auth/login`
-- POST `/api/auth/logout`
-- GET  `/api/auth/me`
-- POST `/api/auth/onboarding`
+- POST `/api/auth/signup` - Create new account
+- POST `/api/auth/login` - Login with credentials
+- POST `/api/auth/logout` - Logout user
+- GET  `/api/auth/me` - Get current user + token
+- POST `/api/auth/onboarding` - Complete user profile
+- GET  `/api/auth/verify-email/:token` - Verify email
+- POST `/api/auth/resend-verification` - Resend verification email
+- POST `/api/auth/forgot-password` - Request password reset
+- POST `/api/auth/reset-password/:token` - Reset password
+- POST `/api/auth/change-password` - Change password (authenticated)
+- GET  `/api/auth/google` - Initiate Google OAuth
+- GET  `/api/auth/google/callback` - Google OAuth callback
 
 Users (protected):
-- GET  `/api/users/search?username=<query>` (search users by username)
-- GET  `/api/users/friends`
-- POST `/api/users/friend-request/:id`
-- PUT  `/api/users/friend-request/:id/accept`
-- GET  `/api/users/friend-requests` (incoming + accepted overview)
-- GET  `/api/users/outgoing-friend-requests`
+- GET  `/api/users/search?username=<query>` - Search users by username
+- GET  `/api/users/friends` - Get user's friends list
+- POST `/api/users/friend-request/:id` - Send friend request
+- PUT  `/api/users/friend-request/:id/accept` - Accept friend request
+- GET  `/api/users/friend-requests` - Get incoming friend requests
+- GET  `/api/users/outgoing-friend-requests` - Get outgoing friend requests
+- GET  `/api/users/profile` - Get user profile
+- PUT  `/api/users/profile` - Update user profile
+- POST `/api/users/change-email` - Request email change
+- GET  `/api/users/verify-email-change/:token` - Verify email change
 
 Chat (protected):
-- GET `/api/chat/token`
+- GET  `/api/chat/channels` - Get user's chat channels
+- POST `/api/chat/channels` - Create or get channel
+- GET  `/api/chat/messages/:channelId` - Get channel messages
+- POST `/api/chat/messages` - Send message
 
 Utility:
-- GET `/api/health`
+- GET `/api/health` - Health check endpoint
+- GET `/api/oauth-check` - OAuth configuration status
 
 ## 🧪 Testing
 Currently no automated tests. Suggested next steps:
 - Unit: controllers (auth, user, chat)
-- Integration: friend request lifecycle
-- E2E: Cypress for onboarding + chat flow
+- Integration: friend request lifecycle, real-time messaging
+- E2E: Playwright/Cypress for onboarding + chat + video call flow
 
 ## 🛡 Security Considerations
 - HttpOnly JWT cookie reduces XSS token theft
-- Passwords hashed with bcrypt (salt rounds = 10)
+- Passwords hashed with bcryptjs (salt rounds = 10)
 - CORS restricts origins; consider adding rate limiting & helmet
-- Stream tokens short‑lived on client side (issued per user via backend secret)
+- Email verification prevents fake accounts
+- Session-based Google OAuth with secure cookies
+- File upload restrictions (size, type) for profile pictures
+- Environment variables for sensitive credentials
 
 ## 🏗 Architecture
 ```
-┌────────────┐   JWT Cookie   ┌────────────┐   Stream Token   ┌──────────────┐
-│  Browser   │ ─────────────▶ │  Express    │ ───────────────▶ │  Stream APIs  │
-│  (React)   │ ◀───────────── │  (Backend)  │ ◀─────────────── │ (Chat/Video)  │
-└─────┬──────┘                 └────┬───────┘                  └─────┬────────┘
-			│  REST /api/*                │                                 │
-			│                             │ Mongoose                        │
-			▼                             ▼                                 ▼
-	UI State / Query          MongoDB (Users, FriendRequests)     Real‑time Channels / Calls
+┌────────────┐   JWT Cookie   ┌────────────┐   WebRTC      ┌──────────────┐
+│  Browser   │ ─────────────▶ │  Express    │  Signaling   │  Browser     │
+│  (React)   │ ◀───────────── │  (Backend)  │ ────────────▶│  (Peer)      │
+└─────┬──────┘                 └────┬───────┘               └──────────────┘
+      │  REST /api/*                │                             
+      │  Socket.io (real-time)      │ Appwrite                    
+      ▼                             ▼                             
+  UI State / Query          Collections (Users, Messages,        
+  Socket Context            Channels, Friend Requests)            
 ```
 
 ## 📦 Deployment Notes
-- Frontend build: `npm run build` (Vite) → deploy `dist/`
-- Backend: Ensure `NODE_ENV=production`, correct CORS origins, and all env vars
-- Add health check for Render uptime (already present)
+- Frontend build: `npm run build` (Vite) → deploy `dist/` to Vercel
+- Backend: Deploy to Railway with `NODE_ENV=production`
+- Ensure correct CORS origins for production domain
+- Configure all environment variables on hosting platform
+- Add health check endpoint for uptime monitoring (already present at `/api/health`)
+- Socket.io requires WebSocket support from hosting provider
 
 ## 🛠 Troubleshooting
 | Issue | Possible Cause | Fix |
 |-------|----------------|-----|
 | CORS error | Unlisted origin | Add domain to allowedOrigins in `server.js` |
 | 401 Unauthorized | Missing/expired JWT | Re-login; check cookie blocked by browser | 
-| Stream token errors | Wrong API key/secret | Verify env vars match Stream dashboard |
-| Chat/channel not loading | Channel watch failed | Check network tab & console for Stream errors |
+| Socket connection failed | CORS or WebSocket issue | Verify VITE_API_URL and Socket.io CORS config |
+| Video call not connecting | STUN/TURN server issue | Check browser console for WebRTC errors |
+| Chat not loading | Appwrite collection issue | Verify collection IDs and permissions |
+| Email not sending | Resend API issue | Check API key and domain verification |
 
 ## 🗺 Roadmap / Ideas
-- Password reset & email verification
-- User presence & typing indicators (Stream supports)
-- Group channels & multi‑party calls
-- Message search & attachments
-- i18n for UI + language preferences
-- Dark/light theme toggle within existing palette set
-- Automated test suite & CI workflow
+- ✅ Password reset & email verification
+- ✅ User presence & typing indicators
+- ✅ WebRTC video calling
+- ✅ Google OAuth integration
+- ✅ PWA support
+- 📋 Group channels & multi‑party calls
+- 📋 Message search & attachments
+- 📋 Screen sharing during video calls
+- 📋 Message reactions & replies
+- 📋 i18n for UI + language preferences
+- 📋 Automated test suite & CI workflow
+- 📋 Call recording feature
 
 ## 🤝 Contributing
 1. Fork project & create feature branch
 2. Keep commits atomic & descriptive
 3. Open PR with context + before/after if UI changes
+4. Follow existing code style and conventions
 
 ## 📄 License
 Add an open source license (MIT recommended) in a `LICENSE` file.
 
 ## 🙌 Acknowledgements
-- [Stream](https://getstream.io/) Chat & Video APIs
-- Tailwind CSS + DaisyUI
-- TanStack React Query team
+- [Appwrite](https://appwrite.io/) - Backend as a Service
+- [Socket.io](https://socket.io/) - Real-time communication
+- Tailwind CSS + DaisyUI - UI framework
+- TanStack React Query - Server state management
+- WebRTC - Peer-to-peer video calling
 
 ## ✅ Status
-Active development. Core 1:1 chat & video functional.
+Active development. Core 1:1 chat & WebRTC video calling functional. Production-ready with OAuth, email verification, and PWA support.
 
 ---
-Made with ❤️ using the MERN stack & Stream APIs.
+Made with ❤️ using the MERN stack, Socket.io & WebRTC.

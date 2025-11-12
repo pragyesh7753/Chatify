@@ -81,7 +81,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router'],
-          stream: ['stream-chat', 'stream-chat-react', '@stream-io/video-react-sdk'],
+          socket: ['socket.io-client'],
           ui: ['@heroicons/react', 'lucide-react', 'react-hot-toast']
         }
       }
