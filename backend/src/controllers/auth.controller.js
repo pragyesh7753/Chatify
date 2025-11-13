@@ -484,15 +484,18 @@ export async function googleCallback(req, res) {
     const user = req.user;
     
     if (!user) {
+      console.error("Google OAuth: No user in request");
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
     }
+
+    console.log("Google OAuth successful for user:", user.email);
 
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: "7d",
     });
 
-    // Set cookie
+    // Set JWT cookie
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
@@ -500,12 +503,12 @@ export async function googleCallback(req, res) {
       secure: process.env.NODE_ENV === "production",
     });
 
-    // Redirect to frontend
-    // If user is not onboarded, redirect to onboarding page, otherwise to home
+    // Redirect to frontend based on onboarding status
     const redirectUrl = user.isOnboarded 
       ? `${process.env.FRONTEND_URL}/`
       : `${process.env.FRONTEND_URL}/onboarding`;
     
+    console.log("Redirecting to:", redirectUrl);
     res.redirect(redirectUrl);
   } catch (error) {
     console.error("Error in googleCallback:", error);

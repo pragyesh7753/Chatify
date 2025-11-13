@@ -3,8 +3,7 @@ import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
-import session from "express-session";
-import passport from "./lib/passport.js";
+import passport from "passport";
 import { createServer } from "http";
 
 import authRoutes from "./routes/auth.route.js";
@@ -14,6 +13,7 @@ import chatRoutes from "./routes/chat.route.js";
 import { connectAppwrite } from "./lib/appwrite.js";
 import { cleanupExpiredTokens } from "./lib/cleanup.js";
 import { initializeSocket } from "./lib/socket.js";
+import "./lib/passport.js"; // Initialize passport strategies
 
 const app = express();
 const httpServer = createServer(app);
@@ -52,23 +52,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Session configuration for Passport
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  proxy: true, // Required for Railway
-  cookie: {
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    secure: process.env.NODE_ENV === "production",
-  }
-}));
-
-// Initialize Passport
+// Initialize Passport (without sessions)
 app.use(passport.initialize());
-app.use(passport.session());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

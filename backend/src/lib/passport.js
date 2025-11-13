@@ -99,19 +99,4 @@ passport.use(
   )
 );
 
-// Serialize user for the session
-passport.serializeUser((user, done) => {
-  done(null, user._id);
-});
-
-// Deserialize user from the session
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await UserService.findById(id);
-    done(null, user);
-  } catch (error) {
-    done(error, null);
-  }
-});
-
 export default passport;

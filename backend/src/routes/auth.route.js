@@ -4,7 +4,7 @@ import { verifyEmailChange } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { optionalProtectRoute } from "../middleware/optionalAuth.middleware.js";
 import { upload } from "../middleware/upload.js";
-import passport from "../lib/passport.js";
+import passport from "passport";
 
 const router = express.Router();
 
@@ -14,29 +14,16 @@ router.post("/logout", optionalProtectRoute, logout);
 
 // Google OAuth routes
 router.get("/google", 
-  (req, res, next) => {
-    console.log("Google OAuth initiated:", {
-      timestamp: new Date().toISOString(),
-      userAgent: req.get('User-Agent'),
-      origin: req.get('Origin'),
-    });
-    next();
-  },
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", { 
+    scope: ["profile", "email"],
+    session: false 
+  })
 );
 
 router.get("/google/callback", 
-  (req, res, next) => {
-    console.log("Google OAuth callback received:", {
-      timestamp: new Date().toISOString(),
-      query: req.query,
-      sessionID: req.sessionID,
-    });
-    next();
-  },
   passport.authenticate("google", { 
     failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed`,
-    failureMessage: true 
+    session: false 
   }),
   googleCallback
 );
