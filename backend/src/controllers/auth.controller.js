@@ -145,6 +145,7 @@ export async function verifyEmail(req, res) {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
+      partitioned: process.env.NODE_ENV === "production", // Enable CHIPS for mobile browsers
     });
 
     console.log("Email verification successful for user:", user.email);
@@ -252,6 +253,7 @@ export async function login(req, res) {
       httpOnly: true, // prevent XSS attacks,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // More permissive for development
       secure: process.env.NODE_ENV === "production",
+      partitioned: process.env.NODE_ENV === "production", // Enable CHIPS for mobile browsers
     });
 
     // Return user without password
@@ -270,6 +272,7 @@ export async function logout(req, res) {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
+      partitioned: process.env.NODE_ENV === "production", // Enable CHIPS for mobile browsers
       path: '/',
     });
     return res.status(200).json({ success: true, message: "Logout successful" });
@@ -279,6 +282,7 @@ export async function logout(req, res) {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
+      partitioned: process.env.NODE_ENV === "production", // Enable CHIPS for mobile browsers
       path: '/',
     });
     return res.status(200).json({ success: true, message: "Logout successful" });
@@ -501,6 +505,7 @@ export async function googleCallback(req, res) {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
+      partitioned: process.env.NODE_ENV === "production", // Enable CHIPS for mobile browsers
     });
 
     // Redirect to frontend based on onboarding status
