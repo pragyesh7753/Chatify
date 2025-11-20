@@ -84,18 +84,18 @@ const OnboardingPage = () => {
   };
 
   return (
-    <div className="h-screen bg-base-100 overflow-y-auto">
-      <div className="min-h-screen py-8 px-4">
+    <div className="min-h-screen bg-base-100 overflow-y-auto">
+      <div className="min-h-screen py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
-          <div className="card bg-base-200 w-full shadow-xl">
-            <div className="card-body p-6 sm:p-8">
-              <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6">Complete Your Profile</h1>
+          <div className="card bg-base-200 w-full shadow-lg sm:shadow-xl">
+            <div className="card-body p-4 sm:p-6 md:p-8">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6">Complete Your Profile</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 md:space-y-6">
             {/* PROFILE PIC CONTAINER */}
-            <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="flex flex-col items-center justify-center space-y-3 sm:space-y-4">
               {/* IMAGE PREVIEW */}
-              <div className="size-32 rounded-full bg-base-300 overflow-hidden">
+              <div className="size-24 sm:size-28 md:size-32 rounded-full bg-base-300 overflow-hidden">
                 {previewUrl || formState.profilePic ? (
                   <img
                     src={previewUrl || formState.profilePic}
@@ -104,13 +104,13 @@ const OnboardingPage = () => {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <CameraIcon className="size-12 text-base-content opacity-40" />
+                    <CameraIcon className="size-10 sm:size-12 text-base-content opacity-40" />
                   </div>
                 )}
               </div>
 
               {/* Upload and Random Avatar Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -118,18 +118,18 @@ const OnboardingPage = () => {
                   accept="image/*"
                   className="hidden"
                 />
-                <button type="button" onClick={handleUploadClick} className="btn btn-primary">
-                  <UploadIcon className="size-4 mr-2" />
+                <button type="button" onClick={handleUploadClick} className="btn btn-primary btn-sm sm:btn-md text-sm w-full sm:w-auto">
+                  <UploadIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
                   Upload Photo
                 </button>
-                <button type="button" onClick={handleRandomAvatar} className="btn btn-accent">
-                  <ShuffleIcon className="size-4 mr-2" />
+                <button type="button" onClick={handleRandomAvatar} className="btn btn-accent btn-sm sm:btn-md text-sm w-full sm:w-auto">
+                  <ShuffleIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
                   Random Avatar
                 </button>
               </div>
               
               {selectedFile && (
-                <p className="text-sm text-base-content opacity-70">
+                <p className="text-xs sm:text-sm text-base-content opacity-70 text-center">
                   Selected: {selectedFile.name}
                 </p>
               )}
@@ -138,14 +138,14 @@ const OnboardingPage = () => {
             {/* FULL NAME */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Full Name</span>
+                <span className="label-text text-xs sm:text-sm">Full Name</span>
               </label>
               <input
                 type="text"
                 name="fullName"
                 value={formState.fullName}
                 onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full text-sm sm:text-base"
                 placeholder="Your full name"
               />
             </div>
@@ -153,34 +153,34 @@ const OnboardingPage = () => {
             {/* USERNAME */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Username</span>
+                <span className="label-text text-xs sm:text-sm">Username</span>
               </label>
               <input
                 type="text"
                 name="username"
                 value={formState.username}
                 onChange={(e) => setFormState({ ...formState, username: e.target.value })}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full text-sm sm:text-base"
                 placeholder="your_username"
                 pattern="^[a-zA-Z0-9_]+$"
                 minLength="3"
                 maxLength="20"
               />
               <label className="label">
-                <span className="label-text-alt">3-20 characters, letters, numbers, and underscores only</span>
+                <span className="label-text-alt text-[10px] sm:text-xs">3-20 characters, letters, numbers, and underscores only</span>
               </label>
             </div>
 
             {/* BIO */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Bio</span>
+                <span className="label-text text-xs sm:text-sm">Bio</span>
               </label>
               <textarea
                 name="bio"
                 value={formState.bio}
                 onChange={(e) => setFormState({ ...formState, bio: e.target.value })}
-                className="textarea textarea-bordered h-24"
+                className="textarea textarea-bordered h-20 sm:h-24 text-sm sm:text-base"
                 placeholder="Tell others about yourself"
               />
             </div>
@@ -188,13 +188,13 @@ const OnboardingPage = () => {
             {/* NATIVE LANGUAGE */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Native Language</span>
+                <span className="label-text text-xs sm:text-sm">Native Language</span>
               </label>
               <select
                 name="nativeLanguage"
                 value={formState.nativeLanguage}
                 onChange={(e) => setFormState({ ...formState, nativeLanguage: e.target.value })}
-                className="select select-bordered w-full"
+                className="select select-bordered w-full text-sm sm:text-base"
               >
                 <option value="">Select your native language</option>
                 {LANGUAGES.map((lang) => (
@@ -208,16 +208,16 @@ const OnboardingPage = () => {
             {/* LOCATION */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Location</span>
+                <span className="label-text text-xs sm:text-sm">Location</span>
               </label>
               <div className="relative">
-                <MapPinIcon className="absolute top-1/2 transform -translate-y-1/2 left-3 size-5 text-base-content opacity-70" />
+                <MapPinIcon className="absolute top-1/2 transform -translate-y-1/2 left-3 size-4 sm:size-5 text-base-content opacity-70" />
                 <input
                   type="text"
                   name="location"
                   value={formState.location}
                   onChange={(e) => setFormState({ ...formState, location: e.target.value })}
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full pl-9 sm:pl-10 text-sm sm:text-base"
                   placeholder="City, Country"
                 />
               </div>
@@ -225,15 +225,15 @@ const OnboardingPage = () => {
 
             {/* SUBMIT BUTTON */}
 
-            <button className="btn btn-primary w-full" disabled={isPending} type="submit">
+            <button className="btn btn-primary w-full text-sm sm:text-base" disabled={isPending} type="submit">
               {!isPending ? (
                 <>
-                  <ShipWheelIcon className="size-5 mr-2" />
+                  <ShipWheelIcon className="size-4 sm:size-5 mr-1.5 sm:mr-2" />
                   Submit
                 </>
               ) : (
                 <>
-                  <LoaderIcon className="animate-spin size-5 mr-2" />
+                  <LoaderIcon className="animate-spin size-4 sm:size-5 mr-1.5 sm:mr-2" />
                   Onboarding...
                 </>
               )}

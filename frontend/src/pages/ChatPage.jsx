@@ -191,51 +191,51 @@ const ChatPage = () => {
   return (
     <div className="h-full flex flex-col bg-base-100 transition-colors duration-200">
       {/* Chat Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-base-300 bg-base-200">
+      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200">
         <button
           onClick={() => navigate(-1)}
-          className="md:hidden btn btn-ghost btn-sm btn-circle"
+          className="md:hidden btn btn-ghost btn-sm btn-circle flex-shrink-0"
           aria-label="Go back"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
         
-        <div className="avatar">
-          <div className="w-10 h-10 rounded-full">
+        <div className="avatar flex-shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full">
             <img src={targetUser.profilePic} alt={targetUser.fullName} />
           </div>
         </div>
         
-        <div className="flex-1">
-          <h2 className="font-semibold">{targetUser.fullName}</h2>
-          <p className="text-xs text-base-content/60">
+        <div className="flex-1 min-w-0">
+          <h2 className="font-semibold text-sm sm:text-base truncate">{targetUser.fullName}</h2>
+          <p className="text-[10px] sm:text-xs text-base-content/60">
             {isConnected ? "Online" : "Offline"}
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2 flex-shrink-0">
           <button
             className="btn btn-ghost btn-sm btn-circle"
             onClick={handleVideoCall}
             aria-label="Voice call"
           >
-            <Phone className="w-5 h-5" />
+            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
             className="btn btn-ghost btn-sm btn-circle"
             onClick={handleVideoCall}
             aria-label="Video call"
           >
-            <Video className="w-5 h-5" />
+            <Video className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-base-content/60">
-            <p>No messages yet. Start the conversation!</p>
+          <div className="flex items-center justify-center h-full text-base-content/60 px-4">
+            <p className="text-sm sm:text-base text-center">No messages yet. Start the conversation!</p>
           </div>
         ) : (
           messages.map((message, index) => {
@@ -247,31 +247,31 @@ const ChatPage = () => {
             return (
               <div
                 key={message.$id || index}
-                className={`flex gap-2 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+                className={`flex gap-1.5 sm:gap-2 ${isOwnMessage ? "flex-row-reverse" : ""}`}
               >
                 {!isOwnMessage && showAvatar && (
-                  <div className="avatar">
-                    <div className="w-8 h-8 rounded-full">
+                  <div className="avatar flex-shrink-0">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full">
                       <img src={message.senderImage} alt={message.senderName} />
                     </div>
                   </div>
                 )}
-                {!isOwnMessage && !showAvatar && <div className="w-8" />}
+                {!isOwnMessage && !showAvatar && <div className="w-6 sm:w-8" />}
                 
                 <div
-                  className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                  className={`max-w-[75%] sm:max-w-[70%] px-3 sm:px-4 py-2 rounded-2xl text-sm sm:text-base ${
                     isOwnMessage
                       ? "bg-primary text-primary-content"
                       : "bg-base-200 text-base-content"
                   }`}
                 >
                   {!isOwnMessage && showAvatar && (
-                    <p className="text-xs font-semibold mb-1 opacity-70">
+                    <p className="text-[10px] sm:text-xs font-semibold mb-1 opacity-70">
                       {message.senderName}
                     </p>
                   )}
-                  <p className="break-words">{message.text}</p>
-                  <p className="text-[10px] mt-1 opacity-60">
+                  <p className="break-words text-sm sm:text-base">{message.text}</p>
+                  <p className="text-[9px] sm:text-[10px] mt-1 opacity-60">
                     {new Date(message.$createdAt).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit"
@@ -284,9 +284,9 @@ const ChatPage = () => {
         )}
         
         {isTyping && typingUser && (
-          <div className="flex gap-2 items-center text-base-content/60 text-sm">
-            <div className="avatar">
-              <div className="w-8 h-8 rounded-full">
+          <div className="flex gap-1.5 sm:gap-2 items-center text-base-content/60 text-xs sm:text-sm">
+            <div className="avatar flex-shrink-0">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full">
                 <img src={targetUser.profilePic} alt={targetUser.fullName} />
               </div>
             </div>
@@ -298,22 +298,22 @@ const ChatPage = () => {
       </div>
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t border-base-300 bg-base-200">
-        <div className="flex gap-2 items-center">
+      <form onSubmit={handleSendMessage} className="p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200">
+        <div className="flex gap-1 sm:gap-2 items-center">
           <button
             type="button"
-            className="btn btn-ghost btn-sm btn-circle"
+            className="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
             aria-label="Add emoji"
           >
-            <Smile className="w-5 h-5" />
+            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           
           <button
             type="button"
-            className="btn btn-ghost btn-sm btn-circle"
+            className="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
             aria-label="Attach file"
           >
-            <Paperclip className="w-5 h-5" />
+            <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           <input
@@ -321,17 +321,17 @@ const ChatPage = () => {
             value={newMessage}
             onChange={handleTyping}
             placeholder="Type a message..."
-            className="input input-bordered flex-1"
+            className="input input-bordered flex-1 text-sm sm:text-base h-9 sm:h-12 min-w-0"
             disabled={!isConnected}
           />
 
           <button
             type="submit"
-            className="btn btn-primary btn-circle"
+            className="btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0"
             disabled={!newMessage.trim() || sendMessageMutation.isPending || !isConnected}
             aria-label="Send message"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </form>

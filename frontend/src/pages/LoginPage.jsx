@@ -47,16 +47,16 @@ const LoginPage = () => {
 
   return (
     <div
-      className="h-screen flex items-center justify-center p-4 sm:p-6 md:p-8"
+      className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8"
       data-theme="forest"
     >
-      <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-5xl mx-auto bg-base-100 rounded-xl shadow-lg overflow-hidden">
+      <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-6xl mx-auto bg-base-100 rounded-lg sm:rounded-xl shadow-lg overflow-hidden">
         {/* LOGIN FORM SECTION */}
-        <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
+        <div className="w-full lg:w-1/2 p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col">
           {/* LOGO */}
-          <div className="mb-4 flex items-center justify-start gap-2">
-            <img src="/favicon.png" alt="favicon" className="size-9 text-primary" />
-            <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
+          <div className="mb-4 sm:mb-6 flex items-center justify-start gap-2">
+            <img src="/favicon.png" alt="favicon" className="size-8 sm:size-9 text-primary" />
+            <span className="text-2xl sm:text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
               Chatify
             </span>
           </div>
@@ -76,45 +76,45 @@ const LoginPage = () => {
             <form onSubmit={handleLogin}>
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-semibold">Welcome Back to Chatify</h2>
-                  <p className="text-sm opacity-70">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-semibold">Welcome Back to Chatify</h2>
+                  <p className="text-xs sm:text-sm opacity-70">
                     Sign in to continue your conversations and stay connected.
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <div className="form-control w-full space-y-2">
+                  <div className="form-control w-full space-y-1 sm:space-y-2">
                     <label className="label">
-                      <span className="label-text">Email or Username</span>
+                      <span className="label-text text-xs sm:text-sm">Email or Username</span>
                     </label>
                     <input
                       type="text"
                       placeholder="hello@example.com or username"
-                      className="input input-bordered w-full"
+                      className="input input-bordered w-full text-sm sm:text-base"
                       value={loginData.emailOrUsername}
                       onChange={(e) => setLoginData({ ...loginData, emailOrUsername: e.target.value })}
                       required
                     />
                   </div>
 
-                  <div className="form-control w-full space-y-2">
+                  <div className="form-control w-full space-y-1 sm:space-y-2">
                     <label className="label">
-                      <span className="label-text">Password</span>
+                      <span className="label-text text-xs sm:text-sm">Password</span>
                     </label>
                     <PasswordInput
                       placeholder="********"
-                      className="input input-bordered w-full"
+                      className="input input-bordered w-full text-sm sm:text-base"
                       value={loginData.password}
                       onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                       required
                     />
                   </div>
 
-                  <button type="submit" className="btn btn-primary w-full" disabled={isPending}>
+                  <button type="submit" className="btn btn-primary w-full text-sm sm:text-base" disabled={isPending}>
                     {isPending ? (
                       <>
                         <span className="loading loading-spinner loading-xs"></span>
-                        Signing in...
+                        <span className="text-sm sm:text-base">Signing in...</span>
                       </>
                     ) : (
                       "Sign In"
@@ -126,9 +126,9 @@ const LoginPage = () => {
                   <button 
                     type="button" 
                     onClick={handleGoogleLogin}
-                    className="btn btn-outline w-full flex items-center justify-center gap-2"
+                    className="btn btn-outline w-full flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
                       <path
                         fill="currentColor"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -150,10 +150,10 @@ const LoginPage = () => {
                   </button>
 
                   <div className="text-center mt-4 space-y-2">
-                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                    <Link to="/forgot-password" className="text-xs sm:text-sm text-primary hover:underline block">
                       Forgot your password?
                     </Link>
-                    <p className="text-sm">
+                    <p className="text-xs sm:text-sm">
                       Don't have an account?{" "}
                       <Link to="/signup" className="text-primary hover:underline">
                         Create one
@@ -167,16 +167,16 @@ const LoginPage = () => {
         </div>
 
         {/* IMAGE SECTION */}
-        <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center">
-          <div className="max-w-md p-8">
+        <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center p-4">
+          <div className="max-w-md p-6 lg:p-8">
             {/* Illustration */}
             <div className="relative aspect-square max-w-sm mx-auto">
               <img src="/i.png" alt="Language connection illustration" className="w-full h-full" />
             </div>
 
             <div className="text-center space-y-3 mt-6">
-              <h2 className="text-xl font-semibold">All-in-one Communication</h2>
-              <p className="opacity-70">
+              <h2 className="text-lg lg:text-xl font-semibold">All-in-one Communication</h2>
+              <p className="text-sm lg:text-base opacity-70">
                 Seamless messaging, voice & video calls, group chats, and threads—everything in one powerful app.
               </p>
             </div>

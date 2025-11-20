@@ -75,6 +75,81 @@ body,
   overflow: hidden;
 }
 
+/* Responsive Typography Utilities */
+@media (max-width: 640px) {
+  /* Small mobile devices */
+  .responsive-text-xs {
+    font-size: 0.625rem; /* 10px */
+  }
+  .responsive-text-sm {
+    font-size: 0.75rem; /* 12px */
+  }
+  e-text-base {
+    font-size: 0.875rem; /* 14px */
+  }
+  .responsive-text-lg {
+    font-size: 1rem; /* 16px */
+  }
+  .responsive-text-xl {
+    font-size: 1.125rem; /* 18px */
+  }
+}
+
+/* Responsive Spacing Utilities */
+@media (max-width: 640px) {
+  .responsive-p-sm {
+    padding: 0.75rem; /* 12px */
+  }
+  .responsive-p-md {
+    padding: 1rem; /* 16px */
+  }
+  .responsive-m-sm {
+    margin: 0.75rem; /* 12px */
+  }
+  .responsive-m-md {
+    margin: 1rem; /* 16px */
+  }
+}
+
+/* Touch-Friendly Interactive Elements */
+@media (max-width: 768px) {
+  button, .btn, a {
+    min-height: 44px; /* iOS recommended touch target */
+    min-width: 44px;
+  }
+  
+  input, textarea, select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+}
+
+/* Responsive Container Padding */
+.container-responsive {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
 /* Resizable Splitter - Prevent text selection while dragging */
 .resizing * {
   user-select: none !important;

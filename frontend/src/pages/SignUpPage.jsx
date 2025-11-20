@@ -49,15 +49,15 @@ const SignUpPage = () => {
   return (
     <>
       <div
-        className="h-screen flex items-center justify-center p-4 sm:p-6 md:p-8"
+        className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8"
         data-theme="forest">
-        <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-5xl mx-auto bg-base-100 rounded-xl shadow-lg overflow-hidden">
+        <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-6xl mx-auto bg-base-100 rounded-lg sm:rounded-xl shadow-lg overflow-hidden">
           {/* SIGNUP FORM - LEFT SIDE */}
-          <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
+          <div className="w-full lg:w-1/2 p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col">
             {/* LOGO */}
-            <div className="mb-4 flex items-center justify-start gap-2">
-              <img src="/favicon.png" alt="favicon" className="size-9 text-primary" />
-              <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
+            <div className="mb-4 sm:mb-6 flex items-center justify-start gap-2">
+              <img src="/favicon.png" alt="favicon" className="size-8 sm:size-9 text-primary" />
+              <span className="text-2xl sm:text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
                 Chatify
               </span>
             </div>
@@ -73,8 +73,8 @@ const SignUpPage = () => {
               <form onSubmit={handleSignup}>
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-xl font-semibold">Create an Account</h2>
-                    <p className="text-sm opacity-70">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold">Create an Account</h2>
+                    <p className="text-xs sm:text-sm opacity-70">
                       Your all-in-one communication starts here.!
                     </p>
                   </div>
@@ -83,12 +83,12 @@ const SignUpPage = () => {
                     {/* FULLNAME */}
                     <div className="form-control w-full">
                       <label className="label">
-                        <span className="label-text">Full Name</span>
+                        <span className="label-text text-xs sm:text-sm">Full Name</span>
                       </label>
                       <input
                         type="text"
                         placeholder="John Doe"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.fullName}
                         onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
                         required
@@ -97,12 +97,12 @@ const SignUpPage = () => {
                     {/* EMAIL */}
                     <div className="form-control w-full">
                       <label className="label">
-                        <span className="label-text">Email</span>
+                        <span className="label-text text-xs sm:text-sm">Email</span>
                       </label>
                       <input
                         type="email"
                         placeholder="john@gmail.com"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.email}
                         onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                         required
@@ -111,11 +111,11 @@ const SignUpPage = () => {
                     {/* PASSWORD */}
                     <div className="form-control w-full">
                       <label className="label">
-                        <span className="label-text">Password</span>
+                        <span className="label-text text-xs sm:text-sm">Password</span>
                       </label>
                       <PasswordInput
                         placeholder="********"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.password}
                         onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                         required
@@ -128,11 +128,11 @@ const SignUpPage = () => {
                     {/* CONFIRM PASSWORD */}
                     <div className="form-control w-full">
                       <label className="label">
-                        <span className="label-text">Confirm Password</span>
+                        <span className="label-text text-xs sm:text-sm">Confirm Password</span>
                       </label>
                       <PasswordInput
                         placeholder="********"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.confirmPassword}
                         onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                         required
@@ -158,11 +158,11 @@ const SignUpPage = () => {
                     </div>
                   </div>
 
-                  <button className="btn btn-primary w-full" type="submit">
+                  <button className="btn btn-primary w-full text-sm sm:text-base" type="submit">
                     {isPending ? (
                       <>
                         <span className="loading loading-spinner loading-xs"></span>
-                        Loading...
+                        <span className="text-sm sm:text-base">Loading...</span>
                       </>
                     ) : (
                       "Create Account"
@@ -174,9 +174,9 @@ const SignUpPage = () => {
                   <button 
                     type="button" 
                     onClick={handleGoogleSignup}
-                    className="btn btn-outline w-full flex items-center justify-center gap-2"
+                    className="btn btn-outline w-full flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
                       <path
                         fill="currentColor"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -198,7 +198,7 @@ const SignUpPage = () => {
                   </button>
 
                   <div className="text-center mt-4">
-                    <p className="text-sm">
+                    <p className="text-xs sm:text-sm">
                       Already have an account?{" "}
                       <Link to="/login" className="text-primary hover:underline">
                         Sign in
@@ -211,16 +211,16 @@ const SignUpPage = () => {
           </div>
 
           {/* SIGNUP FORM - RIGHT SIDE */}
-          <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center">
-            <div className="max-w-md p-8">
+          <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center p-4">
+            <div className="max-w-md p-6 lg:p-8">
               {/* Illustration */}
               <div className="relative aspect-square max-w-sm mx-auto">
                 <img src="/i.png" alt="Language connection illustration" className="w-full h-full" />
               </div>
 
               <div className="text-center space-y-3 mt-6">
-                <h2 className="text-xl font-semibold">Connect with anyone, anywhere</h2>
-                <p className="opacity-70">
+                <h2 className="text-lg lg:text-xl font-semibold">Connect with anyone, anywhere</h2>
+                <p className="text-sm lg:text-base opacity-70">
                   Stay close to your friends, family, and groups with instant chats, voice & video calls, and threads.
                 </p>
               </div>

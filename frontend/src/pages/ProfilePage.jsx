@@ -207,37 +207,37 @@ const ProfilePage = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-base-100 transition-colors duration-200">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-5xl">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <h1 className="text-3xl font-bold text-base-content">My Profile</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-base-content">My Profile</h1>
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="btn btn-primary btn-sm w-full sm:w-auto"
+              className="btn btn-primary btn-sm sm:btn-md w-full sm:w-auto text-sm"
             >
-              <EditIcon className="w-4 h-4 mr-2" />
+              <EditIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               Edit Profile
             </button>
           ) : (
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={handleCancel}
-                className="btn btn-ghost btn-sm w-full sm:w-auto"
+                className="btn btn-ghost btn-sm sm:btn-md w-full sm:w-auto text-sm"
                 disabled={isUpdating}
               >
-                <XIcon className="w-4 h-4 mr-2" />
+                <XIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="btn btn-primary btn-sm w-full sm:w-auto"
+                className="btn btn-primary btn-sm sm:btn-md w-full sm:w-auto text-sm"
                 disabled={isUpdating}
               >
                 {isUpdating ? (
-                  <span className="loading loading-spinner loading-sm mr-2"></span>
+                  <span className="loading loading-spinner loading-xs sm:loading-sm mr-2"></span>
                 ) : (
-                  <SaveIcon className="w-4 h-4 mr-2" />
+                  <SaveIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 )}
                 Save Changes
               </button>
@@ -245,13 +245,13 @@ const ProfilePage = () => {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {/* Profile Picture and Basic Info */}
           <div className="lg:col-span-1">
-            <div className="card bg-base-200 shadow-xl">
-              <div className="card-body items-center text-center">
-                <div className="avatar mb-4">
-                  <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+            <div className="card bg-base-200 shadow-lg sm:shadow-xl">
+              <div className="card-body items-center text-center p-4 sm:p-6">
+                <div className="avatar mb-3 sm:mb-4">
+                  <div className="w-24 sm:w-28 md:w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                     <img 
                       src={previewUrl || formData.profilePic || "/default-avatar.svg"} 
                       alt="Profile" 
@@ -263,7 +263,7 @@ const ProfilePage = () => {
                 </div>
                 
                 {isEditing ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4 w-full">
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -272,12 +272,12 @@ const ProfilePage = () => {
                       className="hidden"
                     />
                     <div className="flex flex-col gap-2">
-                      <button type="button" onClick={handleUploadClick} className="btn btn-primary btn-sm">
-                        <UploadIcon className="size-4 mr-2" />
+                      <button type="button" onClick={handleUploadClick} className="btn btn-primary btn-xs sm:btn-sm text-xs sm:text-sm">
+                        <UploadIcon className="size-3 sm:size-4 mr-1 sm:mr-2" />
                         Upload Photo
                       </button>
-                      <button type="button" onClick={handleRandomAvatar} className="btn btn-accent btn-sm">
-                        <ShuffleIcon className="size-4 mr-2" />
+                      <button type="button" onClick={handleRandomAvatar} className="btn btn-accent btn-xs sm:btn-sm text-xs sm:text-sm">
+                        <ShuffleIcon className="size-3 sm:size-4 mr-1 sm:mr-2" />
                         Random Avatar
                       </button>
                     </div>
@@ -289,13 +289,13 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <>
-                    <h2 className="card-title text-xl">{userProfile?.fullName}</h2>
-                    <div className="text-sm text-base-content/60">
+                    <h2 className="card-title text-base sm:text-lg md:text-xl">{userProfile?.fullName}</h2>
+                    <div className="text-xs sm:text-sm text-base-content/60">
                       Member since {new Date(userProfile?.createdAt).toLocaleDateString()}
                     </div>
                     {userProfile?.isVerified && (
-                      <div className="badge badge-success gap-2">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="badge badge-success gap-1 sm:gap-2 text-xs">
+                        <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
                         Verified
@@ -309,14 +309,14 @@ const ProfilePage = () => {
 
           {/* Detailed Information */}
           <div className="lg:col-span-2">
-            <div className="card bg-base-200 shadow-xl">
-              <div className="card-body">
-                <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="card bg-base-200 shadow-lg sm:shadow-xl">
+              <div className="card-body p-4 sm:p-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   {/* Full Name */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text flex items-center gap-2">
-                        <UserIcon className="w-4 h-4" />
+                      <span className="label-text flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                        <UserIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                         Full Name
                       </span>
                     </label>
@@ -326,11 +326,11 @@ const ProfilePage = () => {
                         name="fullName"
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         required
                       />
                     ) : (
-                      <div className="p-3 bg-base-100 rounded-lg">
+                      <div className="p-2 sm:p-3 bg-base-100 rounded-lg text-sm sm:text-base">
                         {userProfile?.fullName || "Not set"}
                       </div>
                     )}
@@ -339,8 +339,8 @@ const ProfilePage = () => {
                   {/* Username */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text flex items-center gap-2">
-                        <AtSignIcon className="w-4 h-4" />
+                      <span className="label-text flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                        <AtSignIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                         Username
                       </span>
                     </label>
@@ -351,14 +351,14 @@ const ProfilePage = () => {
                         value={formData.username}
                         onChange={handleInputChange}
                         placeholder="e.g., john_doe"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         pattern="^[a-zA-Z0-9_]+$"
                         minLength="3"
                         maxLength="20"
                         required
                       />
                     ) : (
-                      <div className="p-3 bg-base-100 rounded-lg">
+                      <div className="p-2 sm:p-3 bg-base-100 rounded-lg text-sm sm:text-base">
                         @{userProfile?.username || "Not set"}
                       </div>
                     )}
@@ -367,7 +367,7 @@ const ProfilePage = () => {
                   {/* Bio */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text">Bio</span>
+                      <span className="label-text text-xs sm:text-sm">Bio</span>
                     </label>
                     {isEditing ? (
                       <textarea
@@ -375,10 +375,10 @@ const ProfilePage = () => {
                         value={formData.bio}
                         onChange={handleInputChange}
                         placeholder="Tell us about yourself..."
-                        className="textarea textarea-bordered h-24"
+                        className="textarea textarea-bordered h-20 sm:h-24 text-sm sm:text-base"
                       />
                     ) : (
-                      <div className="p-3 bg-base-100 rounded-lg min-h-[6rem]">
+                      <div className="p-2 sm:p-3 bg-base-100 rounded-lg min-h-[5rem] sm:min-h-[6rem] text-sm sm:text-base">
                         {userProfile?.bio || "No bio available"}
                       </div>
                     )}
@@ -387,8 +387,8 @@ const ProfilePage = () => {
                   {/* Native Language */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text flex items-center gap-2">
-                        <GlobeIcon className="w-4 h-4" />
+                      <span className="label-text flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                        <GlobeIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                         Native Language
                       </span>
                     </label>
@@ -399,10 +399,10 @@ const ProfilePage = () => {
                         value={formData.nativeLanguage}
                         onChange={handleInputChange}
                         placeholder="e.g., English"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                       />
                     ) : (
-                      <div className="p-3 bg-base-100 rounded-lg">
+                      <div className="p-2 sm:p-3 bg-base-100 rounded-lg text-sm sm:text-base">
                         {userProfile?.nativeLanguage || "Not set"}
                       </div>
                     )}
@@ -411,8 +411,8 @@ const ProfilePage = () => {
                   {/* Location */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text flex items-center gap-2">
-                        <MapPinIcon className="w-4 h-4" />
+                      <span className="label-text flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                        <MapPinIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                         Location
                       </span>
                     </label>
@@ -423,10 +423,10 @@ const ProfilePage = () => {
                         value={formData.location}
                         onChange={handleInputChange}
                         placeholder="e.g., New York, USA"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
                       />
                     ) : (
-                      <div className="p-3 bg-base-100 rounded-lg">
+                      <div className="p-2 sm:p-3 bg-base-100 rounded-lg text-sm sm:text-base">
                         {userProfile?.location || "Not set"}
                       </div>
                     )}
@@ -435,8 +435,8 @@ const ProfilePage = () => {
                   {/* Email */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text flex items-center gap-2">
-                        <MailIcon className="w-4 h-4" />
+                      <span className="label-text flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                        <MailIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                         Email
                       </span>
                     </label>
@@ -447,22 +447,22 @@ const ProfilePage = () => {
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          className="input input-bordered w-full"
+                          className="input input-bordered w-full text-sm sm:text-base"
                           required
                         />
                         {userProfile?.email !== formData.email && (
-                          <div className="text-xs text-warning">
+                          <div className="text-[10px] sm:text-xs text-warning">
                             ⚠️ Changing email will require verification of the new email address
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="p-3 bg-base-100 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div>{userProfile?.email || "Not set"}</div>
+                      <div className="p-2 sm:p-3 bg-base-100 rounded-lg text-sm sm:text-base">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">{userProfile?.email || "Not set"}</div>
                             {userProfile?.pendingEmail && (
-                              <div className="text-xs text-warning mt-1">
+                              <div className="text-[10px] sm:text-xs text-warning mt-1">
                                 Pending change to: {userProfile.pendingEmail}
                               </div>
                             )}
@@ -471,7 +471,7 @@ const ProfilePage = () => {
                             <button
                               onClick={() => resendVerificationMutation.mutate()}
                               disabled={resendVerificationMutation.isPending}
-                              className="btn btn-warning btn-xs ml-2"
+                              className="btn btn-warning btn-xs text-[10px] sm:text-xs ml-2 flex-shrink-0"
                             >
                               {resendVerificationMutation.isPending ? (
                                 <span className="loading loading-spinner loading-xs"></span>
@@ -482,7 +482,7 @@ const ProfilePage = () => {
                           )}
                         </div>
                         {!userProfile?.isVerified && (
-                          <div className="text-xs text-warning mt-2">
+                          <div className="text-[10px] sm:text-xs text-warning mt-2">
                             ⚠️ Email not verified - Click "Verify" to resend verification email
                           </div>
                         )}

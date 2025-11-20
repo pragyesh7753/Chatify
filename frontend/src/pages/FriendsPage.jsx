@@ -60,14 +60,14 @@ const FriendsPage = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-base-100 transition-colors duration-200">
-      <div className="p-4 sm:p-6 lg:p-8">
+      <div className="p-3 sm:p-4 md:p-6 lg:p-8">
         <div className="container mx-auto space-y-10">
           {/* YOUR FRIENDS SECTION */}
           <section>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-base-content">Your Friends</h1>
-                <p className="text-base-content opacity-70 mt-2">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-base-content">Your Friends</h1>
+                <p className="text-xs sm:text-sm md:text-base text-base-content opacity-70 mt-1 sm:mt-2">
                   Connect and chat with your friends
                 </p>
               </div>
@@ -90,13 +90,13 @@ const FriendsPage = () => {
 
           {/* USER SEARCH SECTION */}
           <section>
-            <div className="mb-6 sm:mb-8">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="mb-4 sm:mb-6 md:mb-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-base-content">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-base-content">
                     Find Friends
                   </h2>
-                  <p className="text-base-content opacity-70">
+                  <p className="text-xs sm:text-sm md:text-base text-base-content opacity-70">
                     Search for users by username and send friend requests
                   </p>
                 </div>
@@ -104,19 +104,19 @@ const FriendsPage = () => {
             </div>
 
             {/* Search Input */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-base-content/50" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 sm:size-5 text-base-content/50" />
                 <input
                   type="text"
                   placeholder="Search by username..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input input-bordered w-full pl-10 bg-base-200"
+                  className="input input-bordered w-full pl-9 sm:pl-10 bg-base-200 text-sm sm:text-base"
                 />
               </div>
               {searchQuery.length > 0 && searchQuery.length < 2 && (
-                <p className="text-sm text-base-content/60 mt-2">
+                <p className="text-xs sm:text-sm text-base-content/60 mt-2">
                   Please enter at least 2 characters to search
                 </p>
               )}
@@ -128,14 +128,14 @@ const FriendsPage = () => {
                 <span className="loading loading-spinner loading-lg text-primary" />
               </div>
             ) : debouncedSearchQuery.length >= 2 && searchResults.length === 0 ? (
-              <div className="card bg-base-200 p-6 text-center">
-                <h3 className="font-semibold text-lg mb-2 text-base-content">No users found</h3>
-                <p className="text-base-content opacity-70">
+              <div className="card bg-base-200 p-4 sm:p-6 text-center">
+                <h3 className="font-semibold text-base sm:text-lg mb-2 text-base-content">No users found</h3>
+                <p className="text-xs sm:text-sm text-base-content opacity-70">
                   Try searching with a different username
                 </p>
               </div>
             ) : debouncedSearchQuery.length >= 2 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {searchResults.map((user) => {
                   const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
 
@@ -144,9 +144,9 @@ const FriendsPage = () => {
                       key={user._id}
                       className="card bg-base-200 hover:shadow-lg transition-all duration-300"
                     >
-                      <div className="card-body p-5 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="avatar size-16">
+                      <div className="card-body p-4 sm:p-5 space-y-3 sm:space-y-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="avatar size-12 sm:size-16 flex-shrink-0">
                             <div className="rounded-full">
                               <img src={user.profilePic} alt={user.fullName} />
                             </div>
