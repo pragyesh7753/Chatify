@@ -189,9 +189,9 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-base-100 transition-colors duration-200">
+    <div className="h-full flex flex-col bg-base-100 transition-colors duration-200 overflow-hidden">
       {/* Chat Header */}
-      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200">
+      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200 flex-shrink-0 w-full">
         <button
           onClick={() => navigate(-1)}
           className="md:hidden btn btn-ghost btn-sm btn-circle flex-shrink-0"
@@ -298,7 +298,7 @@ const ChatPage = () => {
       </div>
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200">
+      <form onSubmit={handleSendMessage} className="flex-shrink-0 p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200 w-full">
         <div className="flex gap-1 sm:gap-2 items-center">
           <button
             type="button"
