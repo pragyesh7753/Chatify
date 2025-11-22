@@ -3,7 +3,8 @@ import { UserService } from "../services/user.service.js";
 
 export const optionalProtectRoute = async (req, res, next) => {
   try {
-    const token = req.cookies.jwt;
+    // Support both new accessToken and old jwt cookie for backward compatibility
+    const token = req.cookies.accessToken || req.cookies.jwt;
 
     if (!token) {
       return next(); // Continue without user if no token

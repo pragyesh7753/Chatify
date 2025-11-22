@@ -10,6 +10,7 @@ export const databases = new Databases(client);
 export const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 export const USERS_COLLECTION_ID = process.env.APPWRITE_USERS_COLLECTION_ID;
 export const FRIEND_REQUESTS_COLLECTION_ID = process.env.APPWRITE_FRIEND_REQUESTS_COLLECTION_ID;
+export const REFRESH_TOKENS_COLLECTION_ID = process.env.APPWRITE_REFRESH_TOKENS_COLLECTION_ID;
 
 export { Query };
 

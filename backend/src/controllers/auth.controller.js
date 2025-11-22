@@ -1,7 +1,9 @@
 import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail } from "../lib/email.js";
 import { UserService } from "../services/user.service.js";
+import { RefreshTokenService } from "../services/refreshToken.service.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../lib/cloudinary.js";
+import { generateAccessToken, generateRefreshToken, getRefreshTokenExpiration, setTokenCookies, clearTokenCookies } from "../utils/token.js";
 
 // Sign up (creates unverified user and sends verification email)
 export async function signup(req, res) {
@@ -135,17 +137,16 @@ export async function verifyEmail(req, res) {
       userId: user._id 
     });
 
-    // Generate JWT token
-    const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d"
-    });
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken();
+    const refreshTokenExpires = getRefreshTokenExpiration();
 
-    res.cookie("jwt", jwtToken, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
+    // Store refresh token in separate collection
+    await RefreshTokenService.create(user._id, refreshToken, refreshTokenExpires);
+
+    // Set token cookies
+    setTokenCookies(res, accessToken, refreshToken);
 
     console.log("Email verification successful for user:", user.email);
     
@@ -243,16 +244,16 @@ export async function login(req, res) {
       });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-    });
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken();
+    const refreshTokenExpires = getRefreshTokenExpiration();
 
-    res.cookie("jwt", token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true, // prevent XSS attacks,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // More permissive for development
-      secure: process.env.NODE_ENV === "production",
-    });
+    // Store refresh token in separate collection
+    await RefreshTokenService.create(user._id, refreshToken, refreshTokenExpires);
+
+    // Set token cookies
+    setTokenCookies(res, accessToken, refreshToken);
 
     // Return user without password
     const { password: userPassword, ...userWithoutPassword } = user;
@@ -266,21 +267,27 @@ export async function login(req, res) {
 // Logout
 export async function logout(req, res) {
   try {
-    res.clearCookie("jwt", {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: '/',
-    });
+    // Clear refresh token from separate collection if user is authenticated
+    if (req.user) {
+      await RefreshTokenService.deleteByUserId(req.user._id);
+    }
+    
+    // Also try to delete by token from cookie if available
+    const { refreshToken } = req.cookies;
+    if (refreshToken) {
+      await RefreshTokenService.deleteByToken(refreshToken);
+    }
+    
+    // Clear all token cookies
+    clearTokenCookies(res);
+    
     return res.status(200).json({ success: true, message: "Logout successful" });
   } catch (error) {
     console.log("Error in logout controller", error.message);
-    res.clearCookie("jwt", {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: '/',
-    });
+    
+    // Clear cookies even if there's an error
+    clearTokenCookies(res);
+    
     return res.status(200).json({ success: true, message: "Logout successful" });
   }
 }
@@ -490,18 +497,16 @@ export async function googleCallback(req, res) {
 
     console.log("Google OAuth successful for user:", user.email);
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-    });
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken();
+    const refreshTokenExpires = getRefreshTokenExpiration();
 
-    // Set JWT cookie
-    res.cookie("jwt", token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
+    // Store refresh token in separate collection
+    await RefreshTokenService.create(user._id, refreshToken, refreshTokenExpires);
+
+    // Set token cookies
+    setTokenCookies(res, accessToken, refreshToken);
 
     // Redirect to frontend based on onboarding status
     const redirectUrl = user.isOnboarded 
@@ -513,5 +518,56 @@ export async function googleCallback(req, res) {
   } catch (error) {
     console.error("Error in googleCallback:", error);
     res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
+  }
+}
+
+// Refresh Token - generate new access token using refresh token
+export async function refreshToken(req, res) {
+  try {
+    const { refreshToken } = req.cookies;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Refresh token not provided" });
+    }
+
+    // Find refresh token in separate collection
+    const tokenDoc = await RefreshTokenService.findByToken(refreshToken);
+
+    if (!tokenDoc) {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    // Check if refresh token is still valid
+    if (new Date(tokenDoc.expiresAt) <= new Date()) {
+      // Token expired, delete it
+      await RefreshTokenService.deleteByToken(refreshToken);
+      return res.status(401).json({ message: "Refresh token expired" });
+    }
+
+    // Verify user still exists
+    const user = await UserService.findById(tokenDoc.userId);
+    if (!user) {
+      await RefreshTokenService.deleteByToken(refreshToken);
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    // Generate new access token
+    const newAccessToken = generateAccessToken(tokenDoc.userId);
+
+    // Set new access token cookie
+    res.cookie("accessToken", newAccessToken, {
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Access token refreshed successfully" 
+    });
+  } catch (error) {
+    console.log("Error in refreshToken controller", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 }

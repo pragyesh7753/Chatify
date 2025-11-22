@@ -1,5 +1,5 @@
 import express from "express";
-import { login, logout, onboard, signup, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword, changePassword, googleCallback } from "../controllers/auth.controller.js";
+import { login, logout, onboard, signup, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword, changePassword, googleCallback, refreshToken } from "../controllers/auth.controller.js";
 import { verifyEmailChange } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { optionalProtectRoute } from "../middleware/optionalAuth.middleware.js";
@@ -11,6 +11,7 @@ const router = express.Router();
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", optionalProtectRoute, logout);
+router.post("/refresh-token", refreshToken);
 
 // Google OAuth routes
 router.get("/google", 
@@ -50,7 +51,7 @@ router.get("/me", protectRoute, (req, res) => {
   res.status(200).json({ 
     success: true, 
     user: req.user,
-    token: req.cookies.jwt // Include token for socket authentication
+    token: req.cookies.accessToken || req.cookies.jwt // Include token for socket authentication (support both old and new)
   });
 });
 
