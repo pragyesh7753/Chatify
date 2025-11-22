@@ -68,10 +68,12 @@ export async function sendMessage(req, res) {
 
     const message = await createMessage(messageData);
 
-    // Emit the message to all connected clients in the channel EXCEPT the sender
-    // The sender will add the message optimistically from the response
+    // Emit the message to all users in the channel (including sender for other devices)
     const io = getIO();
-    io.to(channelId).emit("new-message", { message, senderId: user._id });
+    io.to(channelId).emit("new-message", { 
+      message, 
+      senderId: user._id 
+    });
 
     res.status(201).json(message);
   } catch (error) {
