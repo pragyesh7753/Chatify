@@ -4,64 +4,7 @@
   themes: all;
 }
 
-/* WhatsApp Web Color Variables - Work with any DaisyUI theme */
-:root {
-  --wa-primary: var(--p);
-  --wa-bg: var(--b1);
-  --wa-panel: var(--b2);
-  --wa-border: var(--bc);
-  --wa-text-primary: var(--bc);
-  --wa-text-secondary: var(--bc);
-  --wa-chat-bg: var(--b1);
-  --wa-message-in: var(--b2);
-  --wa-message-out: var(--p);
-}
 
-/* Override for light/dark specific colors */
-[data-theme] {
-  /* Chat list background */
-  --chat-list-bg: oklch(var(--b2));
-  --chat-list-header: oklch(var(--b2));
-  --chat-item-hover: oklch(var(--b3));
-  --chat-item-active: oklch(var(--b3));
-
-  /* Chat area background */
-  --chat-area-bg: oklch(var(--b1));
-  --chat-header-bg: oklch(var(--b2));
-
-  /* Message colors */
-  --message-incoming-bg: oklch(var(--b2));
-  --message-outgoing-bg: oklch(var(--p));
-  --message-incoming-text: oklch(var(--bc));
-  --message-outgoing-text: oklch(var(--pc));
-}
-
-
-/* Fixed header on mobile to prevent scrolling when keyboard opens */
-@media (max-width: 768px) {
-
-  /* Prevent scrolling on the main chat container */
-  .whatsapp-chat {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    height: var(--app-vh, 100dvh) !important; /* visual viewport height if available */
-    max-height: var(--app-vh, 100dvh) !important;
-    overflow: hidden !important;
-  }
-}
-
-.chat-list-container * {
-  transition: opacity 0.3s ease-in-out;
-}
-
-/* Target all possible header text classes */
-[class*="str-chat__header"] *:not(svg):not(path):not(circle):not(rect),
-[class*="str-chat__channel-header"] *:not(svg):not(path):not(circle):not(rect) {
-  color: oklch(var(--bc)) !important;
-}
 
 /* Smooth scrolling behavior */
 html {
@@ -75,41 +18,24 @@ body,
   overflow: hidden;
 }
 
-/* Responsive Typography Utilities */
-@media (max-width: 640px) {
-  /* Small mobile devices */
-  .responsive-text-xs {
-    font-size: 0.625rem; /* 10px */
-  }
-  .responsive-text-sm {
-    font-size: 0.75rem; /* 12px */
-  }
-  e-text-base {
-    font-size: 0.875rem; /* 14px */
-  }
-  .responsive-text-lg {
-    font-size: 1rem; /* 16px */
-  }
-  .responsive-text-xl {
-    font-size: 1.125rem; /* 18px */
+/* Prevent layout shift when mobile keyboard appears */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari */
+  body {
+    height: 100vh;
+    height: -webkit-fill-available;
   }
 }
 
-/* Responsive Spacing Utilities */
-@media (max-width: 640px) {
-  .responsive-p-sm {
-    padding: 0.75rem; /* 12px */
-  }
-  .responsive-p-md {
-    padding: 1rem; /* 16px */
-  }
-  .responsive-m-sm {
-    margin: 0.75rem; /* 12px */
-  }
-  .responsive-m-md {
-    margin: 1rem; /* 16px */
+@media (max-width: 768px) {
+  /* Use fixed positioning for chat to prevent header movement */
+  .h-screen {
+    height: 100vh;
+    height: -webkit-fill-available;
   }
 }
+
+
 
 /* Touch-Friendly Interactive Elements */
 @media (max-width: 768px) {
@@ -123,32 +49,7 @@ body,
   }
 }
 
-/* Responsive Container Padding */
-.container-responsive {
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-}
 
-@media (min-width: 640px) {
-  .container-responsive {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .container-responsive {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container-responsive {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
 
 /* Resizable Splitter - Prevent text selection while dragging */
 .resizing * {
@@ -172,52 +73,3 @@ body,
   }
 }
 
-/* Modern floating navigation animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes zoom-in {
-  from {
-    transform: scale(0.8);
-  }
-
-  to {
-    transform: scale(1);
-  }
-}
-
-.animate-in {
-  animation: fade-in 0.3s ease-out, zoom-in 0.3s ease-out;
-}
-
-/* Glassmorphism effect for modern nav */
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-  .backdrop-blur-xl {
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-  }
-}
-
-/* Mobile Bottom Nav - Ensure icons are always visible */
-.mobile-nav-icon {
-  color: #334155 !important;
-}
-
-.dark .mobile-nav-icon {
-  color: oklch(var(--bc) / 0.7) !important;
-}
-
-.mobile-nav-icon:hover {
-  color: #0f172a !important;
-}
-
-.dark .mobile-nav-icon:hover {
-  color: oklch(var(--bc)) !important;
-}
