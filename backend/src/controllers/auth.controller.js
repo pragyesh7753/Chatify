@@ -137,6 +137,9 @@ export async function verifyEmail(req, res) {
       userId: user._id 
     });
 
+    // Clear any existing refresh tokens for this user before creating new ones
+    await RefreshTokenService.deleteByUserId(user._id);
+
     // Generate access and refresh tokens
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken();
@@ -244,6 +247,9 @@ export async function login(req, res) {
       });
     }
 
+    // Clear any existing refresh tokens for this user before creating new ones
+    await RefreshTokenService.deleteByUserId(user._id);
+
     // Generate access and refresh tokens
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken();
@@ -267,15 +273,24 @@ export async function login(req, res) {
 // Logout
 export async function logout(req, res) {
   try {
+    let tokensDeleted = false;
+    
     // Clear refresh token from separate collection if user is authenticated
     if (req.user) {
-      await RefreshTokenService.deleteByUserId(req.user._id);
+      const deleted = await RefreshTokenService.deleteByUserId(req.user._id);
+      if (deleted) {
+        console.log('Deleted all refresh tokens for authenticated user:', req.user._id);
+        tokensDeleted = true;
+      }
     }
     
-    // Also try to delete by token from cookie if available
+    // Also try to delete by token from cookie if available (fallback)
     const { refreshToken } = req.cookies;
-    if (refreshToken) {
-      await RefreshTokenService.deleteByToken(refreshToken);
+    if (refreshToken && !tokensDeleted) {
+      const deleted = await RefreshTokenService.deleteByToken(refreshToken);
+      if (deleted) {
+        console.log('Deleted refresh token from cookie');
+      }
     }
     
     // Clear all token cookies
@@ -497,6 +512,12 @@ export async function googleCallback(req, res) {
 
     console.log("Google OAuth successful for user:", user.email);
 
+    // Clear any existing refresh tokens for this user before creating new ones
+    console.log("Google OAuth successful for user:", user.email);
+
+    // Clear any existing refresh tokens for this user before creating new ones
+    await RefreshTokenService.deleteByUserId(user._id);
+
     // Generate access and refresh tokens
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken();
@@ -551,6 +572,12 @@ export async function refreshToken(req, res) {
       return res.status(401).json({ message: "User not found" });
     }
 
+    // Verify user is still verified (in case admin revoked verification)
+    if (!user.isVerified) {
+      await RefreshTokenService.deleteByToken(refreshToken);
+      return res.status(401).json({ message: "User account is no longer verified" });
+    }
+
     // Generate new access token
     const newAccessToken = generateAccessToken(tokenDoc.userId);
 
@@ -562,9 +589,14 @@ export async function refreshToken(req, res) {
       secure: process.env.NODE_ENV === "production",
     });
 
+    console.log('Successfully refreshed access token for user:', user._id);
+
+    // Return user data along with success message to avoid additional request
+    const { password: userPassword, ...userWithoutPassword } = user;
     return res.status(200).json({ 
       success: true, 
-      message: "Access token refreshed successfully" 
+      message: "Access token refreshed successfully",
+      user: userWithoutPassword
     });
   } catch (error) {
     console.log("Error in refreshToken controller", error);

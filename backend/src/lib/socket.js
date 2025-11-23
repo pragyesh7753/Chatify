@@ -45,6 +45,12 @@ export const initializeSocket = (server) => {
       next();
     } catch (error) {
       console.error("Socket authentication error:", error);
+      
+      // Send specific error message for expired tokens
+      if (error.name === 'TokenExpiredError') {
+        return next(new Error("Authentication error: Token expired"));
+      }
+      
       next(new Error("Authentication error: Invalid token"));
     }
   });

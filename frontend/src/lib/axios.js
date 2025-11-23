@@ -12,6 +12,22 @@ export const axiosInstance = axios.create({
   },
 });
 
+// Track token refresh state
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
 // Add request interceptor for debugging
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -24,7 +40,7 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add response interceptor for better error handling
+// Add response interceptor for better error handling and token refresh
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;
@@ -38,29 +54,58 @@ axiosInstance.interceptors.response.use(
       url: error.config?.url,
     });
 
-    // Handle token refresh on 401 errors
-    if (error.response?.status === 401 && 
-        error.response?.data?.needsRefresh && 
-        !originalRequest._retry) {
-      
+    // Don't attempt refresh for these specific endpoints
+    const excludedEndpoints = ['/auth/refresh-token', '/auth/login', '/auth/signup'];
+    const isExcluded = excludedEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    
+    // Handle 401 errors with token refresh
+    if (error.response?.status === 401 && !isExcluded && !originalRequest._retry) {
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return axiosInstance(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         console.log('Access token expired, attempting to refresh...');
-        await axiosInstance.post('/auth/refresh-token');
-        console.log('Token refreshed successfully, retrying original request');
+        const refreshResponse = await axiosInstance.post('/auth/refresh-token');
+        console.log('Token refreshed successfully');
+        
+        // Process all queued requests
+        processQueue(null);
         
         // Retry the original request
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
         
-        // Refresh failed, user needs to login again
-        // Clear any auth state and redirect to login
-        localStorage.removeItem('chatify-user');
-        window.location.href = '/login';
+        // Process queue with error
+        processQueue(refreshError, null);
+        
+        // Clear any auth state and redirect to login only if not already on auth pages
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/login') && 
+            !currentPath.includes('/signup') && 
+            !currentPath.includes('/verify-email') &&
+            !currentPath.includes('/forgot-password') &&
+            !currentPath.includes('/reset-password')) {
+          localStorage.removeItem('chatify-user');
+          window.location.href = '/login';
+        }
         
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

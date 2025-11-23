@@ -7,7 +7,7 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const { authUser } = useAuthUser();
+  const { authUser, isLoading } = useAuthUser();
 
   useEffect(() => {
     if (authUser?.token) {
@@ -45,6 +45,12 @@ export const SocketProvider = ({ children }) => {
       newSocket.on("connect_error", (error) => {
         console.error("Socket connection error:", error);
         setIsConnected(false);
+        
+        // If token expired, the socket will be recreated when authUser updates with new token
+        if (error.message?.includes("Token expired")) {
+          console.log("Socket token expired, will reconnect with new token");
+          newSocket.disconnect();
+        }
       });
 
       setSocket(newSocket);
@@ -60,7 +66,7 @@ export const SocketProvider = ({ children }) => {
       setOnlineUsers(new Set());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUser?.token]);
+  }, [authUser?.token, isLoading]);
 
   const value = {
     socket,

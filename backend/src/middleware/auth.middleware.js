@@ -8,8 +8,7 @@ export const protectRoute = async (req, res, next) => {
 
     if (!token) {
       return res.status(401).json({ 
-        message: "Unauthorized - No token provided",
-        needsRefresh: false
+        message: "Unauthorized - No token provided"
       });
     }
 
@@ -17,40 +16,34 @@ export const protectRoute = async (req, res, next) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ 
-          message: "Unauthorized - Token expired",
-          needsRefresh: true // Signal frontend to try refreshing the token
-        });
-      }
+      // Token is invalid or expired
       return res.status(401).json({ 
-        message: "Unauthorized - Invalid token",
-        needsRefresh: false
+        message: error.name === 'TokenExpiredError' 
+          ? "Unauthorized - Token expired" 
+          : "Unauthorized - Invalid token"
       });
     }
 
     if (!decoded) {
       return res.status(401).json({ 
-        message: "Unauthorized - Invalid token",
-        needsRefresh: false
+        message: "Unauthorized - Invalid token"
       });
     }
 
     const user = await UserService.findById(decoded.userId);
     
-    if (user) {
-      delete user.password;
-    }
-
     if (!user) {
       return res.status(401).json({ 
-        message: "Unauthorized - User not found",
-        needsRefresh: false
+        message: "Unauthorized - User not found"
       });
     }
 
-    req.user = user;
+    // Remove password before attaching to request
+    if (user.password) {
+      delete user.password;
+    }
 
+    req.user = user;
     next();
   } catch (error) {
     console.log("Error in protectRoute middleware", error);
