@@ -1,4 +1,5 @@
 import { UserService } from "../services/user.service.js";
+import { RefreshTokenService } from "../services/refreshToken.service.js";
 import { databases, DATABASE_ID, USERS_COLLECTION_ID, Query } from "./appwrite.js";
 
 export const cleanupExpiredEmailChanges = async () => {
@@ -69,6 +70,22 @@ export const cleanupExpiredVerificationTokens = async () => {
   }
 };
 
+// Cleanup expired refresh tokens
+export const cleanupExpiredRefreshTokens = async () => {
+  try {
+    const count = await RefreshTokenService.deleteExpired();
+    
+    if (count > 0) {
+      console.log(`Cleaned up ${count} expired refresh tokens`);
+    }
+
+    return count;
+  } catch (error) {
+    console.error("Error cleaning up expired refresh tokens:", error);
+    throw error;
+  }
+};
+
 // Combined cleanup function
 export const cleanupExpiredTokens = async () => {
   console.log("Running cleanup for expired tokens...");
@@ -76,8 +93,9 @@ export const cleanupExpiredTokens = async () => {
   try {
     const emailChanges = await cleanupExpiredEmailChanges();
     const verificationTokens = await cleanupExpiredVerificationTokens();
+    const refreshTokens = await cleanupExpiredRefreshTokens();
     
-    console.log(`Cleanup completed: ${emailChanges} email changes, ${verificationTokens} verification tokens`);
+    console.log(`Cleanup completed: ${emailChanges} email changes, ${verificationTokens} verification tokens, ${refreshTokens} refresh tokens`);
   } catch (error) {
     console.error("Error during token cleanup:", error);
   }

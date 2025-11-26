@@ -559,7 +559,7 @@ export async function refreshToken(req, res) {
     }
 
     // Check if refresh token is still valid
-    if (new Date(tokenDoc.expiresAt) <= new Date()) {
+    if (new Date(tokenDoc.expiresAt) < new Date()) {
       // Token expired, delete it
       await RefreshTokenService.deleteByToken(refreshToken);
       return res.status(401).json({ message: "Refresh token expired" });

@@ -55,7 +55,7 @@ axiosInstance.interceptors.response.use(
     });
 
     // Don't attempt refresh for these specific endpoints
-    const excludedEndpoints = ['/auth/refresh-token', '/auth/login', '/auth/signup'];
+    const excludedEndpoints = ['/auth/refresh-token', '/auth/login', '/auth/signup', '/auth/verify-email', '/auth/resend-verification'];
     const isExcluded = excludedEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
     
     // Handle 401 errors with token refresh
@@ -78,15 +78,22 @@ axiosInstance.interceptors.response.use(
 
       try {
         console.log('Access token expired, attempting to refresh...');
-        const refreshResponse = await axiosInstance.post('/auth/refresh-token');
-        console.log('Token refreshed successfully');
+        const refreshResponse = await axios.post(
+          `${BASE_URL}/auth/refresh-token`,
+          {},
+          { withCredentials: true }
+        );
+        console.log('Token refreshed successfully:', refreshResponse.data);
         
         // Process all queued requests
         processQueue(null);
         
+        isRefreshing = false;
+        
         // Retry the original request
         return axiosInstance(originalRequest);
       } catch (refreshError) {
+        isRefreshing = false;
         console.error('Token refresh failed:', refreshError);
         
         // Process queue with error
@@ -104,8 +111,6 @@ axiosInstance.interceptors.response.use(
         }
         
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 
