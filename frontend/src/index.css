@@ -11,10 +11,21 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Ensure app can grow and scroll (better for mobile) */
+/* Ensure body takes full height */
 body,
 #root {
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Mobile: Allow scrolling and prevent gray cut areas */
+@media (max-width: 768px) {
+  body,
+  #root {
+    min-height: 100vh;
+    height: auto;
+    overflow: auto;
+  }
 }
 
 /* Prevent layout shift when mobile keyboard appears */
@@ -25,9 +36,6 @@ body,
     height: -webkit-fill-available;
   }
 }
-
-/* Avoid forcing all .h-screen elements to fixed viewport height on mobile,
-   as it can create gray bands or cut off content when there is little text. */
 
 
 

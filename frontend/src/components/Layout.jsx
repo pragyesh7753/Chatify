@@ -8,13 +8,13 @@ const Layout = ({ children, showSidebar = false, friends = [] }) => {
   const isChat = location.pathname.startsWith("/chat/");
 
   return (
-    <div className="min-h-screen bg-base-100 transition-colors duration-200">
+    <div className="h-screen bg-base-100 overflow-hidden transition-colors duration-200">
       {showSidebar ? (
         <ResizableSplitter
           leftPanel={<Sidebar friends={friends} />}
           rightPanel={
             <div className="h-full bg-base-100 transition-colors duration-200">
-              <main className={`${isChat ? 'pb-0' : 'pb-20 md:pb-0'}`}>{children}</main>
+              <main className={`h-full overflow-hidden ${isChat ? 'pb-0' : 'pb-20 md:pb-0'}`}>{children}</main>
             </div>
           }
           defaultLeftWidth={400}
@@ -22,8 +22,8 @@ const Layout = ({ children, showSidebar = false, friends = [] }) => {
           maxLeftWidth={600}
         />
       ) : (
-        <div className="min-h-screen bg-base-100 transition-colors duration-200">
-          <main className={`${isChat ? 'pb-0' : 'pb-20 md:pb-0'}`}>{children}</main>
+        <div className="h-full bg-base-100 transition-colors duration-200">
+          <main className={`h-full overflow-hidden ${isChat ? 'pb-0' : 'pb-20 md:pb-0'}`}>{children}</main>
         </div>
       )}
       <MobileBottomNav />
