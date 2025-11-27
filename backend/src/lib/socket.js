@@ -44,13 +44,14 @@ export const initializeSocket = (server) => {
       socket.userId = decoded.userId;
       next();
     } catch (error) {
-      console.error("Socket authentication error:", error);
-      
-      // Send specific error message for expired tokens
+      // Handle expired tokens gracefully (expected behavior, not an error)
       if (error.name === 'TokenExpiredError') {
+        console.log("Socket connection rejected: Token expired (client will refresh and reconnect)");
         return next(new Error("Authentication error: Token expired"));
       }
       
+      // Log other authentication errors
+      console.error("Socket authentication error:", error.message);
       next(new Error("Authentication error: Invalid token"));
     }
   });
