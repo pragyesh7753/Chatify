@@ -11,11 +11,10 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Ensure body takes full height */
+/* Ensure app can grow and scroll (better for mobile) */
 body,
 #root {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 /* Prevent layout shift when mobile keyboard appears */
@@ -27,13 +26,8 @@ body,
   }
 }
 
-@media (max-width: 768px) {
-  /* Use fixed positioning for chat to prevent header movement */
-  .h-screen {
-    height: 100vh;
-    height: -webkit-fill-available;
-  }
-}
+/* Avoid forcing all .h-screen elements to fixed viewport height on mobile,
+   as it can create gray bands or cut off content when there is little text. */
 
 
 
