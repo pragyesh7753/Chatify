@@ -87,10 +87,10 @@ export const useTokenRefresh = (
             return;
         }
 
-        // Perform initial refresh immediately on authentication
-        console.log('User authenticated, performing initial token refresh...');
-        refreshToken();
-
+        // Don't perform initial refresh immediately on authentication
+        // The access token from login/verification is still fresh
+        // Only set up the periodic refresh interval
+        
         // Clear any existing interval
         if (refreshIntervalRef.current) {
             clearInterval(refreshIntervalRef.current);

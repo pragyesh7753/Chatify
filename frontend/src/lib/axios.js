@@ -55,10 +55,10 @@ axiosInstance.interceptors.response.use(
     });
 
     // Don't attempt refresh for these specific endpoints
-    const excludedEndpoints = ['/auth/refresh-token', '/auth/login', '/auth/signup', '/auth/verify-email', '/auth/resend-verification'];
+    const excludedEndpoints = ['/auth/refresh-token', '/auth/login', '/auth/signup', '/auth/verify-email', '/auth/resend-verification', '/auth/me'];
     const isExcluded = excludedEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
     
-    // Handle 401 errors with token refresh
+    // Handle 401 errors with token refresh (but not for excluded endpoints or auth check)
     if (error.response?.status === 401 && !isExcluded && !originalRequest._retry) {
       if (isRefreshing) {
         // If already refreshing, queue this request
@@ -99,15 +99,14 @@ axiosInstance.interceptors.response.use(
         // Process queue with error
         processQueue(refreshError, null);
         
-        // Clear any auth state and redirect to login only if not already on auth pages
+        // Only redirect to login if refresh fails and not already on auth pages
         const currentPath = window.location.pathname;
-        if (!currentPath.includes('/login') && 
-            !currentPath.includes('/signup') && 
-            !currentPath.includes('/verify-email') &&
-            !currentPath.includes('/forgot-password') &&
-            !currentPath.includes('/reset-password')) {
+        const isOnAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password', '/verify-email-change'].some(path => currentPath.includes(path));
+        
+        if (!isOnAuthPage) {
+          // Clear auth state silently without redirecting immediately
+          // Let the auth check handle the redirect naturally
           localStorage.removeItem('chatify-user');
-          window.location.href = '/login';
         }
         
         return Promise.reject(refreshError);
