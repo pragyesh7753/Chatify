@@ -252,7 +252,24 @@ const ChatPage = () => {
             // Check if message is emoji only
             const isEmojiOnly = /^[\p{Emoji}\s]+$/u.test(message.text.trim());
 
-            return (
+            return isEmojiOnly ? (
+              <div
+                key={message.$id || index}
+                className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} mb-3`}
+              >
+                <div className="text-4xl sm:text-5xl py-1">
+                  {message.text}
+                </div>
+                <div className="opacity-50 px-2">
+                  <time className="text-xs">
+                    {new Date(message.$createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </time>
+                </div>
+              </div>
+            ) : (
               <div
                 key={message.$id || index}
                 className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
@@ -263,15 +280,9 @@ const ChatPage = () => {
                   </div>
                 )}
 
-                {isEmojiOnly ? (
-                  <div className="text-4xl sm:text-5xl py-1">
-                    {message.text}
-                  </div>
-                ) : (
-                  <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
-                    {message.text}
-                  </div>
-                )}
+                <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
+                  {message.text}
+                </div>
 
                 <div className="chat-footer opacity-50">
                   <time className="text-xs">
