@@ -189,18 +189,18 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-base-100 transition-colors duration-200 relative">
+    <div className="h-full flex flex-col bg-base-100 relative">
       {/* Chat Header */}
-      <div className="fixed top-0 left-0 right-0 md:relative z-10 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200 flex-shrink-0 w-full">
+      <div className="fixed top-0 left-0 right-0 md:relative z-10 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200 w-full">
         <button
           onClick={() => navigate(-1)}
-          className="md:hidden btn btn-ghost btn-sm btn-circle flex-shrink-0"
+          className="md:hidden btn btn-ghost btn-sm btn-circle"
           aria-label="Go back"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
         
-        <div className="avatar flex-shrink-0">
+        <div className="avatar">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full">
             <img src={targetUser.profilePic} alt={targetUser.fullName} />
           </div>
@@ -213,7 +213,7 @@ const ChatPage = () => {
           </p>
         </div>
 
-        <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+        <div className="flex gap-1 sm:gap-2">
           <button
             className="btn btn-ghost btn-sm btn-circle"
             onClick={handleVideoCall}
@@ -232,7 +232,7 @@ const ChatPage = () => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 mt-[52px] md:mt-0 mb-[68px] md:mb-0">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 mt-[52px] md:mt-0 mb-[68px] md:mb-0">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-base-content/60 px-4">
             <p className="text-sm sm:text-base text-center">No messages yet. Start the conversation!</p>
@@ -240,43 +240,32 @@ const ChatPage = () => {
         ) : (
           messages.map((message, index) => {
             const isOwnMessage = message.senderId === authUser._id;
-            const showAvatar = 
-              index === 0 || 
-              messages[index - 1]?.senderId !== message.senderId;
+            const showSenderName = 
+              !isOwnMessage && 
+              (index === 0 || messages[index - 1]?.senderId !== message.senderId);
 
             return (
               <div
                 key={message.$id || index}
-                className={`flex gap-1.5 sm:gap-2 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+                className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
               >
-                {!isOwnMessage && showAvatar && (
-                  <div className="avatar flex-shrink-0">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full">
-                      <img src={message.senderImage} alt={message.senderName} />
-                    </div>
+                {showSenderName && (
+                  <div className="chat-header mb-1">
+                    <span className="text-xs sm:text-sm font-semibold">{message.senderName}</span>
                   </div>
                 )}
-                {!isOwnMessage && !showAvatar && <div className="w-6 sm:w-8" />}
                 
-                <div
-                  className={`max-w-[75%] sm:max-w-[70%] px-3 sm:px-4 py-2 rounded-2xl text-sm sm:text-base ${
-                    isOwnMessage
-                      ? "bg-primary text-primary-content"
-                      : "bg-base-200 text-base-content"
-                  }`}
-                >
-                  {!isOwnMessage && showAvatar && (
-                    <p className="text-[10px] sm:text-xs font-semibold mb-1 opacity-70">
-                      {message.senderName}
-                    </p>
-                  )}
-                  <p className="break-words text-sm sm:text-base">{message.text}</p>
-                  <p className="text-[9px] sm:text-[10px] mt-1 opacity-60">
+                <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
+                  {message.text}
+                </div>
+                
+                <div className="chat-footer opacity-50">
+                  <time className="text-xs">
                     {new Date(message.$createdAt).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit"
                     })}
-                  </p>
+                  </time>
                 </div>
               </div>
             );
@@ -284,13 +273,10 @@ const ChatPage = () => {
         )}
         
         {isTyping && typingUser && (
-          <div className="flex gap-1.5 sm:gap-2 items-center text-base-content/60 text-xs sm:text-sm">
-            <div className="avatar flex-shrink-0">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full">
-                <img src={targetUser.profilePic} alt={targetUser.fullName} />
-              </div>
+          <div className="chat chat-start">
+            <div className="chat-bubble">
+              <span className="loading loading-dots loading-sm"></span>
             </div>
-            <span>{typingUser} is typing...</span>
           </div>
         )}
         
@@ -298,11 +284,11 @@ const ChatPage = () => {
       </div>
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="fixed bottom-0 left-0 right-0 md:relative z-10 flex-shrink-0 p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200 w-full">
+      <form onSubmit={handleSendMessage} className="fixed bottom-0 left-0 right-0 md:relative z-10 p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200">
         <div className="flex gap-1 sm:gap-2 items-center">
           <button
             type="button"
-            className="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
+            className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
             aria-label="Add emoji"
           >
             <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -310,7 +296,7 @@ const ChatPage = () => {
           
           <button
             type="button"
-            className="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
+            className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
             aria-label="Attach file"
           >
             <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -321,13 +307,13 @@ const ChatPage = () => {
             value={newMessage}
             onChange={handleTyping}
             placeholder="Type a message..."
-            className="input input-bordered flex-1 text-sm sm:text-base h-9 sm:h-12 min-w-0"
+            className="input input-bordered flex-1 h-9 sm:h-12"
             disabled={!isConnected}
           />
 
           <button
             type="submit"
-            className="btn btn-primary btn-circle btn-sm sm:btn-md flex-shrink-0"
+            className="btn btn-primary btn-circle btn-sm sm:btn-md"
             disabled={!newMessage.trim() || sendMessageMutation.isPending || !isConnected}
             aria-label="Send message"
           >
