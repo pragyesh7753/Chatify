@@ -2,21 +2,22 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { 
-  createOrGetChannel, 
-  getChannelMessages, 
+import {
+  createOrGetChannel,
+  getChannelMessages,
   sendMessage as sendMessageApi,
   getUserFriends
 } from "../lib/api";
 import { useSocket } from "../hooks/useSocket";
 import toast from "react-hot-toast";
-import { ArrowLeft, Send, Phone, Video, Smile, Paperclip } from "lucide-react";
+import { ArrowLeft, Send, Phone, Video, Paperclip } from "lucide-react";
 import ChatLoader from "../components/ChatLoader";
+import EmojiPicker from "../components/EmojiPicker";
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
   const navigate = useNavigate();
-  
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [channelId, setChannelId] = useState(null);
@@ -77,7 +78,7 @@ const ChatPage = () => {
       if (data.senderId && data.senderId === authUser._id) {
         return; // Ignore own messages from socket
       }
-      
+
       // Handle both formats: direct message or wrapped in data object
       const message = data.message || data;
       
@@ -132,7 +133,7 @@ const ChatPage = () => {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    
+
     if (!newMessage.trim() || !channelId) return;
 
     sendMessageMutation.mutate({
@@ -176,6 +177,10 @@ const ChatPage = () => {
     }, 2000);
   };
 
+  const handleEmojiSelect = (emoji) => {
+    setNewMessage((prev) => prev + emoji.native);
+  };
+
   const handleVideoCall = () => {
     if (!channelId || !targetUser) {
       toast.error("Unable to start call");
@@ -199,13 +204,13 @@ const ChatPage = () => {
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
-        
+
         <div className="avatar">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full">
             <img src={targetUser.profilePic} alt={targetUser.fullName} />
           </div>
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-sm sm:text-base truncate">{targetUser.fullName}</h2>
           <p className="text-[10px] sm:text-xs text-base-content/60">
@@ -240,9 +245,12 @@ const ChatPage = () => {
         ) : (
           messages.map((message, index) => {
             const isOwnMessage = message.senderId === authUser._id;
-            const showSenderName = 
-              !isOwnMessage && 
+            const showSenderName =
+              !isOwnMessage &&
               (index === 0 || messages[index - 1]?.senderId !== message.senderId);
+            
+            // Check if message is emoji only
+            const isEmojiOnly = /^[\p{Emoji}\s]+$/u.test(message.text.trim());
 
             return (
               <div
@@ -254,11 +262,17 @@ const ChatPage = () => {
                     <span className="text-xs sm:text-sm font-semibold">{message.senderName}</span>
                   </div>
                 )}
-                
-                <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
-                  {message.text}
-                </div>
-                
+
+                {isEmojiOnly ? (
+                  <div className="text-4xl sm:text-5xl py-1">
+                    {message.text}
+                  </div>
+                ) : (
+                  <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
+                    {message.text}
+                  </div>
+                )}
+
                 <div className="chat-footer opacity-50">
                   <time className="text-xs">
                     {new Date(message.$createdAt).toLocaleTimeString([], {
@@ -271,7 +285,7 @@ const ChatPage = () => {
             );
           })
         )}
-        
+
         {isTyping && typingUser && (
           <div className="chat chat-start">
             <div className="chat-bubble">
@@ -279,21 +293,15 @@ const ChatPage = () => {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input */}
       <form onSubmit={handleSendMessage} className="fixed bottom-0 left-0 right-0 md:relative z-10 p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200">
         <div className="flex gap-1 sm:gap-2 items-center">
-          <button
-            type="button"
-            className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
-            aria-label="Add emoji"
-          >
-            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          
+          <EmojiPicker onEmojiSelect={handleEmojiSelect} disabled={!isConnected} />
+
           <button
             type="button"
             className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
