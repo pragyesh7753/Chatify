@@ -194,9 +194,9 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-base-100 relative">
+    <div className="h-full flex flex-col bg-base-100 overflow-hidden">
       {/* Chat Header */}
-      <div className="fixed top-0 left-0 right-0 md:relative z-10 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200 w-full">
+      <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200 w-full">
         <button
           onClick={() => navigate(-1)}
           className="md:hidden btn btn-ghost btn-sm btn-circle"
@@ -237,7 +237,7 @@ const ChatPage = () => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 mt-[52px] md:mt-0 mb-[68px] md:mb-0">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-base-content/60 px-4">
             <p className="text-sm sm:text-base text-center">No messages yet. Start the conversation!</p>
@@ -309,7 +309,7 @@ const ChatPage = () => {
       </div>
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="fixed bottom-0 left-0 right-0 md:relative z-10 p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200">
+      <form onSubmit={handleSendMessage} className="flex-shrink-0 p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200">
         <div className="flex gap-1 sm:gap-2 items-center">
           <EmojiPicker onEmojiSelect={handleEmojiSelect} disabled={!isConnected} />
 

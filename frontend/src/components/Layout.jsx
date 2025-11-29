@@ -26,7 +26,7 @@ const Layout = ({ children, showSidebar = false, friends = [] }) => {
           <main className={`h-full overflow-hidden ${isChat ? 'pb-0' : 'pb-20 md:pb-0'}`}>{children}</main>
         </div>
       )}
-      <MobileBottomNav />
+      {!isChat && <MobileBottomNav />}
     </div>
   );
 };
