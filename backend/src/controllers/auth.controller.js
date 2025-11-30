@@ -453,9 +453,12 @@ export async function resetPassword(req, res) {
       passwordResetTokenExpires: null,
     });
 
+    // Invalidate all existing sessions
+    await RefreshTokenService.deleteByUserId(user._id);
+
     return res.status(200).json({
       success: true,
-      message: "Password reset successfully"
+      message: "Password reset successfully. Please log in again."
     });
   } catch (error) {
     console.error("Error in resetPassword:", error);
@@ -490,6 +493,17 @@ export async function changePassword(req, res) {
     const hashedPassword = await UserService.hashPassword(newPassword);
     await UserService.findByIdAndUpdate(userId, { password: hashedPassword });
 
+    // Invalidate all sessions and create new ones
+    await RefreshTokenService.deleteByUserId(userId);
+    
+    // Generate new tokens for current session
+    const newAccessToken = generateAccessToken(userId);
+    const newRefreshToken = generateRefreshToken();
+    const refreshTokenExpires = getRefreshTokenExpiration();
+    
+    await RefreshTokenService.create(userId, newRefreshToken, refreshTokenExpires);
+    setTokenCookies(res, newAccessToken, newRefreshToken);
+
     return res.status(200).json({
       success: true,
       message: "Password changed successfully"
@@ -510,9 +524,6 @@ export async function googleCallback(req, res) {
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
     }
 
-    console.log("Google OAuth successful for user:", user.email);
-
-    // Clear any existing refresh tokens for this user before creating new ones
     console.log("Google OAuth successful for user:", user.email);
 
     // Clear any existing refresh tokens for this user before creating new ones
@@ -560,7 +571,6 @@ export async function refreshToken(req, res) {
 
     // Check if refresh token is still valid
     if (new Date(tokenDoc.expiresAt) < new Date()) {
-      // Token expired, delete it
       await RefreshTokenService.deleteByToken(refreshToken);
       return res.status(401).json({ message: "Refresh token expired" });
     }
@@ -572,30 +582,30 @@ export async function refreshToken(req, res) {
       return res.status(401).json({ message: "User not found" });
     }
 
-    // Verify user is still verified (in case admin revoked verification)
+    // Verify user is still verified
     if (!user.isVerified) {
       await RefreshTokenService.deleteByToken(refreshToken);
       return res.status(401).json({ message: "User account is no longer verified" });
     }
 
-    // Generate new access token
+    // Token rotation: Delete old refresh token and create new one
+    await RefreshTokenService.deleteByToken(refreshToken);
+    
     const newAccessToken = generateAccessToken(tokenDoc.userId);
+    const newRefreshToken = generateRefreshToken();
+    const refreshTokenExpires = getRefreshTokenExpiration();
 
-    // Set new access token cookie
-    res.cookie("accessToken", newAccessToken, {
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
+    await RefreshTokenService.create(tokenDoc.userId, newRefreshToken, refreshTokenExpires);
 
-    console.log('Successfully refreshed access token for user:', user._id);
+    // Set both tokens
+    setTokenCookies(res, newAccessToken, newRefreshToken);
 
-    // Return user data along with success message to avoid additional request
+    console.log('Successfully refreshed tokens for user:', user._id);
+
     const { password: userPassword, ...userWithoutPassword } = user;
     return res.status(200).json({ 
       success: true, 
-      message: "Access token refreshed successfully",
+      message: "Tokens refreshed successfully",
       user: userWithoutPassword
     });
   } catch (error) {

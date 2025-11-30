@@ -17,10 +17,10 @@ const useAuthUser = () => {
       // Retry other errors once
       return failureCount < 1;
     },
-    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes (less than token expiry)
+    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
     refetchOnWindowFocus: true, // Check auth on window focus
     refetchOnReconnect: true, // Check auth when reconnecting
-    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes to keep session alive
+    refetchInterval: false, // Disable automatic refetch - token refresh handles session
     // Don't show errors in console for expected 401s
     onError: (error) => {
       if (error?.response?.status !== 401) {

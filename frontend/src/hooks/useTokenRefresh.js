@@ -62,7 +62,7 @@ export const useTokenRefresh = (
                 const timeSinceLastRefresh = Date.now() - lastRefreshTimeRef.current;
                 const shouldRefresh = timeSinceLastRefresh > refreshInterval;
 
-                if (shouldRefresh) {
+                if (shouldRefresh && !isRefreshingRef.current) {
                     console.log('Tab became visible, refreshing token...');
                     refreshToken();
                 }
@@ -79,32 +79,28 @@ export const useTokenRefresh = (
     // Main token refresh interval
     useEffect(() => {
         if (!isAuthenticated) {
-            // Clear interval if user is not authenticated
             if (refreshIntervalRef.current) {
                 clearInterval(refreshIntervalRef.current);
                 refreshIntervalRef.current = null;
             }
+            failureCountRef.current = 0;
             return;
         }
 
-        // Don't perform initial refresh immediately on authentication
-        // The access token from login/verification is still fresh
-        // Only set up the periodic refresh interval
-        
-        // Clear any existing interval
         if (refreshIntervalRef.current) {
             clearInterval(refreshIntervalRef.current);
         }
 
         // Set up periodic refresh interval
         refreshIntervalRef.current = setInterval(() => {
-            console.log('Periodic token refresh triggered');
-            refreshToken();
+            if (!isRefreshingRef.current) {
+                console.log('Periodic token refresh triggered');
+                refreshToken();
+            }
         }, refreshInterval);
 
         console.log(`Token refresh scheduled every ${refreshInterval / 60000} minutes`);
 
-        // Cleanup on unmount or when authentication status changes
         return () => {
             if (refreshIntervalRef.current) {
                 clearInterval(refreshIntervalRef.current);
