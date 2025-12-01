@@ -80,7 +80,6 @@ export const createMessage = async (messageData) => {
         channelId: messageData.channelId,
         senderId: messageData.senderId,
         senderName: messageData.senderName,
-        senderImage: messageData.senderImage,
         text: messageData.text,
         attachments: messageData.attachments || []
       }

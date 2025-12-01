@@ -61,7 +61,6 @@ export async function sendMessage(req, res) {
       channelId,
       senderId: user._id,
       senderName: user.fullName,
-      senderImage: user.profilePic,
       text,
       attachments: attachments || []
     };
