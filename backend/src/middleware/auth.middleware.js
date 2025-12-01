@@ -3,10 +3,16 @@ import { UserService } from "../services/user.service.js";
 
 export const protectRoute = async (req, res, next) => {
   try {
-    // Support both new accessToken and old jwt cookie for backward compatibility
     const token = req.cookies.accessToken || req.cookies.jwt;
+    const refreshToken = req.cookies.refreshToken;
 
     if (!token) {
+      // If no access token but refresh token exists, return token expired to trigger refresh
+      if (refreshToken) {
+        return res.status(401).json({ 
+          message: "Unauthorized - Token expired"
+        });
+      }
       return res.status(401).json({ 
         message: "Unauthorized - No token provided"
       });
@@ -16,7 +22,6 @@ export const protectRoute = async (req, res, next) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     } catch (error) {
-      // Token is invalid or expired
       return res.status(401).json({ 
         message: error.name === 'TokenExpiredError' 
           ? "Unauthorized - Token expired" 

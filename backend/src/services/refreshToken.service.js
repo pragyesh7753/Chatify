@@ -78,18 +78,24 @@ export const RefreshTokenService = {
 
   async deleteExpired() {
     try {
-      const now = new Date().toISOString();
+      const now = new Date();
       const result = await databases.listDocuments(
         DATABASE_ID,
         REFRESH_TOKENS_COLLECTION_ID,
-        [Query.lessThan("expiresAt", now)]
+        [Query.lessThan("expiresAt", now.toISOString())]
       );
+      
+      // Double-check each token is actually expired before deleting
+      const expiredTokens = result.documents.filter(doc => 
+        new Date(doc.expiresAt) < now
+      );
+      
       await Promise.all(
-        result.documents.map(doc => 
+        expiredTokens.map(doc => 
           databases.deleteDocument(DATABASE_ID, REFRESH_TOKENS_COLLECTION_ID, doc.$id)
         )
       );
-      return result.documents.length;
+      return expiredTokens.length;
     } catch (error) {
       console.error("Error deleting expired tokens:", error);
       return 0;

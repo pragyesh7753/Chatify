@@ -44,10 +44,10 @@ axiosInstance.interceptors.response.use(
 
     // Don't attempt refresh for these specific endpoints
     const excludedEndpoints = ['/auth/refresh-token', '/auth/login', '/auth/signup', '/auth/verify-email', '/auth/resend-verification'];
-    const isExcluded = excludedEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    const isExcluded = originalRequest?.url && excludedEndpoints.some(endpoint => originalRequest.url.includes(endpoint));
     
     // Handle 401 errors with token refresh
-    if (error.response?.status === 401 && !isExcluded && !originalRequest._retry) {
+    if (error.response?.status === 401 && !isExcluded && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       if (isRefreshing && refreshPromise) {
@@ -80,6 +80,7 @@ axiosInstance.interceptors.response.use(
         
         if (!isOnAuthPage) {
           localStorage.removeItem('chatify-user');
+          window.location.href = '/login';
         }
         
         throw refreshError;

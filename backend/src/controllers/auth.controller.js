@@ -137,9 +137,6 @@ export async function verifyEmail(req, res) {
       userId: user._id 
     });
 
-    // Clear any existing refresh tokens for this user before creating new ones
-    await RefreshTokenService.deleteByUserId(user._id);
-
     // Generate access and refresh tokens
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken();
@@ -247,10 +244,7 @@ export async function login(req, res) {
       });
     }
 
-    // Clear any existing refresh tokens for this user before creating new ones
-    await RefreshTokenService.deleteByUserId(user._id);
-
-    // Generate access and refresh tokens
+    // Generate access and refresh tokens (allow multiple devices)
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken();
     const refreshTokenExpires = getRefreshTokenExpiration();
@@ -525,9 +519,6 @@ export async function googleCallback(req, res) {
     }
 
     console.log("Google OAuth successful for user:", user.email);
-
-    // Clear any existing refresh tokens for this user before creating new ones
-    await RefreshTokenService.deleteByUserId(user._id);
 
     // Generate access and refresh tokens
     const accessToken = generateAccessToken(user._id);

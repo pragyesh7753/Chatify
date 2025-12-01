@@ -26,6 +26,7 @@ export const setTokenCookies = (res, accessToken, refreshToken) => {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
+    path: '/',
   });
 
   // Refresh token cookie (7 days)
@@ -34,6 +35,7 @@ export const setTokenCookies = (res, accessToken, refreshToken) => {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
+    path: '/',
   });
 };
 
