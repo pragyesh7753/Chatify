@@ -91,7 +91,7 @@ export async function sendMessage(req, res) {
               data: {
                 channelId,
                 senderId: user._id,
-                link: `/chat/${user._id}`
+                link: `${process.env.FRONTEND_URL}/chat/${user._id}`
               }
             });
             console.log(`[FCM] Notification sent to ${recipientId}`);
