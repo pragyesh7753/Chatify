@@ -24,6 +24,7 @@ import ConnectionStatus from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
 import useAuthUser from "./hooks/useAuthUser.js";
 import { useTokenRefresh } from "./hooks/useTokenRefresh.js";
+import { useFCM } from "./hooks/useFCM.js";
 import Layout from "./components/Layout";
 import LayoutWithSidebar from "./components/LayoutWithSidebar";
 import { useThemeStore } from "./store/useThemeStore.js";
@@ -39,6 +40,9 @@ const App = () => {
 
   // Auto-refresh tokens before they expire
   useTokenRefresh(isAuthenticated);
+
+  // Setup FCM for push notifications
+  useFCM();
 
   // Apply theme to document element
   useEffect(() => {

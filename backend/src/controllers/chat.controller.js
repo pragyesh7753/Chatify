@@ -5,7 +5,9 @@ import {
   createMessage, 
   getChannelMessages 
 } from "../services/message.service.js";
-import { getIO } from "../lib/socket.js";
+import { getIO, isUserOnline } from "../lib/socket.js";
+import { getFCMTokenService } from "../services/fcm.service.js";
+import { sendPushNotification } from "../lib/fcm.js";
 
 export async function getChannels(req, res) {
   try {
@@ -73,6 +75,32 @@ export async function sendMessage(req, res) {
       message, 
       senderId: user._id 
     });
+
+    // Send push notification to offline recipient (with small delay to avoid race condition)
+    const members = channelId.split("-");
+    const recipientId = members.find(id => id !== user._id);
+    
+    setTimeout(async () => {
+      if (recipientId && !isUserOnline(recipientId)) {
+        try {
+          const fcmToken = await getFCMTokenService(recipientId);
+          if (fcmToken) {
+            await sendPushNotification(fcmToken, {
+              title: user.fullName,
+              body: text || "Sent a message",
+              data: {
+                channelId,
+                senderId: user._id,
+                link: `/chat/${user._id}`
+              }
+            });
+            console.log(`[FCM] Notification sent to ${recipientId}`);
+          }
+        } catch (error) {
+          console.error("[FCM] Error:", error.message);
+        }
+      }
+    }, 1000);
 
     res.status(201).json(message);
   } catch (error) {

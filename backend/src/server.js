@@ -9,10 +9,12 @@ import { createServer } from "http";
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
+import fcmRoutes from "./routes/fcm.route.js";
 
 import { connectAppwrite } from "./lib/appwrite.js";
 import { cleanupExpiredTokens } from "./lib/cleanup.js";
 import { initializeSocket } from "./lib/socket.js";
+import { initializeFCM } from "./lib/fcm.js";
 import "./lib/passport.js"; // Initialize passport strategies
 
 const app = express();
@@ -58,6 +60,7 @@ app.use(passport.initialize());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/fcm", fcmRoutes);
 
 // Add a health check endpoint for debugging
 app.get("/api/health", (req, res) => {
@@ -118,6 +121,7 @@ initializeSocket(httpServer);
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   connectAppwrite();
+  initializeFCM();
   
   // Run initial cleanup
   cleanupExpiredTokens();
