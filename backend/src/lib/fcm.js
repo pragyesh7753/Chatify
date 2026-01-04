@@ -19,7 +19,7 @@ export const initializeFCM = () => {
   }
 };
 
-export const sendPushNotification = async (token, { title, body, data = {} }) => {
+export const sendPushNotification = async (token, { title, body, data = {}, link }) => {
   if (!fcmInitialized) return;
 
   try {
@@ -33,7 +33,7 @@ export const sendPushNotification = async (token, { title, body, data = {} }) =>
           badge: "/pwa-64x64.png"
         },
         fcmOptions: {
-          link: data.link || "/"
+          link: link || process.env.FRONTEND_URL || "/"
         }
       }
     });
