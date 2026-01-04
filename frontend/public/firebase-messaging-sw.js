@@ -13,16 +13,26 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification.title;
+  // Handle data-only messages
+  const data = payload.data || {};
+  const notificationTitle = data.title || payload.notification?.title || "New Message";
+  const notificationBody = data.body || payload.notification?.body || "You have a new message";
+  
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: "/pwa-192x192.png",
-    data: payload.data,
-    tag: payload.data.channelId || "default",
-    renotify: false
+    body: notificationBody,
+    icon: data.icon || "/pwa-192x192.png",
+    badge: data.badge || "/pwa-64x64.png",
+    data: {
+      link: data.link || "/",
+      ...data
+    },
+    // Use unique tag to prevent duplicates
+    tag: data.messageId || data.channelId || `notification-${Date.now()}`,
+    renotify: false,
+    requireInteraction: false
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 self.addEventListener("notificationclick", (event) => {

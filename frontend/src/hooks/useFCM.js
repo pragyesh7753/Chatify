@@ -21,10 +21,26 @@ export const useFCM = () => {
   useEffect(() => {
     setupFCM();
 
+    // Handle foreground messages
     onMessageListener().then((payload) => {
-      if (document.visibilityState === "visible") {
+      const data = payload.data || {};
+      const title = data.title || payload.notification?.title;
+      const body = data.body || payload.notification?.body;
+      
+      // Only show notification if app is not in focus
+      if (document.visibilityState !== "visible" && title && body) {
+        new Notification(title, {
+          body,
+          icon: data.icon || "/pwa-192x192.png",
+          tag: data.messageId || data.channelId || `notification-${Date.now()}`
+        });
+      } else {
         console.log("Foreground message received:", payload);
       }
     }).catch((err) => console.error("Message listener error:", err));
+
+    return () => {
+      // Cleanup if needed
+    };
   }, [setupFCM]);
 };
