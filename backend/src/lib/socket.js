@@ -14,7 +14,7 @@ export const initializeSocket = (server) => {
         if (!origin) return callback(null, true);
         
         const allowedOrigins = [
-          'https://chatify.pragyesh.tech', 
+          'https://chatify.studio', 
           'http://localhost:5173',
           'http://localhost:3000',
           'http://localhost:4173'
