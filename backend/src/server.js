@@ -11,7 +11,7 @@ import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
 import fcmRoutes from "./routes/fcm.route.js";
 
-import { connectAppwrite } from "./lib/appwrite.js";
+import { connectAppwrite, databases, Query } from "./lib/appwrite.js";
 import { cleanupExpiredTokens } from "./lib/cleanup.js";
 import { initializeSocket } from "./lib/socket.js";
 import { initializeFCM } from "./lib/fcm.js";
@@ -75,20 +75,25 @@ app.get("/api/health", (req, res) => {
 
 // Keep-alive endpoint for preventing idling on  Railway
 app.get("/api/internal/keepalive", async (req, res) => {
-  if (process.env.NODE_ENV === "production") {
-    if (req.query.secret !== process.env.CRON_SECRET) {
-      return res.status(401).end();
+  try {
+    if (process.env.NODE_ENV === "production") {
+      if (req.query.secret !== process.env.CRON_SECRET) {
+        return res.status(401).end();
+      }
+
+      await fetch("https://httpbin.org/get", {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+      });
+
+      await databases.list({ queries: [Query.limit(1)] });
     }
 
-    await fetch("https://httpbin.org/get", {
-      method: "HEAD",
-      signal: AbortSignal.timeout(5000),
-    });
-
-    await databases.list({ queries: [Query.limit(1)] });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Keep-alive endpoint error:", error);
+    res.status(500).json({ error: "Internal server error", message: error.message });
   }
-
-  res.json({ ok: true });
 });
 
 // OAuth configuration check endpoint
