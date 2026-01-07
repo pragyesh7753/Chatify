@@ -10,12 +10,16 @@ import {
   PaletteIcon, 
   BellIcon, 
   ShieldIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LogOutIcon
+  LogOutIcon,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from "lucide-react";
 import PasswordInput from "../components/PasswordInput";
 import useLogout from "../hooks/useLogout";
+import PermissionDialog from "../components/PermissionDialog";
+import { checkNotificationPermission, getPermissionInstructions } from "../lib/permissions";
+import { requestNotificationPermission } from "../lib/firebase";
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
@@ -27,6 +31,11 @@ const SettingsPage = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [notificationPermission, setNotificationPermission] = useState(
+    checkNotificationPermission().state
+  );
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
 
   const { mutate: changePasswordMutation, isPending: isChangingPassword } = useMutation({
     mutationFn: ({ currentPassword, newPassword }) => changePassword(currentPassword, newPassword),
@@ -89,6 +98,39 @@ const SettingsPage = () => {
     ), {
       duration: 3000,
     });
+  };
+
+  const handleRequestNotificationPermission = async () => {
+    setIsRequestingPermission(true);
+    try {
+      const result = await requestNotificationPermission();
+      setNotificationPermission(result.permission);
+      
+      if (result.permission === 'granted') {
+        toast.success('Notification permission granted!');
+      } else if (result.permission === 'denied') {
+        toast.error('Notification permission denied');
+        setShowPermissionDialog(true);
+      }
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      toast.error('Failed to request permission');
+    } finally {
+      setIsRequestingPermission(false);
+    }
+  };
+
+  const getPermissionStatus = () => {
+    switch (notificationPermission) {
+      case 'granted':
+        return { text: 'Enabled', icon: CheckCircle, color: 'text-success' };
+      case 'denied':
+        return { text: 'Blocked', icon: XCircle, color: 'text-error' };
+      case 'unsupported':
+        return { text: 'Not Supported', icon: AlertCircle, color: 'text-warning' };
+      default:
+        return { text: 'Not Set', icon: AlertCircle, color: 'text-warning' };
+    }
   };
 
   const sections = [
@@ -327,78 +369,145 @@ const SettingsPage = () => {
     </div>
   );
 
-  const renderNotificationsSection = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Notification Settings</h3>
-        <div className="space-y-3 sm:space-y-4">
-          <div className="card bg-base-200 shadow-sm">
-            <div className="card-body p-4 sm:p-5 md:p-6">
-              <h4 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Push Notifications</h4>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="form-control">
-                  <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
-                    <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" defaultChecked />
-                    <div>
-                      <div className="font-medium text-xs sm:text-sm">New Messages</div>
-                      <div className="text-[10px] sm:text-xs text-base-content/70">Get notified when you receive new messages</div>
+  const renderNotificationsSection = () => {
+    const permissionStatus = getPermissionStatus();
+    const PermissionIcon = permissionStatus.icon;
+
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Notification Settings</h3>
+          <div className="space-y-3 sm:space-y-4">
+            {/* Browser Permission Status */}
+            <div className="card bg-base-200 shadow-sm border-2 border-primary/20">
+              <div className="card-body p-4 sm:p-5 md:p-6">
+                <h4 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Browser Permissions</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-base-100 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <BellIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="font-medium text-sm">Notification Permission</div>
+                        <div className="text-xs text-base-content/70">Allow Chatify to show notifications</div>
+                      </div>
                     </div>
-                  </label>
-                </div>
-                
-                <div className="form-control">
-                  <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
-                    <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" defaultChecked />
-                    <div>
-                      <div className="font-medium text-xs sm:text-sm">Friend Requests</div>
-                      <div className="text-[10px] sm:text-xs text-base-content/70">Get notified when someone sends you a friend request</div>
+                    <div className="flex items-center gap-2">
+                      <span className={`flex items-center gap-1 text-sm font-medium ${permissionStatus.color}`}>
+                        <PermissionIcon className="w-4 h-4" />
+                        {permissionStatus.text}
+                      </span>
                     </div>
-                  </label>
-                </div>
-                
-                <div className="form-control">
-                  <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
-                    <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" />
-                    <div>
-                      <div className="font-medium text-xs sm:text-sm">Video Calls</div>
-                      <div className="text-[10px] sm:text-xs text-base-content/70">Get notified when someone calls you</div>
+                  </div>
+                  
+                  {notificationPermission !== 'granted' && notificationPermission !== 'unsupported' && (
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={notificationPermission === 'denied' ? () => setShowPermissionDialog(true) : handleRequestNotificationPermission}
+                        className="btn btn-primary btn-sm w-full sm:w-auto"
+                        disabled={isRequestingPermission}
+                      >
+                        {isRequestingPermission ? (
+                          <>
+                            <span className="loading loading-spinner loading-xs"></span>
+                            <span>Requesting...</span>
+                          </>
+                        ) : (
+                          notificationPermission === 'denied' ? 'See How to Enable' : 'Enable Notifications'
+                        )}
+                      </button>
+                      {notificationPermission === 'denied' && (
+                        <p className="text-xs text-warning">
+                          ⚠️ Notifications are blocked. Click the button to see how to enable them in your browser.
+                        </p>
+                      )}
                     </div>
-                  </label>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="card bg-base-200 shadow-sm">
-            <div className="card-body p-4 sm:p-5 md:p-6">
-              <h4 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Email Notifications</h4>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="form-control">
-                  <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
-                    <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" />
-                    <div>
-                      <div className="font-medium text-xs sm:text-sm">Weekly Summary</div>
-                      <div className="text-[10px] sm:text-xs text-base-content/70">Receive a weekly summary of your activity</div>
-                    </div>
-                  </label>
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body p-4 sm:p-5 md:p-6">
+                <h4 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Push Notifications</h4>
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="form-control">
+                    <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
+                      <input 
+                        type="checkbox" 
+                        className="checkbox checkbox-primary checkbox-sm" 
+                        defaultChecked 
+                        disabled={notificationPermission !== 'granted'}
+                      />
+                      <div>
+                        <div className="font-medium text-xs sm:text-sm">New Messages</div>
+                        <div className="text-[10px] sm:text-xs text-base-content/70">Get notified when you receive new messages</div>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="form-control">
+                    <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
+                      <input 
+                        type="checkbox" 
+                        className="checkbox checkbox-primary checkbox-sm" 
+                        defaultChecked 
+                        disabled={notificationPermission !== 'granted'}
+                      />
+                      <div>
+                        <div className="font-medium text-xs sm:text-sm">Friend Requests</div>
+                        <div className="text-[10px] sm:text-xs text-base-content/70">Get notified when someone sends you a friend request</div>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="form-control">
+                    <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
+                      <input 
+                        type="checkbox" 
+                        className="checkbox checkbox-primary checkbox-sm" 
+                        disabled={notificationPermission !== 'granted'}
+                      />
+                      <div>
+                        <div className="font-medium text-xs sm:text-sm">Video Calls</div>
+                        <div className="text-[10px] sm:text-xs text-base-content/70">Get notified when someone calls you</div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
-                
-                <div className="form-control">
-                  <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
-                    <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" />
-                    <div>
-                      <div className="font-medium text-xs sm:text-sm">Security Alerts</div>
-                      <div className="text-[10px] sm:text-xs text-base-content/70">Get notified about security-related activities</div>
-                    </div>
-                  </label>
+              </div>
+            </div>
+
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body p-4 sm:p-5 md:p-6">
+                <h4 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Email Notifications</h4>
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="form-control">
+                    <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
+                      <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" />
+                      <div>
+                        <div className="font-medium text-xs sm:text-sm">Weekly Summary</div>
+                        <div className="text-[10px] sm:text-xs text-base-content/70">Receive a weekly summary of your activity</div>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="form-control">
+                    <label className="cursor-pointer label justify-start gap-2 sm:gap-3">
+                      <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" />
+                      <div>
+                        <div className="font-medium text-xs sm:text-sm">Security Alerts</div>
+                        <div className="text-[10px] sm:text-xs text-base-content/70">Get notified about security-related activities</div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -459,6 +568,15 @@ const SettingsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Permission Dialog */}
+      <PermissionDialog
+        isOpen={showPermissionDialog}
+        onClose={() => setShowPermissionDialog(false)}
+        permission="Notifications"
+        message="Notification permission was blocked. To receive notifications, you'll need to enable them in your browser settings."
+        instructions={getPermissionInstructions('notification')}
+      />
     </div>
   );
 };

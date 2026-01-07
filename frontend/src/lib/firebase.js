@@ -15,17 +15,24 @@ const messaging = getMessaging(app);
 
 export const requestNotificationPermission = async () => {
   try {
+    // Check if notifications are supported
+    if (!('Notification' in window)) {
+      return { token: null, permission: 'unsupported', error: 'Notifications not supported' };
+    }
+
     const permission = await Notification.requestPermission();
+    
     if (permission === "granted") {
       const token = await getToken(messaging, {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
       });
-      return token;
+      return { token, permission: 'granted', error: null };
     }
-    return null;
+    
+    return { token: null, permission, error: null };
   } catch (error) {
     console.error("Notification permission error:", error);
-    return null;
+    return { token: null, permission: 'error', error: error.message };
   }
 };
 

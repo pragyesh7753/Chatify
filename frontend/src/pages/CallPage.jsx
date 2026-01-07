@@ -4,6 +4,8 @@ import { Phone, Video, Mic, MicOff, VideoOff, PhoneOff, ArrowLeft } from "lucide
 import { useSocket } from "../hooks/useSocket";
 import useAuthUser from "../hooks/useAuthUser";
 import toast from "react-hot-toast";
+import PermissionDialog from "../components/PermissionDialog";
+import { handleMediaPermissionError, getPermissionInstructions } from "../lib/permissions";
 
 const CallPage = () => {
   const navigate = useNavigate();
@@ -23,6 +25,8 @@ const CallPage = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
+  const [permissionError, setPermissionError] = useState(null);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -51,8 +55,14 @@ const CallPage = () => {
         }
       } catch (error) {
         console.error("Error accessing media devices:", error);
-        toast.error("Failed to access camera/microphone");
-        navigate(-1);
+        const errorInfo = handleMediaPermissionError(error);
+        setPermissionError(errorInfo);
+        setShowPermissionDialog(true);
+        
+        toast.error(errorInfo.message, { 
+          duration: 5000,
+          id: 'media-permission-error'
+        });
       }
     };
 
@@ -418,6 +428,24 @@ const CallPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Permission Dialog */}
+      {permissionError && (
+        <PermissionDialog
+          isOpen={showPermissionDialog}
+          onClose={() => {
+            setShowPermissionDialog(false);
+            navigate(-1);
+          }}
+          permission={permissionError.type === 'permission_denied' ? 'Camera/Microphone' : 'Media Device'}
+          message={permissionError.message}
+          instructions={
+            permissionError.type === 'permission_denied'
+              ? getPermissionInstructions('camera')
+              : []
+          }
+        />
       )}
     </div>
   );
