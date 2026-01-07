@@ -73,6 +73,24 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Keep-alive endpoint for preventing idling on  Railway
+app.get("/api/internal/keepalive", async (req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    if (req.query.secret !== process.env.CRON_SECRET) {
+      return res.status(401).end();
+    }
+
+    await fetch("https://httpbin.org/get", {
+      method: "HEAD",
+      signal: AbortSignal.timeout(5000),
+    });
+
+    await databases.list({ queries: [Query.limit(1)] });
+  }
+
+  res.json({ ok: true });
+});
+
 // OAuth configuration check endpoint
 app.get("/api/oauth-check", (req, res) => {
   res.json({
