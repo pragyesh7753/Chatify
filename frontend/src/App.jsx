@@ -22,6 +22,7 @@ import PageLoader from "./components/PageLoader";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import ConnectionStatus from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
+import IncomingCallModal from "./components/IncomingCallModal";
 import useAuthUser from "./hooks/useAuthUser.js";
 import { useTokenRefresh } from "./hooks/useTokenRefresh.js";
 import { useFCM } from "./hooks/useFCM.js";
@@ -195,6 +196,7 @@ const App = () => {
       <Toaster />
       <PWAInstallPrompt />
       <ConnectionStatus />
+      {isAuthenticated && isOnboarded && <IncomingCallModal />}
       <SpeedInsights />
     </div>
     </ErrorBoundary>

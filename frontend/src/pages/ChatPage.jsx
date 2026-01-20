@@ -181,12 +181,20 @@ const ChatPage = () => {
     setNewMessage((prev) => prev + emoji.native);
   };
 
+  const handleVoiceCall = () => {
+    if (!channelId || !targetUser) {
+      toast.error("Unable to start call");
+      return;
+    }
+    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&callType=voice`);
+  };
+
   const handleVideoCall = () => {
     if (!channelId || !targetUser) {
       toast.error("Unable to start call");
       return;
     }
-    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}`);
+    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&callType=video`);
   };
 
   if (channelLoading || messagesLoading || !targetUser) {
@@ -221,7 +229,7 @@ const ChatPage = () => {
         <div className="flex gap-1 sm:gap-2">
           <button
             className="btn btn-ghost btn-sm btn-circle"
-            onClick={handleVideoCall}
+            onClick={handleVoiceCall}
             aria-label="Voice call"
           >
             <Phone className="w-4 h-4 sm:w-5 sm:h-5" />

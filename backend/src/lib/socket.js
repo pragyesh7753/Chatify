@@ -1,5 +1,10 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import { getFCMTokenService } from "../services/fcm.service.js";
+import { sendPushNotification } from "./fcm.js";
+import { databases, DATABASE_ID, Query } from "./appwrite.js";
+
+const USERS_COLLECTION_ID = process.env.APPWRITE_USERS_COLLECTION_ID;
 
 let io;
 
@@ -99,16 +104,62 @@ export const initializeSocket = (server) => {
     });
 
     // Handle video call events
-    socket.on("call-user", (data) => {
-      const { to, from, offer, channelId } = data;
+    socket.on("call-user", async (data) => {
+      const { to, from, offer, channelId, callType } = data;
       const recipientSocketId = connectedUsers.get(to);
       
+      // Get caller info
+      let callerName = "Someone";
+      let callerAvatar = null;
+      try {
+        const callerDocs = await databases.listDocuments(DATABASE_ID, USERS_COLLECTION_ID, [
+          Query.equal("$id", from)
+        ]);
+        
+        if (callerDocs.documents.length > 0) {
+          callerName = callerDocs.documents[0].fullName;
+          callerAvatar = callerDocs.documents[0].profilePic;
+        }
+      } catch (error) {
+        console.error("Error fetching caller info:", error);
+      }
+      
       if (recipientSocketId) {
+        // User is online, send via socket
         io.to(recipientSocketId).emit("incoming-call", {
           from,
           offer,
-          channelId
+          channelId,
+          callType,
+          callerName,
+          callerAvatar
         });
+      } else {
+        // User is offline or app is in background, send push notification
+        try {
+          const fcmToken = await getFCMTokenService(to);
+          
+          if (fcmToken) {
+            await sendPushNotification(fcmToken, {
+              title: `Incoming ${callType === "voice" ? "Voice" : "Video"} Call`,
+              body: `${callerName} is calling you`,
+              data: {
+                type: "call",
+                callType,
+                from,
+                channelId,
+                offer: JSON.stringify(offer),
+                callerName,
+                callerAvatar: callerAvatar || ""
+              },
+              link: `/call/${from}?channelId=${channelId}&callType=${callType}&userName=${encodeURIComponent(callerName)}`
+            });
+            
+            console.log(`Push notification sent to ${to} for ${callType} call`);
+          }
+        } catch (error) {
+          console.error("Error sending call notification:", error);
+        }
       }
     });
 

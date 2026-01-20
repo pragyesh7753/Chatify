@@ -11,10 +11,23 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+
+// Check if messaging is supported (HTTPS required)
+let messaging = null;
+try {
+  messaging = getMessaging(app);
+} catch (error) {
+  console.warn('Firebase Messaging not supported (HTTPS required):', error.message);
+}
 
 export const requestNotificationPermission = async () => {
   try {
+    // Check if messaging is available (requires HTTPS)
+    if (!messaging) {
+      console.warn('Firebase Messaging not available (HTTPS required)');
+      return { token: null, permission: 'unsupported', error: 'HTTPS required for notifications' };
+    }
+
     // Check if notifications are supported
     if (!('Notification' in window)) {
       return { token: null, permission: 'unsupported', error: 'Notifications not supported' };
@@ -38,6 +51,10 @@ export const requestNotificationPermission = async () => {
 
 export const onMessageListener = () =>
   new Promise((resolve) => {
+    if (!messaging) {
+      console.warn('Firebase Messaging not available');
+      return;
+    }
     onMessage(messaging, (payload) => {
       resolve(payload);
     });
