@@ -13,6 +13,7 @@ const CallPage = () => {
   const [searchParams] = useSearchParams();
   const channelId = searchParams.get("channelId");
   const targetUserName = searchParams.get("userName");
+  const targetUserAvatar = searchParams.get("userAvatar");
   const callType = searchParams.get("callType") || "video"; // 'voice' or 'video'
   const isIncoming = searchParams.get("incoming") === "true";
   const incomingOffer = searchParams.get("offer");
@@ -675,9 +676,13 @@ const CallPage = () => {
             <div className="text-center">
               <div className="avatar placeholder mb-4">
                 <div className="bg-primary text-primary-content rounded-full w-32">
-                  <span className="text-5xl">
-                    {targetUserName?.charAt(0).toUpperCase() || "?"}
-                  </span>
+                  {targetUserAvatar ? (
+                    <img src={targetUserAvatar} alt={targetUserName} className="rounded-full" />
+                  ) : (
+                    <span className="text-5xl">
+                      {targetUserName?.charAt(0).toUpperCase() || "?"}
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="text-lg">
@@ -775,9 +780,13 @@ const CallPage = () => {
             <div className="flex flex-col items-center gap-4">
               <div className="avatar placeholder">
                 <div className="bg-primary text-primary-content rounded-full w-24">
-                  <span className="text-4xl">
-                    {targetUserName?.charAt(0).toUpperCase() || "?"}
-                  </span>
+                  {targetUserAvatar ? (
+                    <img src={targetUserAvatar} alt={targetUserName} className="rounded-full" />
+                  ) : (
+                    <span className="text-4xl">
+                      {targetUserName?.charAt(0).toUpperCase() || "?"}
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="text-center">

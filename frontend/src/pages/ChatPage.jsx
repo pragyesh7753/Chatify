@@ -186,7 +186,7 @@ const ChatPage = () => {
       toast.error("Unable to start call");
       return;
     }
-    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&callType=voice`);
+    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&userAvatar=${encodeURIComponent(targetUser.profilePic || '')}&callType=voice`);
   };
 
   const handleVideoCall = () => {
@@ -194,7 +194,7 @@ const ChatPage = () => {
       toast.error("Unable to start call");
       return;
     }
-    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&callType=video`);
+    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&userAvatar=${encodeURIComponent(targetUser.profilePic || '')}&callType=video`);
   };
 
   if (channelLoading || messagesLoading || !targetUser) {

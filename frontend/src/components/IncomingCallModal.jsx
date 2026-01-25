@@ -53,7 +53,7 @@ const IncomingCallModal = () => {
 
     // Navigate to call page with all necessary data
     navigate(
-      `/call/${incomingCall.from}?channelId=${incomingCall.channelId}&userName=${encodeURIComponent(incomingCall.callerName)}&callType=${incomingCall.callType}&incoming=true&offer=${encodeURIComponent(JSON.stringify(incomingCall.offer))}`,
+      `/call/${incomingCall.from}?channelId=${incomingCall.channelId}&userName=${encodeURIComponent(incomingCall.callerName)}&userAvatar=${encodeURIComponent(incomingCall.callerAvatar || '')}&callType=${incomingCall.callType}&incoming=true&offer=${encodeURIComponent(JSON.stringify(incomingCall.offer))}`,
       { replace: true }
     );
     
