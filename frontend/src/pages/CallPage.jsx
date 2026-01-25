@@ -126,7 +126,7 @@ const CallPage = () => {
   const createPeerConnection = () => {
     const peerConnection = new RTCPeerConnection(iceServers);
 
-    // Add local stream tracks using transceivers for bidirectional communication
+    // Add local stream tracks to peer connection
     if (localStream) {
       localStream.getTracks().forEach((track) => {
         // Ensure audio tracks are enabled
@@ -134,11 +134,8 @@ const CallPage = () => {
           track.enabled = true;
         }
         console.log(`Adding local track: ${track.kind}, enabled: ${track.enabled}`);
-        // Use addTransceiver instead of addTrack for better control
-        peerConnection.addTransceiver(track, {
-          direction: 'sendrecv',
-          streams: [localStream],
-        });
+        // Use addTrack for simpler and more reliable setup
+        peerConnection.addTrack(track, localStream);
       });
     } else {
       console.error("No local stream available when creating peer connection");
@@ -298,8 +295,11 @@ const CallPage = () => {
             
             console.log("Remote description set, creating answer...");
             
-            // Create answer with proper constraints
-            const answer = await peerConnection.createAnswer();
+            // Create answer with explicit constraints to ensure audio/video
+            const answer = await peerConnection.createAnswer({
+              offerToReceiveAudio: true,
+              offerToReceiveVideo: callType === 'video'
+            });
             await peerConnection.setLocalDescription(answer);
             
             // Log SDP for debugging
@@ -385,8 +385,11 @@ const CallPage = () => {
       setIsCalling(true);
       const peerConnection = createPeerConnection();
 
-      // Create offer with proper modern constraints
-      const offer = await peerConnection.createOffer();
+      // Create offer with explicit constraints to ensure audio/video
+      const offer = await peerConnection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: callType === 'video'
+      });
       await peerConnection.setLocalDescription(offer);
       
       // Log SDP for debugging
@@ -436,8 +439,11 @@ const CallPage = () => {
       
       console.log("Remote description set, creating answer...");
 
-      // Create answer with proper constraints
-      const answer = await peerConnection.createAnswer();
+      // Create answer with explicit constraints to ensure audio/video
+      const answer = await peerConnection.createAnswer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: callType === 'video'
+      });
       await peerConnection.setLocalDescription(answer);
       
       // Log SDP for debugging
