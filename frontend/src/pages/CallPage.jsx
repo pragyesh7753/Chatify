@@ -41,14 +41,19 @@ const CallPage = () => {
   const callType = searchParams.get("callType") || "video";
   const isIncoming = searchParams.get("incoming") === "true";
   const incomingOffer = searchParams.get("offer");
-  
+
   const { socket, isConnected } = useSocket();
   const { authUser } = useAuthUser();
 
   const isVideoCall = callType === "video";
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
-  const [callState, setCallState] = useState({ isCalling: false, isReceiving: false, isAccepted: false, isEnded: false });
+  const [callState, setCallState] = useState({
+    isCalling: false,
+    isReceiving: false,
+    isAccepted: false,
+    isEnded: false
+  });
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(!isVideoCall);
   const [permissionError, setPermissionError] = useState(null);
@@ -60,61 +65,91 @@ const CallPage = () => {
   const peerConnectionRef = useRef(null);
   const incomingCallDataRef = useRef(null);
   const localStreamRef = useRef(null);
+  const mountedRef = useRef(true);
+  const callStartedRef = useRef(false);
+  const incomingCallHandledRef = useRef(false);
 
   const setupRemoteAudio = useCallback((videoElement) => {
-    if (!videoElement) return;
+    if (!videoElement || !mountedRef.current) return;
     videoElement.muted = false;
     videoElement.volume = 1.0;
     if (videoElement.setSinkId) {
-      videoElement.setSinkId('').catch(() => {});
+      videoElement.setSinkId('').catch(() => { });
     }
-    videoElement.play().then(() => setAudioBlocked(false)).catch(() => setAudioBlocked(true));
-  }, []);
-
-  const enableAudioTrack = useCallback((track) => {
-    track.enabled = true;
-    return track;
+    videoElement.play()
+      .then(() => {
+        if (mountedRef.current) setAudioBlocked(false);
+      })
+      .catch(() => {
+        if (mountedRef.current) setAudioBlocked(true);
+      });
   }, []);
 
   const endCall = useCallback(() => {
     if (callState.isEnded) return;
-    setCallState(prev => ({ ...prev, isEnded: true }));
-    
-    socket?.emit("end-call", { to: targetUserId, channelId });
+
+    if (mountedRef.current) {
+      setCallState(prev => ({ ...prev, isEnded: true }));
+    }
+
+    if (socket && targetUserId && channelId) {
+      socket.emit("end-call", { to: targetUserId, channelId });
+    }
 
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
 
-    localStreamRef.current?.getTracks().forEach(track => track.stop());
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+
+    // Clear refs
+    incomingCallDataRef.current = null;
+    callStartedRef.current = false;
+    incomingCallHandledRef.current = false;
 
     toast.success("Call ended", { id: 'call-ended' });
-    setTimeout(() => navigate('/', { replace: true }), 1000);
+    setTimeout(() => {
+      if (mountedRef.current) {
+        navigate('/', { replace: true });
+      }
+    }, 1000);
   }, [callState.isEnded, socket, targetUserId, channelId, navigate]);
 
+  // Initialize local media stream
   useEffect(() => {
     let mounted = true;
+
     const initLocalStream = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia(getMediaConstraints(isVideoCall));
-        stream.getAudioTracks().forEach(enableAudioTrack);
-        
+
+        // Enable all audio tracks immediately
+        stream.getAudioTracks().forEach(track => {
+          track.enabled = true;
+        });
+
         if (!mounted) {
           stream.getTracks().forEach(track => track.stop());
           return;
         }
-        
+
         localStreamRef.current = stream;
         setLocalStream(stream);
+
         if (localVideoRef.current && isVideoCall) {
           localVideoRef.current.srcObject = stream;
         }
       } catch (error) {
         if (!mounted) return;
-        
+
+        console.error("Media access error:", error);
+
         if (error.name === 'NotReadableError' || error.message?.includes('in use')) {
-          toast.error("Camera/microphone is in use. You can still receive audio.", { 
+          toast.error("Camera/microphone is in use. You can still receive audio.", {
             duration: 5000,
             id: 'device-in-use'
           });
@@ -131,125 +166,115 @@ const CallPage = () => {
 
     return () => {
       mounted = false;
-      localStreamRef.current?.getTracks().forEach(track => track.stop());
-      peerConnectionRef.current?.close();
     };
-  }, [isVideoCall, enableAudioTrack]);
+  }, [isVideoCall]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+      }
+    };
+  }, []);
 
   const createPeerConnection = useCallback(() => {
     const peerConnection = new RTCPeerConnection(ICE_SERVERS);
 
-    if (localStream) {
-      localStream.getTracks().forEach((track) => {
-        if (track.kind === 'audio') track.enabled = true;
-        peerConnection.addTrack(track, localStream);
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => {
+        if (track.kind === 'audio') {
+          track.enabled = true;
+        }
+        peerConnection.addTrack(track, localStreamRef.current);
       });
     } else {
+      // Receive-only mode if we don't have local stream
       peerConnection.addTransceiver('audio', { direction: 'recvonly' });
-      if (isVideoCall) peerConnection.addTransceiver('video', { direction: 'recvonly' });
+      if (isVideoCall) {
+        peerConnection.addTransceiver('video', { direction: 'recvonly' });
+      }
     }
 
     peerConnection.ontrack = (event) => {
       const stream = event.streams[0];
-      stream.getAudioTracks().forEach(enableAudioTrack);
-      
-      setRemoteStream(stream);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
-        setupRemoteAudio(remoteVideoRef.current);
-        
-        setTimeout(() => {
-          remoteVideoRef.current?.paused && remoteVideoRef.current.play().catch(() => {});
-        }, 1000);
+
+      // Enable all audio tracks
+      stream.getAudioTracks().forEach(track => {
+        track.enabled = true;
+      });
+
+      if (mountedRef.current) {
+        setRemoteStream(stream);
+
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream;
+          setupRemoteAudio(remoteVideoRef.current);
+
+          // Retry playback after a short delay
+          setTimeout(() => {
+            if (remoteVideoRef.current?.paused && mountedRef.current) {
+              remoteVideoRef.current.play().catch(() => { });
+            }
+          }, 1000);
+        }
       }
     };
 
     peerConnection.onicecandidate = (event) => {
       if (event.candidate && socket) {
-        socket.emit("ice-candidate", { to: targetUserId, candidate: event.candidate, channelId });
+        socket.emit("ice-candidate", {
+          to: targetUserId,
+          candidate: event.candidate,
+          channelId
+        });
       }
     };
 
     peerConnection.onconnectionstatechange = () => {
-      if (!callState.isEnded && peerConnection.connectionState === "failed") endCall();
+      console.log("Connection state:", peerConnection.connectionState);
+
+      if (peerConnection.connectionState === "connected" && mountedRef.current) {
+        toast.success("Call connected", { id: 'call-connected', duration: 2000 });
+      }
+
+      if (!callState.isEnded && peerConnection.connectionState === "failed") {
+        console.error("Peer connection failed");
+        endCall();
+      }
     };
 
     peerConnectionRef.current = peerConnection;
     return peerConnection;
-  }, [localStream, isVideoCall, socket, targetUserId, channelId, callState.isEnded, setupRemoteAudio, enableAudioTrack, endCall]);
-
-  const handleIncomingCallFromUrl = useCallback(async () => {
-    if (!incomingOffer || !localStream || callState.isAccepted) return;
-    
-    try {
-      const offer = JSON.parse(decodeURIComponent(incomingOffer));
-      incomingCallDataRef.current = { from: targetUserId, offer, channelId, callType };
-      
-      const peerConnection = createPeerConnection();
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-      
-      const answer = await peerConnection.createAnswer(getAnswerConstraints(isVideoCall));
-      await peerConnection.setLocalDescription(answer);
-      
-      socket.emit("call-answer", { to: targetUserId, answer, channelId });
-      setCallState(prev => ({ ...prev, isAccepted: true }));
-      toast.success("Call connected", { id: 'call-connected' });
-    } catch {
-      toast.error("Failed to answer call");
-    }
-  }, [incomingOffer, localStream, callState.isAccepted, targetUserId, channelId, callType, isVideoCall, createPeerConnection, socket]);
-
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const handleIncomingCall = ({ from, offer, channelId: incomingChannelId, callType: incomingCallType }) => {
-      incomingCallDataRef.current = { from, offer, channelId: incomingChannelId, callType: incomingCallType };
-      setCallState(prev => ({ ...prev, isReceiving: true }));
-    };
-
-    const handleCallAnswered = async ({ answer }) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-        setCallState(prev => ({ ...prev, isAccepted: true }));
-      }
-    };
-
-    const handleIceCandidate = async ({ candidate }) => {
-      if (peerConnectionRef.current && candidate) {
-        try {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch {
-          // Ignore ICE candidate errors - they're usually harmless
-        }
-      }
-    };
-
-    if (!isIncoming) {
-      socket.on("incoming-call", handleIncomingCall);
-    } else {
-      handleIncomingCallFromUrl();
-    }
-
-    socket.on("call-answered", handleCallAnswered);
-    socket.on("ice-candidate", handleIceCandidate);
-    socket.on("call-ended", endCall);
-
-    return () => {
-      if (!isIncoming) socket.off("incoming-call");
-      socket.off("call-answered");
-      socket.off("ice-candidate");
-      socket.off("call-ended");
-    };
-  }, [socket, isConnected, isIncoming, handleIncomingCallFromUrl, endCall]);
+  }, [isVideoCall, socket, targetUserId, channelId, callState.isEnded, setupRemoteAudio, endCall]);
 
   const startCall = useCallback(async () => {
-    if (!socket || !targetUserId || !localStream) {
-      toast.error(!localStream ? "No media access. Allow camera/microphone." : "Cannot start call");
+    // Prevent duplicate calls
+    if (callStartedRef.current) return;
+
+    if (!socket || !targetUserId) {
+      toast.error("Cannot start call - missing connection info");
+      return;
+    }
+
+    if (!localStreamRef.current) {
+      toast.error("No media access. Please allow camera/microphone.");
       return;
     }
 
     try {
-      setCallState(prev => ({ ...prev, isCalling: true }));
+      callStartedRef.current = true;
+
+      if (mountedRef.current) {
+        setCallState(prev => ({ ...prev, isCalling: true }));
+      }
+
       const peerConnection = createPeerConnection();
       const offer = await peerConnection.createOffer(getAnswerConstraints(isVideoCall));
       await peerConnection.setLocalDescription(offer);
@@ -262,15 +287,142 @@ const CallPage = () => {
         callType,
       });
 
-      toast.success("Calling...");
-    } catch {
+      toast.success("Calling...", { id: 'calling' });
+    } catch (error) {
+      console.error("Failed to start call:", error);
       toast.error("Failed to start call");
-      setCallState(prev => ({ ...prev, isCalling: false }));
+
+      callStartedRef.current = false;
+
+      if (mountedRef.current) {
+        setCallState(prev => ({ ...prev, isCalling: false }));
+      }
     }
-  }, [socket, targetUserId, localStream, createPeerConnection, isVideoCall, authUser, channelId, callType]);
+  }, [socket, targetUserId, createPeerConnection, isVideoCall, authUser, channelId, callType]);
+
+  const handleIncomingCallFromUrl = useCallback(async () => {
+    // Prevent duplicate handling
+    if (incomingCallHandledRef.current) return;
+
+    if (!incomingOffer || !localStreamRef.current) return;
+
+    try {
+      incomingCallHandledRef.current = true;
+
+      const offer = JSON.parse(decodeURIComponent(incomingOffer));
+      incomingCallDataRef.current = {
+        from: targetUserId,
+        offer,
+        channelId,
+        callType
+      };
+
+      const peerConnection = createPeerConnection();
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+      const answer = await peerConnection.createAnswer(getAnswerConstraints(isVideoCall));
+      await peerConnection.setLocalDescription(answer);
+
+      socket.emit("call-answer", { to: targetUserId, answer, channelId });
+
+      if (mountedRef.current) {
+        setCallState(prev => ({ ...prev, isAccepted: true }));
+      }
+
+      toast.success("Call connected", { id: 'call-connected' });
+    } catch (error) {
+      console.error("Failed to answer call from URL:", error);
+      toast.error("Failed to answer call");
+      incomingCallHandledRef.current = false;
+    }
+  }, [incomingOffer, targetUserId, channelId, callType, isVideoCall, createPeerConnection, socket]);
+
+  // Socket event handlers
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleIncomingCall = ({ from, offer, channelId: incomingChannelId, callType: incomingCallType }) => {
+      console.log("Incoming call received");
+      incomingCallDataRef.current = {
+        from,
+        offer,
+        channelId: incomingChannelId,
+        callType: incomingCallType
+      };
+
+      if (mountedRef.current) {
+        setCallState(prev => ({ ...prev, isReceiving: true }));
+      }
+    };
+
+    const handleCallAnswered = async ({ answer }) => {
+      try {
+        if (peerConnectionRef.current && answer) {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+
+          if (mountedRef.current) {
+            setCallState(prev => ({ ...prev, isAccepted: true }));
+          }
+        }
+      } catch (error) {
+        console.error("Error handling call answer:", error);
+        toast.error("Failed to establish connection");
+      }
+    };
+
+    const handleIceCandidate = async ({ candidate }) => {
+      try {
+        if (peerConnectionRef.current && candidate) {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+      } catch (error) {
+        // ICE candidate errors are usually harmless, log but don't show to user
+        console.warn("ICE candidate error:", error);
+      }
+    };
+
+    // Only listen for incoming calls if this is not already an incoming call
+    if (!isIncoming) {
+      socket.on("incoming-call", handleIncomingCall);
+    }
+
+    socket.on("call-answered", handleCallAnswered);
+    socket.on("ice-candidate", handleIceCandidate);
+    socket.on("call-ended", endCall);
+
+    return () => {
+      socket.off("incoming-call", handleIncomingCall);
+      socket.off("call-answered", handleCallAnswered);
+      socket.off("ice-candidate", handleIceCandidate);
+      socket.off("call-ended", endCall);
+    };
+  }, [socket, isConnected, isIncoming, endCall]);
+
+  // Handle incoming call from URL parameter
+  useEffect(() => {
+    if (isIncoming && localStream && !incomingCallHandledRef.current) {
+      handleIncomingCallFromUrl();
+    }
+  }, [isIncoming, localStream, handleIncomingCallFromUrl]);
+
+  // Auto-start outgoing call when ready
+  useEffect(() => {
+    const shouldStartCall =
+      localStream &&
+      targetUserId &&
+      !callStartedRef.current &&
+      !callState.isCalling &&
+      !callState.isAccepted &&
+      !callState.isReceiving &&
+      !isIncoming;
+
+    if (shouldStartCall) {
+      startCall();
+    }
+  }, [localStream, targetUserId, isIncoming, callState.isCalling, callState.isAccepted, callState.isReceiving, startCall]);
 
   const answerCall = useCallback(async () => {
-    if (!incomingCallDataRef.current || !localStream || !socket) {
+    if (!incomingCallDataRef.current || !localStreamRef.current || !socket) {
       toast.error("Cannot answer call - please try again");
       return;
     }
@@ -278,19 +430,24 @@ const CallPage = () => {
     try {
       const { from, offer, channelId: incomingChannelId } = incomingCallDataRef.current;
       const peerConnection = createPeerConnection();
+
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-      
+
       const answer = await peerConnection.createAnswer(getAnswerConstraints(isVideoCall));
       await peerConnection.setLocalDescription(answer);
 
       socket.emit("call-answer", { to: from, answer, channelId: incomingChannelId });
 
-      setCallState(prev => ({ ...prev, isReceiving: false, isAccepted: true }));
+      if (mountedRef.current) {
+        setCallState(prev => ({ ...prev, isReceiving: false, isAccepted: true }));
+      }
+
       toast.success("Call connected");
-    } catch {
+    } catch (error) {
+      console.error("Failed to answer call:", error);
       toast.error("Failed to answer call");
     }
-  }, [localStream, socket, createPeerConnection, isVideoCall]);
+  }, [socket, createPeerConnection, isVideoCall]);
 
   const rejectCall = useCallback(() => {
     if (incomingCallDataRef.current?.from && socket) {
@@ -299,57 +456,78 @@ const CallPage = () => {
         channelId: incomingCallDataRef.current.channelId,
       });
     }
-    setCallState(prev => ({ ...prev, isReceiving: false }));
+
+    incomingCallDataRef.current = null;
+
+    if (mountedRef.current) {
+      setCallState(prev => ({ ...prev, isReceiving: false }));
+    }
+
     toast.error("Call rejected", { id: 'call-rejected' });
     navigate('/', { replace: true });
   }, [socket, navigate]);
 
   const toggleTrack = useCallback((trackType) => {
-    if (!localStream) {
+    if (!localStreamRef.current) {
       toast.error(`No ${trackType} stream available`);
       return;
     }
-    
-    const tracks = trackType === 'audio' ? localStream.getAudioTracks() : localStream.getVideoTracks();
+
+    const tracks = trackType === 'audio'
+      ? localStreamRef.current.getAudioTracks()
+      : localStreamRef.current.getVideoTracks();
+
     const track = tracks[0];
-    
+
     if (!track) {
       toast.error(`No ${trackType} track available`);
       return;
     }
-    
+
     track.enabled = !track.enabled;
     const isOff = !track.enabled;
-    
+
+    // Update the track in peer connection as well
     if (peerConnectionRef.current) {
       const sender = peerConnectionRef.current.getSenders().find(s => s.track?.kind === trackType);
-      if (sender?.track) sender.track.enabled = track.enabled;
+      if (sender?.track) {
+        sender.track.enabled = track.enabled;
+      }
     }
-    
+
     if (trackType === 'audio') {
-      setIsMuted(isOff);
-      toast.success(isOff ? "Microphone muted" : "Microphone unmuted", { duration: 1500, id: 'mute-toggle' });
+      if (mountedRef.current) {
+        setIsMuted(isOff);
+      }
+      toast.success(isOff ? "Microphone muted" : "Microphone unmuted", {
+        duration: 1500,
+        id: 'mute-toggle'
+      });
     } else {
-      setIsVideoOff(isOff);
-      toast.success(isOff ? "Camera off" : "Camera on", { duration: 1500, id: 'video-toggle' });
+      if (mountedRef.current) {
+        setIsVideoOff(isOff);
+      }
+      toast.success(isOff ? "Camera off" : "Camera on", {
+        duration: 1500,
+        id: 'video-toggle'
+      });
     }
-  }, [localStream]);
+  }, []);
 
   const toggleMute = useCallback(() => toggleTrack('audio'), [toggleTrack]);
   const toggleVideo = useCallback(() => toggleTrack('video'), [toggleTrack]);
 
+  // Sync mute state with audio track
   useEffect(() => {
     const audioTrack = localStream?.getAudioTracks()[0];
-    if (audioTrack) setIsMuted(!audioTrack.enabled);
+    if (audioTrack && mountedRef.current) {
+      setIsMuted(!audioTrack.enabled);
+    }
   }, [localStream]);
 
+  // Setup remote stream when it changes
   useEffect(() => {
-    const shouldStartCall = localStream && targetUserId && !callState.isCalling && !callState.isAccepted && !callState.isReceiving && !isIncoming;
-    if (shouldStartCall) startCall();
-  }, [localStream, targetUserId, isIncoming, callState.isCalling, callState.isAccepted, callState.isReceiving, startCall]);
-
-  useEffect(() => {
-    if (remoteStream && remoteVideoRef.current) {
+    if (remoteStream && remoteVideoRef.current && mountedRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
       setupRemoteAudio(remoteVideoRef.current);
     }
@@ -358,7 +536,8 @@ const CallPage = () => {
   const getCallStatusText = () => {
     if (callState.isCalling) return "Calling...";
     if (callState.isReceiving) return "Incoming call...";
-    return "Waiting for connection...";
+    if (callState.isAccepted) return "Connected";
+    return "Connecting...";
   };
 
   const renderUserAvatar = (size = "w-32", textSize = "text-5xl") => (
@@ -415,7 +594,13 @@ const CallPage = () => {
         {/* Local Video (Picture-in-Picture) */}
         {isVideoCall && (
           <div className="absolute top-4 right-4 w-48 h-36 bg-base-300 rounded-lg overflow-hidden shadow-xl border-2 border-base-100">
-            <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
             {isVideoOff && (
               <div className="absolute inset-0 bg-base-300 flex items-center justify-center">
                 <VideoOff className="w-8 h-8" />
@@ -459,18 +644,33 @@ const CallPage = () => {
             <button
               onClick={() => {
                 if (remoteVideoRef.current) {
-                  remoteVideoRef.current.play().then(() => {
-                    setAudioBlocked(false);
-                    toast.success('Audio enabled');
-                  }).catch(() => {
-                    toast.error('Could not enable audio');
-                  });
+                  remoteVideoRef.current.play()
+                    .then(() => {
+                      if (mountedRef.current) {
+                        setAudioBlocked(false);
+                        toast.success('Audio enabled');
+                      }
+                    })
+                    .catch(() => {
+                      toast.error('Could not enable audio');
+                    });
                 }
               }}
               className="btn btn-lg btn-primary gap-2 animate-pulse"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                />
               </svg>
               Tap to Enable Audio
             </button>
