@@ -11,24 +11,28 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
   ],
-  sdpSemantics: 'unified-plan',
+  iceCandidatePoolSize: 10,
 };
 
 const AUDIO_CONSTRAINTS = {
   echoCancellation: true,
   noiseSuppression: true,
-  autoGainControl: true
+  autoGainControl: true,
+  sampleRate: 48000,
+  channelCount: 1
 };
 
 const getMediaConstraints = (isVideo) => ({
-  video: isVideo,
+  video: isVideo ? {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30 }
+  } : false,
   audio: AUDIO_CONSTRAINTS
-});
-
-const getAnswerConstraints = (isVideo) => ({
-  offerToReceiveAudio: true,
-  offerToReceiveVideo: isVideo
 });
 
 const CallPage = () => {
@@ -68,25 +72,41 @@ const CallPage = () => {
   const mountedRef = useRef(true);
   const callStartedRef = useRef(false);
   const incomingCallHandledRef = useRef(false);
+  const iceCandidatesQueue = useRef([]);
+  const isNegotiatingRef = useRef(false);
 
   const setupRemoteAudio = useCallback((videoElement) => {
     if (!videoElement || !mountedRef.current) return;
+
+    console.log("Setting up remote audio");
     videoElement.muted = false;
     videoElement.volume = 1.0;
+    videoElement.autoplay = true;
+
     if (videoElement.setSinkId) {
-      videoElement.setSinkId('').catch(() => { });
-    }
-    videoElement.play()
-      .then(() => {
-        if (mountedRef.current) setAudioBlocked(false);
-      })
-      .catch(() => {
-        if (mountedRef.current) setAudioBlocked(true);
+      videoElement.setSinkId('').catch((err) => {
+        console.warn("Failed to set audio output device:", err);
       });
+    }
+
+    const playPromise = videoElement.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log("Remote audio playback started successfully");
+          if (mountedRef.current) setAudioBlocked(false);
+        })
+        .catch((err) => {
+          console.error("Remote audio playback failed:", err);
+          if (mountedRef.current) setAudioBlocked(true);
+        });
+    }
   }, []);
 
   const endCall = useCallback(() => {
     if (callState.isEnded) return;
+
+    console.log("Ending call");
 
     if (mountedRef.current) {
       setCallState(prev => ({ ...prev, isEnded: true }));
@@ -102,7 +122,10 @@ const CallPage = () => {
     }
 
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log(`Stopped ${track.kind} track`);
+      });
       localStreamRef.current = null;
     }
 
@@ -110,6 +133,8 @@ const CallPage = () => {
     incomingCallDataRef.current = null;
     callStartedRef.current = false;
     incomingCallHandledRef.current = false;
+    iceCandidatesQueue.current = [];
+    isNegotiatingRef.current = false;
 
     toast.success("Call ended", { id: 'call-ended' });
     setTimeout(() => {
@@ -125,11 +150,19 @@ const CallPage = () => {
 
     const initLocalStream = async () => {
       try {
+        console.log("Requesting media access:", getMediaConstraints(isVideoCall));
         const stream = await navigator.mediaDevices.getUserMedia(getMediaConstraints(isVideoCall));
 
-        // Enable all audio tracks immediately
+        console.log("Media stream obtained:", {
+          audioTracks: stream.getAudioTracks().length,
+          videoTracks: stream.getVideoTracks().length
+        });
+
+        // Enable and configure all audio tracks
         stream.getAudioTracks().forEach(track => {
           track.enabled = true;
+          console.log("Audio track settings:", track.getSettings());
+          console.log("Audio track constraints:", track.getConstraints());
         });
 
         if (!mounted) {
@@ -185,16 +218,38 @@ const CallPage = () => {
   }, []);
 
   const createPeerConnection = useCallback(() => {
+    console.log("Creating peer connection");
     const peerConnection = new RTCPeerConnection(ICE_SERVERS);
 
+    // CRITICAL FIX: Add tracks BEFORE creating offer/answer
     if (localStreamRef.current) {
+      console.log("Adding local tracks to peer connection");
       localStreamRef.current.getTracks().forEach((track) => {
+        console.log(`Adding ${track.kind} track, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+
+        // CRITICAL: Ensure audio is enabled
         if (track.kind === 'audio') {
           track.enabled = true;
         }
-        peerConnection.addTrack(track, localStreamRef.current);
+
+        const sender = peerConnection.addTrack(track, localStreamRef.current);
+
+        // CRITICAL FIX: Configure sender parameters for better audio
+        if (track.kind === 'audio' && sender) {
+          const parameters = sender.getParameters();
+          if (!parameters.encodings) {
+            parameters.encodings = [{}];
+          }
+          // Ensure audio is not degraded
+          parameters.encodings[0].maxBitrate = 128000; // 128 kbps for audio
+          parameters.encodings[0].priority = 'high';
+          sender.setParameters(parameters).catch(err => {
+            console.warn("Failed to set sender parameters:", err);
+          });
+        }
       });
     } else {
+      console.log("No local stream, creating receive-only transceivers");
       // Receive-only mode if we don't have local stream
       peerConnection.addTransceiver('audio', { direction: 'recvonly' });
       if (isVideoCall) {
@@ -203,11 +258,18 @@ const CallPage = () => {
     }
 
     peerConnection.ontrack = (event) => {
+      console.log("Received remote track:", event.track.kind, "streams:", event.streams.length);
       const stream = event.streams[0];
 
-      // Enable all audio tracks
+      // CRITICAL: Ensure all audio tracks are enabled
       stream.getAudioTracks().forEach(track => {
+        console.log(`Remote audio track: enabled=${track.enabled}, muted=${track.muted}, readyState=${track.readyState}`);
         track.enabled = true;
+
+        // Listen for mute/unmute events
+        track.onmute = () => console.log("Remote audio track muted");
+        track.onunmute = () => console.log("Remote audio track unmuted");
+        track.onended = () => console.log("Remote audio track ended");
       });
 
       if (mountedRef.current) {
@@ -229,12 +291,27 @@ const CallPage = () => {
 
     peerConnection.onicecandidate = (event) => {
       if (event.candidate && socket) {
+        console.log("Sending ICE candidate");
         socket.emit("ice-candidate", {
           to: targetUserId,
           candidate: event.candidate,
           channelId
         });
+      } else if (!event.candidate) {
+        console.log("ICE gathering complete");
       }
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", peerConnection.iceConnectionState);
+    };
+
+    peerConnection.onicegatheringstatechange = () => {
+      console.log("ICE gathering state:", peerConnection.iceGatheringState);
+    };
+
+    peerConnection.onsignalingstatechange = () => {
+      console.log("Signaling state:", peerConnection.signalingState);
     };
 
     peerConnection.onconnectionstatechange = () => {
@@ -242,11 +319,42 @@ const CallPage = () => {
 
       if (peerConnection.connectionState === "connected" && mountedRef.current) {
         toast.success("Call connected", { id: 'call-connected', duration: 2000 });
+
+        // CRITICAL FIX: Verify audio tracks after connection
+        if (localStreamRef.current) {
+          const audioTracks = localStreamRef.current.getAudioTracks();
+          audioTracks.forEach(track => {
+            console.log(`Local audio after connection: enabled=${track.enabled}, muted=${track.muted}`);
+          });
+        }
       }
 
       if (!callState.isEnded && peerConnection.connectionState === "failed") {
         console.error("Peer connection failed");
         endCall();
+      }
+    };
+
+    // CRITICAL FIX: Handle negotiation needed
+    peerConnection.onnegotiationneeded = async () => {
+      try {
+        if (isNegotiatingRef.current) {
+          console.log("Already negotiating, skipping");
+          return;
+        }
+
+        console.log("Negotiation needed");
+        isNegotiatingRef.current = true;
+
+        // Only renegotiate if we're already connected and this is not the initial setup
+        if (peerConnection.signalingState !== "stable") {
+          console.log("Not in stable state, skipping renegotiation");
+          isNegotiatingRef.current = false;
+          return;
+        }
+      } catch (err) {
+        console.error("Negotiation error:", err);
+        isNegotiatingRef.current = false;
       }
     };
 
@@ -275,10 +383,29 @@ const CallPage = () => {
         setCallState(prev => ({ ...prev, isCalling: true }));
       }
 
+      // CRITICAL FIX: Ensure audio is enabled before creating peer connection
+      const audioTracks = localStreamRef.current.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = true;
+        console.log(`Pre-call audio check: enabled=${track.enabled}, readyState=${track.readyState}`);
+      });
+
       const peerConnection = createPeerConnection();
-      const offer = await peerConnection.createOffer(getAnswerConstraints(isVideoCall));
+
+      // CRITICAL FIX: Create offer with proper constraints
+      const offerOptions = {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: isVideoCall,
+        voiceActivityDetection: true
+      };
+
+      console.log("Creating offer with options:", offerOptions);
+      const offer = await peerConnection.createOffer(offerOptions);
+
+      console.log("Setting local description");
       await peerConnection.setLocalDescription(offer);
 
+      console.log("Emitting call-user event");
       socket.emit("call-user", {
         to: targetUserId,
         from: authUser._id,
@@ -309,6 +436,7 @@ const CallPage = () => {
     try {
       incomingCallHandledRef.current = true;
 
+      console.log("Handling incoming call from URL");
       const offer = JSON.parse(decodeURIComponent(incomingOffer));
       incomingCallDataRef.current = {
         from: targetUserId,
@@ -317,18 +445,48 @@ const CallPage = () => {
         callType
       };
 
+      // CRITICAL FIX: Ensure audio is enabled before answering
+      const audioTracks = localStreamRef.current.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = true;
+        console.log(`Pre-answer audio check: enabled=${track.enabled}, readyState=${track.readyState}`);
+      });
+
       const peerConnection = createPeerConnection();
+
+      console.log("Setting remote description (offer)");
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
-      const answer = await peerConnection.createAnswer(getAnswerConstraints(isVideoCall));
+      // CRITICAL FIX: Process queued ICE candidates if any
+      while (iceCandidatesQueue.current.length > 0) {
+        const candidate = iceCandidatesQueue.current.shift();
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.warn("Failed to add queued ICE candidate:", err);
+        }
+      }
+
+      const answerOptions = {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: isVideoCall,
+        voiceActivityDetection: true
+      };
+
+      console.log("Creating answer with options:", answerOptions);
+      const answer = await peerConnection.createAnswer(answerOptions);
+
+      console.log("Setting local description (answer)");
       await peerConnection.setLocalDescription(answer);
 
+      console.log("Emitting call-answer event");
       socket.emit("call-answer", { to: targetUserId, answer, channelId });
 
       if (mountedRef.current) {
         setCallState(prev => ({ ...prev, isAccepted: true }));
       }
 
+      isNegotiatingRef.current = false;
       toast.success("Call connected", { id: 'call-connected' });
     } catch (error) {
       console.error("Failed to answer call from URL:", error);
@@ -342,7 +500,7 @@ const CallPage = () => {
     if (!socket || !isConnected) return;
 
     const handleIncomingCall = ({ from, offer, channelId: incomingChannelId, callType: incomingCallType }) => {
-      console.log("Incoming call received");
+      console.log("Incoming call received from:", from);
       incomingCallDataRef.current = {
         from,
         offer,
@@ -357,12 +515,26 @@ const CallPage = () => {
 
     const handleCallAnswered = async ({ answer }) => {
       try {
+        console.log("Call answered by remote peer");
         if (peerConnectionRef.current && answer) {
+          console.log("Setting remote description (answer)");
           await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+
+          // CRITICAL FIX: Process queued ICE candidates
+          while (iceCandidatesQueue.current.length > 0) {
+            const candidate = iceCandidatesQueue.current.shift();
+            try {
+              await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (err) {
+              console.warn("Failed to add queued ICE candidate:", err);
+            }
+          }
 
           if (mountedRef.current) {
             setCallState(prev => ({ ...prev, isAccepted: true }));
           }
+
+          isNegotiatingRef.current = false;
         }
       } catch (error) {
         console.error("Error handling call answer:", error);
@@ -372,11 +544,19 @@ const CallPage = () => {
 
     const handleIceCandidate = async ({ candidate }) => {
       try {
+        console.log("Received ICE candidate");
         if (peerConnectionRef.current && candidate) {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+          // CRITICAL FIX: Queue candidates if remote description not set yet
+          if (peerConnectionRef.current.remoteDescription) {
+            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log("ICE candidate added successfully");
+          } else {
+            console.log("Queueing ICE candidate (remote description not set)");
+            iceCandidatesQueue.current.push(candidate);
+          }
         }
       } catch (error) {
-        // ICE candidate errors are usually harmless, log but don't show to user
+        // ICE candidate errors are usually harmless
         console.warn("ICE candidate error:", error);
       }
     };
@@ -428,20 +608,51 @@ const CallPage = () => {
     }
 
     try {
+      console.log("Answering incoming call");
       const { from, offer, channelId: incomingChannelId } = incomingCallDataRef.current;
+
+      // CRITICAL FIX: Ensure audio is enabled before answering
+      const audioTracks = localStreamRef.current.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = true;
+        console.log(`Pre-answer audio check: enabled=${track.enabled}, readyState=${track.readyState}`);
+      });
+
       const peerConnection = createPeerConnection();
 
+      console.log("Setting remote description (offer)");
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
-      const answer = await peerConnection.createAnswer(getAnswerConstraints(isVideoCall));
+      // CRITICAL FIX: Process queued ICE candidates
+      while (iceCandidatesQueue.current.length > 0) {
+        const candidate = iceCandidatesQueue.current.shift();
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.warn("Failed to add queued ICE candidate:", err);
+        }
+      }
+
+      const answerOptions = {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: isVideoCall,
+        voiceActivityDetection: true
+      };
+
+      console.log("Creating answer");
+      const answer = await peerConnection.createAnswer(answerOptions);
+
+      console.log("Setting local description (answer)");
       await peerConnection.setLocalDescription(answer);
 
+      console.log("Emitting call-answer event");
       socket.emit("call-answer", { to: from, answer, channelId: incomingChannelId });
 
       if (mountedRef.current) {
         setCallState(prev => ({ ...prev, isReceiving: false, isAccepted: true }));
       }
 
+      isNegotiatingRef.current = false;
       toast.success("Call connected");
     } catch (error) {
       console.error("Failed to answer call:", error);
@@ -450,6 +661,7 @@ const CallPage = () => {
   }, [socket, createPeerConnection, isVideoCall]);
 
   const rejectCall = useCallback(() => {
+    console.log("Rejecting call");
     if (incomingCallDataRef.current?.from && socket) {
       socket.emit("end-call", {
         to: incomingCallDataRef.current.from,
@@ -487,11 +699,14 @@ const CallPage = () => {
     track.enabled = !track.enabled;
     const isOff = !track.enabled;
 
-    // Update the track in peer connection as well
+    console.log(`Toggle ${trackType}: enabled=${track.enabled}`);
+
+    // CRITICAL FIX: Update the sender's track enabled state
     if (peerConnectionRef.current) {
       const sender = peerConnectionRef.current.getSenders().find(s => s.track?.kind === trackType);
       if (sender?.track) {
         sender.track.enabled = track.enabled;
+        console.log(`Updated sender ${trackType} track: enabled=${sender.track.enabled}`);
       }
     }
 
@@ -528,6 +743,7 @@ const CallPage = () => {
   // Setup remote stream when it changes
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current && mountedRef.current) {
+      console.log("Setting up remote stream");
       remoteVideoRef.current.srcObject = remoteStream;
       setupRemoteAudio(remoteVideoRef.current);
     }
