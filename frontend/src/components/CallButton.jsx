@@ -1,5 +1,4 @@
 import { Phone, Video } from "lucide-react";
-import PropTypes from "prop-types";
 
 /**
  * Call button component for initiating audio/video calls
@@ -31,12 +30,6 @@ const CallButton = ({ onCall, disabled = false, className = "" }) => {
       </button>
     </div>
   );
-};
-
-CallButton.propTypes = {
-  onCall: PropTypes.func.isRequired,
-  disabled: PropTypes.bool,
-  className: PropTypes.string
 };
 
 export default CallButton;

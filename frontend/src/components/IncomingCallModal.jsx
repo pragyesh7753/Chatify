@@ -1,6 +1,5 @@
 import { Phone, PhoneOff, Video } from "lucide-react";
 import { useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 
 /**
  * Modal component for displaying incoming call notification
@@ -102,17 +101,6 @@ const IncomingCallModal = ({
       </div>
     </>
   );
-};
-
-IncomingCallModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  callerInfo: PropTypes.shape({
-    fullName: PropTypes.string,
-    profilePic: PropTypes.string
-  }),
-  callType: PropTypes.oneOf(["audio", "video"]).isRequired,
-  onAccept: PropTypes.func.isRequired,
-  onReject: PropTypes.func.isRequired
 };
 
 export default IncomingCallModal;

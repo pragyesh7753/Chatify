@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react";
-import PropTypes from "prop-types";
 
 /**
  * Call window component for active audio/video calls
@@ -163,19 +162,6 @@ const CallWindow = ({
       </div>
     </div>
   );
-};
-
-CallWindow.propTypes = {
-  localStream: PropTypes.object,
-  remoteStream: PropTypes.object,
-  callType: PropTypes.oneOf(["audio", "video"]).isRequired,
-  remoteUserInfo: PropTypes.shape({
-    fullName: PropTypes.string,
-    profilePic: PropTypes.string
-  }),
-  onEndCall: PropTypes.func.isRequired,
-  onToggleAudio: PropTypes.func.isRequired,
-  onToggleVideo: PropTypes.func.isRequired
 };
 
 export default CallWindow;
