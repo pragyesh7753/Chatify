@@ -41,6 +41,7 @@ const ChatPage = () => {
   });
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const callTimeoutRef = useRef(null);
 
   const { authUser } = useAuthUser();
   const { socket, isConnected } = useSocket();
@@ -256,6 +257,15 @@ const ChatPage = () => {
         }
       });
 
+      // Set timeout for unanswered call (45 seconds)
+      callTimeoutRef.current = setTimeout(() => {
+        if (callState.isInCall && !callState.callId) {
+          // Call was not accepted within timeout period
+          toast.error("Call timeout - no answer");
+          endCall();
+        }
+      }, 45000);
+
       toast.success(`Calling ${targetUser.fullName}...`);
     } catch (error) {
       console.error("Error initiating call:", error);
@@ -348,6 +358,12 @@ const ChatPage = () => {
    * End an active call
    */
   const endCall = useCallback(() => {
+    // Clear call timeout if it exists
+    if (callTimeoutRef.current) {
+      clearTimeout(callTimeoutRef.current);
+      callTimeoutRef.current = null;
+    }
+
     if (callState.callId && socket) {
       socket.emit("end-call", {
         callId: callState.callId,
@@ -394,6 +410,12 @@ const ChatPage = () => {
     // Handle call accepted
     const handleCallAccepted = async (data) => {
       console.log("Call accepted:", data);
+      
+      // Clear call timeout
+      if (callTimeoutRef.current) {
+        clearTimeout(callTimeoutRef.current);
+        callTimeoutRef.current = null;
+      }
       
       setCallState(prev => ({
         ...prev,

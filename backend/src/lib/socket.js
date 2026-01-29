@@ -148,6 +148,12 @@ export const initializeSocket = (server) => {
         return;
       }
 
+      // Validate that the user accepting is the intended receiver
+      if (socket.userId !== call.receiverId) {
+        socket.emit("call-failed", { reason: "Unauthorized" });
+        return;
+      }
+
       // Update call status
       call.status = "active";
       activeCalls.set(callId, call);
@@ -171,6 +177,11 @@ export const initializeSocket = (server) => {
       
       if (!call) return;
 
+      // Validate that the user rejecting is the intended receiver
+      if (socket.userId !== call.receiverId) {
+        return;
+      }
+
       const callerSocketId = connectedUsers.get(call.callerId);
       
       if (callerSocketId) {
@@ -190,6 +201,13 @@ export const initializeSocket = (server) => {
 
     // Handle WebRTC offer
     socket.on("offer", ({ to, offer, callId }) => {
+      const call = activeCalls.get(callId);
+      
+      // Validate call exists and sender is a participant
+      if (!call || socket.userId !== call.callerId) {
+        return;
+      }
+      
       const receiverSocketId = connectedUsers.get(to);
       
       if (receiverSocketId) {
@@ -205,6 +223,13 @@ export const initializeSocket = (server) => {
 
     // Handle WebRTC answer
     socket.on("answer", ({ to, answer, callId }) => {
+      const call = activeCalls.get(callId);
+      
+      // Validate call exists and sender is a participant
+      if (!call || socket.userId !== call.receiverId) {
+        return;
+      }
+      
       const callerSocketId = connectedUsers.get(to);
       
       if (callerSocketId) {
@@ -220,6 +245,13 @@ export const initializeSocket = (server) => {
 
     // Handle ICE candidates
     socket.on("ice-candidate", ({ to, candidate, callId }) => {
+      const call = activeCalls.get(callId);
+      
+      // Validate call exists and sender is a participant
+      if (!call || (socket.userId !== call.callerId && socket.userId !== call.receiverId)) {
+        return;
+      }
+      
       const targetSocketId = connectedUsers.get(to);
       
       if (targetSocketId) {
@@ -236,6 +268,11 @@ export const initializeSocket = (server) => {
       const call = activeCalls.get(callId);
       
       if (call) {
+        // Validate that user is a participant in the call
+        if (socket.userId !== call.callerId && socket.userId !== call.receiverId) {
+          return;
+        }
+        
         // Determine the other participant
         const otherUserId = call.callerId === socket.userId ? call.receiverId : call.callerId;
         const otherSocketId = connectedUsers.get(to || otherUserId);

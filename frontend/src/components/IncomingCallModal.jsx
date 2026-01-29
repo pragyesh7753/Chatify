@@ -1,10 +1,8 @@
 import { Phone, PhoneOff, Video } from "lucide-react";
-import { useEffect, useRef } from "react";
 
 /**
  * Modal component for displaying incoming call notification
  * Shows caller information and provides Accept/Reject buttons
- * Includes a ringing sound effect
  */
 const IncomingCallModal = ({ 
   isOpen, 
@@ -13,37 +11,10 @@ const IncomingCallModal = ({
   onAccept, 
   onReject 
 }) => {
-  const ringtoneRef = useRef(null);
-
-  // Play ringtone when modal opens
-  useEffect(() => {
-    if (isOpen && ringtoneRef.current) {
-      ringtoneRef.current.play().catch(error => {
-        console.log("Could not play ringtone:", error);
-      });
-    } else if (!isOpen && ringtoneRef.current) {
-      ringtoneRef.current.pause();
-      ringtoneRef.current.currentTime = 0;
-    }
-
-    return () => {
-      if (ringtoneRef.current) {
-        ringtoneRef.current.pause();
-        ringtoneRef.current.currentTime = 0;
-      }
-    };
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Ringtone audio element */}
-      <audio ref={ringtoneRef} loop>
-        <source src="/ringtone.mp3" type="audio/mpeg" />
-      </audio>
-
-      {/* Modal overlay */}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
         <div className="bg-base-100 rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
           {/* Call type icon */}

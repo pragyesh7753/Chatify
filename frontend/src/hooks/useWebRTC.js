@@ -1,6 +1,25 @@
 import { useRef, useCallback, useEffect } from "react";
 import { useSocket } from "./useSocket";
 
+// WebRTC configuration with Google STUN server (outside component to prevent recreation)
+const RTC_CONFIG = {
+  iceServers: [
+    {
+      urls: [
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302",
+        "stun:stun2.l.google.com:19302"
+      ]
+    }
+    // TURN servers can be added here if needed:
+    // {
+    //   urls: "turn:your-turn-server.com:3478",
+    //   username: "username",
+    //   credential: "password"
+    // }
+  ]
+};
+
 /**
  * Custom React hook for managing WebRTC peer connections
  * Handles the complete WebRTC lifecycle including:
@@ -21,25 +40,6 @@ const useWebRTC = () => {
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const iceCandidatesQueueRef = useRef([]);
-  
-  // WebRTC configuration with Google STUN server
-  const rtcConfig = {
-    iceServers: [
-      {
-        urls: [
-          "stun:stun.l.google.com:19302",
-          "stun:stun1.l.google.com:19302",
-          "stun:stun2.l.google.com:19302"
-        ]
-      }
-      // TURN servers can be added here if needed:
-      // {
-      //   urls: "turn:your-turn-server.com:3478",
-      //   username: "username",
-      //   credential: "password"
-      // }
-    ]
-  };
 
   /**
    * Get user media (camera and microphone)
@@ -85,7 +85,7 @@ const useWebRTC = () => {
         return peerConnectionRef.current;
       }
 
-      const pc = new RTCPeerConnection(rtcConfig);
+      const pc = new RTCPeerConnection(RTC_CONFIG);
       peerConnectionRef.current = pc;
 
       // Handle ICE candidates
