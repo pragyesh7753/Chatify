@@ -1,6 +1,6 @@
 <div align="center">
 	<h1>✨ Chatify ✨</h1>
-	<p><strong>Real‑time chat & video calling web app with onboarding, friend system, and theming</strong></p>
+	<p><strong>Real‑time chat web app with onboarding, friend system, and theming</strong></p>
 	<img src="frontend/public/screenshot-for-readme.png" alt="Chatify Screenshot" width="850" />
 	<br/>
 	<br/>
@@ -24,11 +24,10 @@ Chatify is a full‑stack MERN application that lets authenticated users:
 3. Search for users by username & send friend requests
 4. Accept requests and manage a friends list
 5. Start 1:1 real‑time chats (Socket.io)
-6. Launch instant WebRTC video calls directly from a chat
-7. Persist user state & relationships in Appwrite
-8. Enjoy theme customization (Zustand + DaisyUI/Tailwind)
+6. Persist user state & relationships in Appwrite
+7. Enjoy theme customization (Zustand + DaisyUI/Tailwind)
 
-Backend is deployed on Railway and frontend served via Vercel with custom domain. Socket.io powers real-time messaging and WebRTC enables peer-to-peer video calls.
+Backend is deployed on Railway and frontend served via Vercel with custom domain. Socket.io powers real-time messaging.
 
 ## 🧩 Tech Stack
 Frontend:
@@ -38,7 +37,6 @@ Frontend:
 - TanStack Query (server state & caching)
 - Zustand (lightweight client state)
 - Socket.io Client (real-time messaging)
-- WebRTC (peer-to-peer video calls)
 - Axios (API layer) & react-hot-toast (UX feedback)
 - Vite PWA (Progressive Web App support)
 
@@ -67,7 +65,6 @@ Dev/Deployment:
 - Profile picture upload with Cloudinary
 - Friend system (search users by username, send & accept requests, list friends)
 - Real‑time chat with Socket.io (1:1 channels, typing indicators, online status)
-- WebRTC-based peer-to-peer video calling with camera/mic controls
 - Theming & persistence via localStorage (20+ DaisyUI themes)
 - Robust Axios instance with request/response interceptors & error logging
 - Production‑aware CORS & cookie settings (SameSite, secure flags)
@@ -109,13 +106,10 @@ chatify/
 3. `PUT /api/users/friend-request/:id/accept` marks accepted & updates both users' friend arrays
 4. Friends listed via `GET /api/users/friends`
 
-## 💬 Chat & 📹 Video
+## 💬 Chat
 - Real-time messaging: Socket.io with channel-based rooms (channelId = sorted user IDs)
 - Messages stored in Appwrite messages collection
 - Typing indicators and online status via Socket.io events
-- Video call: WebRTC peer-to-peer connection with Socket.io for signaling
-- Call controls: mute/unmute, video on/off, end call
-- STUN servers for NAT traversal
 
 ## ⚙️ Environment Variables
 Create `backend/.env`:
@@ -237,7 +231,7 @@ Utility:
 Currently no automated tests. Suggested next steps:
 - Unit: controllers (auth, user, chat)
 - Integration: friend request lifecycle, real-time messaging
-- E2E: Playwright/Cypress for onboarding + chat + video call flow
+- E2E: Playwright/Cypress for onboarding + chat flow
 
 ## 🛡 Security Considerations
 - HttpOnly JWT cookie reduces XSS token theft
@@ -250,10 +244,10 @@ Currently no automated tests. Suggested next steps:
 
 ## 🏗 Architecture
 ```
-┌────────────┐   JWT Cookie   ┌────────────┐   WebRTC      ┌──────────────┐
-│  Browser   │ ─────────────▶ │  Express    │  Signaling   │  Browser     │
-│  (React)   │ ◀───────────── │  (Backend)  │ ────────────▶│  (Peer)      │
-└─────┬──────┘                 └────┬───────┘               └──────────────┘
+┌────────────┐   JWT Cookie   ┌────────────┐
+│  Browser   │ ─────────────▶ │  Express    │
+│  (React)   │ ◀───────────── │  (Backend)  │
+└─────┬──────┘                 └────┬───────┘
       │  REST /api/*                │                             
       │  Socket.io (real-time)      │ Appwrite                    
       ▼                             ▼                             
@@ -275,23 +269,19 @@ Currently no automated tests. Suggested next steps:
 | CORS error | Unlisted origin | Add domain to allowedOrigins in `server.js` |
 | 401 Unauthorized | Missing/expired JWT | Re-login; check cookie blocked by browser | 
 | Socket connection failed | CORS or WebSocket issue | Verify VITE_API_URL and Socket.io CORS config |
-| Video call not connecting | STUN/TURN server issue | Check browser console for WebRTC errors |
 | Chat not loading | Appwrite collection issue | Verify collection IDs and permissions |
 | Email not sending | Resend API issue | Check API key and domain verification |
 
 ## 🗺 Roadmap / Ideas
 - ✅ Password reset & email verification
 - ✅ User presence & typing indicators
-- ✅ WebRTC video calling
 - ✅ Google OAuth integration
 - ✅ PWA support
-- 📋 Group channels & multi‑party calls
+- 📋 Group channels
 - 📋 Message search & attachments
-- 📋 Screen sharing during video calls
 - 📋 Message reactions & replies
 - 📋 i18n for UI + language preferences
 - 📋 Automated test suite & CI workflow
-- 📋 Call recording feature
 
 ## 🤝 Contributing
 1. Fork project & create feature branch
@@ -307,10 +297,9 @@ Add an open source license (MIT recommended) in a `LICENSE` file.
 - [Socket.io](https://socket.io/) - Real-time communication
 - Tailwind CSS + DaisyUI - UI framework
 - TanStack React Query - Server state management
-- WebRTC - Peer-to-peer video calling
 
 ## ✅ Status
-Active development. Core 1:1 chat & WebRTC video calling functional. Production-ready with OAuth, email verification, and PWA support.
+Active development. Core 1:1 chat functional. Production-ready with OAuth, email verification, and PWA support.
 
 ---
-Made with ❤️ using the MERN stack, Socket.io & WebRTC.
+Made with ❤️ using the MERN stack & Socket.io.

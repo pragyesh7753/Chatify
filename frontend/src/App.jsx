@@ -6,7 +6,6 @@ import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import FriendsPage from "./pages/FriendsPage";
-import CallPage from "./pages/CallPage";
 import ChatPage from "./pages/ChatPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
@@ -22,7 +21,6 @@ import PageLoader from "./components/PageLoader";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import ConnectionStatus from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
-import IncomingCallModal from "./components/IncomingCallModal";
 import useAuthUser from "./hooks/useAuthUser.js";
 import { useTokenRefresh } from "./hooks/useTokenRefresh.js";
 import { useFCM } from "./hooks/useFCM.js";
@@ -154,17 +152,6 @@ const App = () => {
           }
         />
         <Route
-          path="/call/:id"
-          element={
-            isAuthenticated && isOnboarded ? (
-              <CallPage />
-            ) : (
-              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
-            )
-          }
-        />
-
-        <Route
           path="/chat/:id"
           element={
             isAuthenticated && isOnboarded ? (
@@ -196,7 +183,6 @@ const App = () => {
       <Toaster />
       <PWAInstallPrompt />
       <ConnectionStatus />
-      {isAuthenticated && isOnboarded && <IncomingCallModal />}
       <SpeedInsights />
     </div>
     </ErrorBoundary>

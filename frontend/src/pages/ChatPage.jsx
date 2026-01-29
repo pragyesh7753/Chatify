@@ -10,7 +10,7 @@ import {
 } from "../lib/api";
 import { useSocket } from "../hooks/useSocket";
 import toast from "react-hot-toast";
-import { ArrowLeft, Send, Phone, Video, Paperclip } from "lucide-react";
+import { ArrowLeft, Send, Paperclip } from "lucide-react";
 import ChatLoader from "../components/ChatLoader";
 import EmojiPicker from "../components/EmojiPicker";
 
@@ -181,22 +181,6 @@ const ChatPage = () => {
     setNewMessage((prev) => prev + emoji.native);
   };
 
-  const handleVoiceCall = () => {
-    if (!channelId || !targetUser) {
-      toast.error("Unable to start call");
-      return;
-    }
-    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&userAvatar=${encodeURIComponent(targetUser.profilePic || '')}&callType=voice`);
-  };
-
-  const handleVideoCall = () => {
-    if (!channelId || !targetUser) {
-      toast.error("Unable to start call");
-      return;
-    }
-    navigate(`/call/${targetUserId}?channelId=${channelId}&userName=${encodeURIComponent(targetUser.fullName)}&userAvatar=${encodeURIComponent(targetUser.profilePic || '')}&callType=video`);
-  };
-
   if (channelLoading || messagesLoading || !targetUser) {
     return <ChatLoader />;
   }
@@ -224,23 +208,6 @@ const ChatPage = () => {
           <p className="text-[10px] sm:text-xs text-base-content/60">
             {isConnected ? "Online" : "Offline"}
           </p>
-        </div>
-
-        <div className="flex gap-1 sm:gap-2">
-          <button
-            className="btn btn-ghost btn-sm btn-circle"
-            onClick={handleVoiceCall}
-            aria-label="Voice call"
-          >
-            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button
-            className="btn btn-ghost btn-sm btn-circle"
-            onClick={handleVideoCall}
-            aria-label="Video call"
-          >
-            <Video className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
         </div>
       </div>
 
