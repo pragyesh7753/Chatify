@@ -65,6 +65,12 @@ Dev/Deployment:
 - Profile picture upload with Cloudinary
 - Friend system (search users by username, send & accept requests, list friends)
 - Real‑time chat with Socket.io (1:1 channels, typing indicators, online status)
+- **🎥 1-to-1 Audio/Video Calling** with WebRTC (peer-to-peer, low latency)
+  - Audio and video call support
+  - In-call controls (mute, camera toggle, end call)
+  - Incoming call notifications
+  - Call timeout and rejection handling
+  - Mobile-responsive call interface
 - Theming & persistence via localStorage (20+ DaisyUI themes)
 - Robust Axios instance with request/response interceptors & error logging
 - Production‑aware CORS & cookie settings (SameSite, secure flags)
@@ -106,10 +112,16 @@ chatify/
 3. `PUT /api/users/friend-request/:id/accept` marks accepted & updates both users' friend arrays
 4. Friends listed via `GET /api/users/friends`
 
-## 💬 Chat
+## 💬 Chat & Calling
 - Real-time messaging: Socket.io with channel-based rooms (channelId = sorted user IDs)
 - Messages stored in Appwrite messages collection
 - Typing indicators and online status via Socket.io events
+- **WebRTC Audio/Video Calls**: 
+  - Peer-to-peer media transmission (no backend media processing)
+  - Socket.io for signaling only (offers, answers, ICE candidates)
+  - Google STUN servers for NAT traversal
+  - Call state management and participant validation
+  - See [WEBRTC_DOCUMENTATION.md](WEBRTC_DOCUMENTATION.md) for architecture details
 
 ## ⚙️ Environment Variables
 Create `backend/.env`:
@@ -271,12 +283,16 @@ Currently no automated tests. Suggested next steps:
 | Socket connection failed | CORS or WebSocket issue | Verify VITE_API_URL and Socket.io CORS config |
 | Chat not loading | Appwrite collection issue | Verify collection IDs and permissions |
 | Email not sending | Resend API issue | Check API key and domain verification |
+| Call not connecting | Browser permissions or network | Check mic/camera permissions; see [TESTING_GUIDE.md](TESTING_GUIDE.md) |
 
 ## 🗺 Roadmap / Ideas
 - ✅ Password reset & email verification
 - ✅ User presence & typing indicators
 - ✅ Google OAuth integration
 - ✅ PWA support
+- ✅ **1-to-1 Audio/Video calling with WebRTC**
+- 📋 Group video calls (3+ participants)
+- 📋 Screen sharing during calls
 - 📋 Group channels
 - 📋 Message search & attachments
 - 📋 Message reactions & replies
@@ -299,7 +315,18 @@ Add an open source license (MIT recommended) in a `LICENSE` file.
 - TanStack React Query - Server state management
 
 ## ✅ Status
-Active development. Core 1:1 chat functional. Production-ready with OAuth, email verification, and PWA support.
+Active development. Production-ready with:
+- ✅ Core 1:1 chat functionality
+- ✅ Audio/Video calling with WebRTC
+- ✅ OAuth authentication
+- ✅ Email verification
+- ✅ PWA support
+- ✅ Mobile-responsive design
+
+## 📚 Additional Documentation
+- [WEBRTC_DOCUMENTATION.md](WEBRTC_DOCUMENTATION.md) - Complete WebRTC architecture and call flow
+- [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Implementation details and summary
+- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Comprehensive testing instructions
 
 ---
-Made with ❤️ using the MERN stack & Socket.io.
+Made with ❤️ using the MERN stack, Socket.io & WebRTC.
