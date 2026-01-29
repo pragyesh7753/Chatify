@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -9,10 +9,14 @@ import {
   getUserFriends
 } from "../lib/api";
 import { useSocket } from "../hooks/useSocket";
+import useWebRTC from "../hooks/useWebRTC";
 import toast from "react-hot-toast";
 import { ArrowLeft, Send, Paperclip } from "lucide-react";
 import ChatLoader from "../components/ChatLoader";
 import EmojiPicker from "../components/EmojiPicker";
+import CallButton from "../components/CallButton";
+import IncomingCallModal from "../components/IncomingCallModal";
+import CallWindow from "../components/CallWindow";
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
@@ -26,8 +30,21 @@ const ChatPage = () => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  // Call-related state
+  const [callState, setCallState] = useState({
+    isInCall: false,
+    callType: null, // "audio" or "video"
+    callId: null,
+    remoteUserId: null,
+    isIncoming: false,
+    incomingCallData: null
+  });
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+
   const { authUser } = useAuthUser();
   const { socket, isConnected } = useSocket();
+  const webRTC = useWebRTC();
 
   // Get target user info from friends list
   const { data: friends } = useQuery({
@@ -181,35 +198,362 @@ const ChatPage = () => {
     setNewMessage((prev) => prev + emoji.native);
   };
 
+  // ==================== WebRTC Call Functions ====================
+
+  /**
+   * Initiate a call to the target user
+   */
+  const initiateCall = useCallback(async (callType) => {
+    if (!socket || !targetUserId || !authUser) {
+      toast.error("Cannot initiate call");
+      return;
+    }
+
+    try {
+      // Request media permissions
+      const stream = await webRTC.getUserMedia(
+        callType === "video",
+        true // always get audio
+      );
+      
+      setLocalStream(stream);
+
+      // Create peer connection
+      const pc = webRTC.createPeerConnection(
+        targetUserId,
+        null, // callId will be set when call is accepted
+        (stream) => {
+          setRemoteStream(stream);
+        },
+        (state) => {
+          console.log("Connection state:", state);
+          if (state === "disconnected" || state === "failed" || state === "closed") {
+            endCall();
+          }
+        }
+      );
+
+      // Add local tracks to peer connection
+      webRTC.addLocalTracks(stream);
+
+      // Update call state
+      setCallState({
+        isInCall: true,
+        callType,
+        callId: null,
+        remoteUserId: targetUserId,
+        isIncoming: false,
+        incomingCallData: null
+      });
+
+      // Emit call-user event
+      socket.emit("call-user", {
+        to: targetUserId,
+        callType,
+        callerInfo: {
+          fullName: authUser.fullName,
+          profilePic: authUser.profilePic
+        }
+      });
+
+      toast.success(`Calling ${targetUser.fullName}...`);
+    } catch (error) {
+      console.error("Error initiating call:", error);
+      toast.error("Could not access camera/microphone");
+      webRTC.cleanup();
+    }
+  }, [socket, targetUserId, authUser, targetUser, webRTC]);
+
+  /**
+   * Accept an incoming call
+   */
+  const acceptCall = useCallback(async () => {
+    if (!socket || !callState.incomingCallData) {
+      return;
+    }
+
+    const { callId, from, callType } = callState.incomingCallData;
+
+    try {
+      // Request media permissions
+      const stream = await webRTC.getUserMedia(
+        callType === "video",
+        true
+      );
+      
+      setLocalStream(stream);
+
+      // Create peer connection
+      webRTC.createPeerConnection(
+        from,
+        callId,
+        (stream) => {
+          setRemoteStream(stream);
+        },
+        (state) => {
+          console.log("Connection state:", state);
+          if (state === "disconnected" || state === "failed" || state === "closed") {
+            endCall();
+          }
+        }
+      );
+
+      // Add local tracks
+      webRTC.addLocalTracks(stream);
+
+      // Update call state
+      setCallState({
+        isInCall: true,
+        callType,
+        callId,
+        remoteUserId: from,
+        isIncoming: false,
+        incomingCallData: null
+      });
+
+      // Accept the call
+      socket.emit("accept-call", { callId });
+    } catch (error) {
+      console.error("Error accepting call:", error);
+      toast.error("Could not access camera/microphone");
+      rejectCall();
+    }
+  }, [socket, callState.incomingCallData, webRTC]);
+
+  /**
+   * Reject an incoming call
+   */
+  const rejectCall = useCallback(() => {
+    if (!socket || !callState.incomingCallData) {
+      return;
+    }
+
+    const { callId } = callState.incomingCallData;
+    
+    socket.emit("reject-call", { callId, reason: "Call declined" });
+    
+    setCallState({
+      isInCall: false,
+      callType: null,
+      callId: null,
+      remoteUserId: null,
+      isIncoming: false,
+      incomingCallData: null
+    });
+
+    toast.success("Call declined");
+  }, [socket, callState.incomingCallData]);
+
+  /**
+   * End an active call
+   */
+  const endCall = useCallback(() => {
+    if (callState.callId && socket) {
+      socket.emit("end-call", {
+        callId: callState.callId,
+        to: callState.remoteUserId
+      });
+    }
+
+    // Cleanup WebRTC resources
+    webRTC.cleanup();
+    
+    setLocalStream(null);
+    setRemoteStream(null);
+    setCallState({
+      isInCall: false,
+      callType: null,
+      callId: null,
+      remoteUserId: null,
+      isIncoming: false,
+      incomingCallData: null
+    });
+  }, [callState, socket, webRTC]);
+
+  // ==================== WebRTC Socket Event Listeners ====================
+
+  useEffect(() => {
+    if (!socket || !authUser) return;
+
+    // Handle incoming call
+    const handleIncomingCall = (data) => {
+      console.log("Incoming call:", data);
+      
+      setCallState({
+        isInCall: false,
+        callType: data.callType,
+        callId: data.callId,
+        remoteUserId: data.from,
+        isIncoming: true,
+        incomingCallData: data
+      });
+
+      toast.success(`Incoming ${data.callType} call from ${data.callerInfo.fullName}`);
+    };
+
+    // Handle call accepted
+    const handleCallAccepted = async (data) => {
+      console.log("Call accepted:", data);
+      
+      setCallState(prev => ({
+        ...prev,
+        callId: data.callId
+      }));
+
+      // Create and send offer
+      try {
+        await webRTC.createOffer(callState.remoteUserId, data.callId);
+      } catch (error) {
+        console.error("Error creating offer:", error);
+        endCall();
+      }
+    };
+
+    // Handle call rejected
+    const handleCallRejected = (data) => {
+      console.log("Call rejected:", data);
+      toast.error(`Call declined by ${targetUser?.fullName || "user"}`);
+      endCall();
+    };
+
+    // Handle call ended
+    const handleCallEnded = (data) => {
+      console.log("Call ended:", data);
+      toast.success("Call ended");
+      endCall();
+    };
+
+    // Handle call failed
+    const handleCallFailed = (data) => {
+      console.log("Call failed:", data);
+      toast.error(data.reason || "Call failed");
+      endCall();
+    };
+
+    // Handle WebRTC offer
+    const handleOffer = async (data) => {
+      console.log("Received offer:", data);
+      
+      try {
+        await webRTC.handleOffer(data.offer, data.from, data.callId);
+      } catch (error) {
+        console.error("Error handling offer:", error);
+        endCall();
+      }
+    };
+
+    // Handle WebRTC answer
+    const handleAnswer = async (data) => {
+      console.log("Received answer:", data);
+      
+      try {
+        await webRTC.handleAnswer(data.answer);
+      } catch (error) {
+        console.error("Error handling answer:", error);
+        endCall();
+      }
+    };
+
+    // Handle ICE candidate
+    const handleIceCandidate = async (data) => {
+      try {
+        await webRTC.handleIceCandidate(data.candidate);
+      } catch (error) {
+        console.error("Error handling ICE candidate:", error);
+      }
+    };
+
+    // Register event listeners
+    socket.on("incoming-call", handleIncomingCall);
+    socket.on("call-accepted", handleCallAccepted);
+    socket.on("call-rejected", handleCallRejected);
+    socket.on("call-ended", handleCallEnded);
+    socket.on("call-failed", handleCallFailed);
+    socket.on("offer", handleOffer);
+    socket.on("answer", handleAnswer);
+    socket.on("ice-candidate", handleIceCandidate);
+
+    return () => {
+      socket.off("incoming-call", handleIncomingCall);
+      socket.off("call-accepted", handleCallAccepted);
+      socket.off("call-rejected", handleCallRejected);
+      socket.off("call-ended", handleCallEnded);
+      socket.off("call-failed", handleCallFailed);
+      socket.off("offer", handleOffer);
+      socket.off("answer", handleAnswer);
+      socket.off("ice-candidate", handleIceCandidate);
+    };
+  }, [socket, authUser, webRTC, callState.remoteUserId, targetUser, endCall]);
+
+  // Cleanup on unmount or navigation
+  useEffect(() => {
+    return () => {
+      if (callState.isInCall) {
+        endCall();
+      }
+    };
+  }, []);
+
+  // ==================== End WebRTC Functions ====================
+
   if (channelLoading || messagesLoading || !targetUser) {
     return <ChatLoader />;
   }
 
   return (
-    <div className="h-full flex flex-col bg-base-100 overflow-hidden">
-      {/* Chat Header */}
-      <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200 w-full">
-        <button
-          onClick={() => navigate(-1)}
-          className="md:hidden btn btn-ghost btn-sm btn-circle"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
+    <>
+      {/* Incoming Call Modal */}
+      <IncomingCallModal
+        isOpen={callState.isIncoming}
+        callerInfo={callState.incomingCallData?.callerInfo}
+        callType={callState.callType}
+        onAccept={acceptCall}
+        onReject={rejectCall}
+      />
 
-        <div className="avatar">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full">
-            <img src={targetUser.profilePic} alt={targetUser.fullName} />
+      {/* Active Call Window */}
+      {callState.isInCall && !callState.isIncoming && (
+        <CallWindow
+          localStream={localStream}
+          remoteStream={remoteStream}
+          callType={callState.callType}
+          remoteUserInfo={targetUser}
+          onEndCall={endCall}
+          onToggleAudio={webRTC.toggleAudio}
+          onToggleVideo={webRTC.toggleVideo}
+        />
+      )}
+
+      <div className="h-full flex flex-col bg-base-100 overflow-hidden">
+        {/* Chat Header */}
+        <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-base-300 bg-base-200 w-full">
+          <button
+            onClick={() => navigate(-1)}
+            className="md:hidden btn btn-ghost btn-sm btn-circle"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+
+          <div className="avatar">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full">
+              <img src={targetUser.profilePic} alt={targetUser.fullName} />
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1 min-w-0">
-          <h2 className="font-semibold text-sm sm:text-base truncate">{targetUser.fullName}</h2>
-          <p className="text-[10px] sm:text-xs text-base-content/60">
-            {isConnected ? "Online" : "Offline"}
-          </p>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-semibold text-sm sm:text-base truncate">{targetUser.fullName}</h2>
+            <p className="text-[10px] sm:text-xs text-base-content/60">
+              {isConnected ? "Online" : "Offline"}
+            </p>
+          </div>
+
+          {/* Call Buttons */}
+          <CallButton 
+            onCall={initiateCall} 
+            disabled={!isConnected || callState.isInCall}
+          />
         </div>
-      </div>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4">
@@ -316,6 +660,7 @@ const ChatPage = () => {
         </div>
       </form>
     </div>
+    </>
   );
 };
 

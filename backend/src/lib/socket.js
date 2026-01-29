@@ -11,6 +11,9 @@ let io;
 // Store connected users: { userId: socketId }
 const connectedUsers = new Map();
 
+// Store active calls: { callId: { callerId, receiverId, status } }
+const activeCalls = new Map();
+
 export const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
@@ -103,9 +106,179 @@ export const initializeSocket = (server) => {
       socket.to(channelId).emit("user-stopped-typing", { userId });
     });
 
+    // ==================== WebRTC Signaling Events ====================
+    
+    // Handle call initiation
+    socket.on("call-user", ({ to, callType, callerInfo }) => {
+      const receiverSocketId = connectedUsers.get(to);
+      
+      if (!receiverSocketId) {
+        // Receiver is offline
+        socket.emit("call-failed", { reason: "User is offline" });
+        return;
+      }
+
+      const callId = `${socket.userId}-${to}-${Date.now()}`;
+      
+      // Store call state
+      activeCalls.set(callId, {
+        callerId: socket.userId,
+        receiverId: to,
+        status: "ringing",
+        callType
+      });
+
+      // Notify receiver of incoming call
+      io.to(receiverSocketId).emit("incoming-call", {
+        callId,
+        from: socket.userId,
+        callType,
+        callerInfo
+      });
+
+      console.log(`Call initiated: ${socket.userId} -> ${to} (${callType})`);
+    });
+
+    // Handle call acceptance
+    socket.on("accept-call", ({ callId }) => {
+      const call = activeCalls.get(callId);
+      
+      if (!call) {
+        socket.emit("call-failed", { reason: "Call not found" });
+        return;
+      }
+
+      // Update call status
+      call.status = "active";
+      activeCalls.set(callId, call);
+
+      const callerSocketId = connectedUsers.get(call.callerId);
+      
+      if (callerSocketId) {
+        // Notify caller that call was accepted
+        io.to(callerSocketId).emit("call-accepted", {
+          callId,
+          acceptedBy: socket.userId
+        });
+      }
+
+      console.log(`Call accepted: ${callId}`);
+    });
+
+    // Handle call rejection
+    socket.on("reject-call", ({ callId, reason }) => {
+      const call = activeCalls.get(callId);
+      
+      if (!call) return;
+
+      const callerSocketId = connectedUsers.get(call.callerId);
+      
+      if (callerSocketId) {
+        // Notify caller that call was rejected
+        io.to(callerSocketId).emit("call-rejected", {
+          callId,
+          rejectedBy: socket.userId,
+          reason: reason || "Call declined"
+        });
+      }
+
+      // Remove call from active calls
+      activeCalls.delete(callId);
+
+      console.log(`Call rejected: ${callId}`);
+    });
+
+    // Handle WebRTC offer
+    socket.on("offer", ({ to, offer, callId }) => {
+      const receiverSocketId = connectedUsers.get(to);
+      
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("offer", {
+          from: socket.userId,
+          offer,
+          callId
+        });
+        
+        console.log(`SDP offer sent: ${socket.userId} -> ${to}`);
+      }
+    });
+
+    // Handle WebRTC answer
+    socket.on("answer", ({ to, answer, callId }) => {
+      const callerSocketId = connectedUsers.get(to);
+      
+      if (callerSocketId) {
+        io.to(callerSocketId).emit("answer", {
+          from: socket.userId,
+          answer,
+          callId
+        });
+        
+        console.log(`SDP answer sent: ${socket.userId} -> ${to}`);
+      }
+    });
+
+    // Handle ICE candidates
+    socket.on("ice-candidate", ({ to, candidate, callId }) => {
+      const targetSocketId = connectedUsers.get(to);
+      
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("ice-candidate", {
+          from: socket.userId,
+          candidate,
+          callId
+        });
+      }
+    });
+
+    // Handle call end
+    socket.on("end-call", ({ callId, to }) => {
+      const call = activeCalls.get(callId);
+      
+      if (call) {
+        // Determine the other participant
+        const otherUserId = call.callerId === socket.userId ? call.receiverId : call.callerId;
+        const otherSocketId = connectedUsers.get(to || otherUserId);
+        
+        if (otherSocketId) {
+          // Notify the other participant
+          io.to(otherSocketId).emit("call-ended", {
+            callId,
+            endedBy: socket.userId
+          });
+        }
+
+        // Remove call from active calls
+        activeCalls.delete(callId);
+        
+        console.log(`Call ended: ${callId}`);
+      }
+    });
+
+    // ==================== End WebRTC Signaling Events ====================
+
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.userId}`);
+      
+      // End any active calls involving this user
+      activeCalls.forEach((call, callId) => {
+        if (call.callerId === socket.userId || call.receiverId === socket.userId) {
+          const otherUserId = call.callerId === socket.userId ? call.receiverId : call.callerId;
+          const otherSocketId = connectedUsers.get(otherUserId);
+          
+          if (otherSocketId) {
+            io.to(otherSocketId).emit("call-ended", {
+              callId,
+              endedBy: socket.userId,
+              reason: "User disconnected"
+            });
+          }
+          
+          activeCalls.delete(callId);
+        }
+      });
+      
       connectedUsers.delete(socket.userId);
       
       // Emit offline status to all connected clients
