@@ -7,6 +7,7 @@ import { BrowserRouter } from "react-router";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SocketProvider } from "./context/SocketContext.jsx";
+import { CallProvider } from "./context/CallProvider.jsx";
 
 // Export queryClient so it can be used in axios interceptors
 export const queryClient = new QueryClient({
@@ -25,7 +26,9 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <SocketProvider>
-          <App />
+          <CallProvider>
+            <App />
+          </CallProvider>
         </SocketProvider>
       </QueryClientProvider>
     </BrowserRouter>

@@ -103,6 +103,49 @@ export const initializeSocket = (server) => {
       socket.to(channelId).emit("user-stopped-typing", { userId });
     });
 
+    // Handle call events
+    socket.on("call-invite", (data) => {
+      const { roomName, mode, targetUserId, caller } = data;
+      const targetSocketId = connectedUsers.get(targetUserId);
+      
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("call-invite", { roomName, mode, caller });
+      } else {
+        socket.emit("call-rejected", { roomName, reason: "offline" });
+      }
+    });
+
+    socket.on("call-accepted", (data) => {
+      const targetSocketId = connectedUsers.get(data.targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("call-accepted", { roomName: data.roomName });
+      }
+    });
+
+    socket.on("call-rejected", (data) => {
+      const targetSocketId = connectedUsers.get(data.targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("call-rejected", { 
+          roomName: data.roomName, 
+          reason: data.reason || "rejected" 
+        });
+      }
+    });
+
+    socket.on("call-cancelled", (data) => {
+      const targetSocketId = connectedUsers.get(data.targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("call-cancelled", { roomName: data.roomName });
+      }
+    });
+
+    socket.on("call-ended", (data) => {
+      const targetSocketId = connectedUsers.get(data.targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("call-ended", { roomName: data.roomName });
+      }
+    });
+
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.userId}`);

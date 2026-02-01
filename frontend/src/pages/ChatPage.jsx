@@ -9,8 +9,9 @@ import {
   getUserFriends
 } from "../lib/api";
 import { useSocket } from "../hooks/useSocket";
+import { useCall } from "../hooks/useCall";
 import toast from "react-hot-toast";
-import { ArrowLeft, Send, Paperclip } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, Video } from "lucide-react";
 import ChatLoader from "../components/ChatLoader";
 import EmojiPicker from "../components/EmojiPicker";
 
@@ -28,6 +29,7 @@ const ChatPage = () => {
 
   const { authUser } = useAuthUser();
   const { socket, isConnected } = useSocket();
+  const { initiateCall, callState, CALL_STATES } = useCall();
 
   // Get target user info from friends list
   const { data: friends } = useQuery({
@@ -181,6 +183,36 @@ const ChatPage = () => {
     setNewMessage((prev) => prev + emoji.native);
   };
 
+  // Handle audio call
+  const handleAudioCall = () => {
+    if (callState.state !== CALL_STATES.IDLE) {
+      toast.error("Already in a call");
+      return;
+    }
+    
+    if (!targetUser) {
+      toast.error("User not found");
+      return;
+    }
+
+    initiateCall(targetUser, "audio");
+  };
+
+  // Handle video call
+  const handleVideoCall = () => {
+    if (callState.state !== CALL_STATES.IDLE) {
+      toast.error("Already in a call");
+      return;
+    }
+    
+    if (!targetUser) {
+      toast.error("User not found");
+      return;
+    }
+
+    initiateCall(targetUser, "video");
+  };
+
   if (channelLoading || messagesLoading || !targetUser) {
     return <ChatLoader />;
   }
@@ -208,6 +240,26 @@ const ChatPage = () => {
           <p className="text-[10px] sm:text-xs text-base-content/60">
             {isConnected ? "Online" : "Offline"}
           </p>
+        </div>
+
+        {/* Call Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleAudioCall}
+            className="btn btn-ghost btn-sm btn-circle"
+            title="Audio call"
+            disabled={!isConnected || callState.state !== CALL_STATES.IDLE}
+          >
+            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button
+            onClick={handleVideoCall}
+            className="btn btn-ghost btn-sm btn-circle"
+            title="Video call"
+            disabled={!isConnected || callState.state !== CALL_STATES.IDLE}
+          >
+            <Video className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
         </div>
       </div>
 
