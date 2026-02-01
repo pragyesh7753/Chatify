@@ -1,4 +1,5 @@
 import { Client, Databases, Query } from "node-appwrite";
+import logger from "./logger.js";
 
 const client = new Client()
   .setEndpoint(process.env.APPWRITE_ENDPOINT)
@@ -17,9 +18,9 @@ export { Query };
 export const connectAppwrite = async () => {
   try {
     await databases.list();
-    console.log("Appwrite Connected Successfully");
+    logger.info("Appwrite Connected Successfully");
   } catch (error) {
-    console.log("Error connecting to Appwrite:", error);
+    logger.error("Error connecting to Appwrite", { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };

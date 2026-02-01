@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { UserService } from "../services/user.service.js";
+import logger from "../lib/logger.js";
 
 export const optionalProtectRoute = async (req, res, next) => {
   try {
@@ -23,7 +24,7 @@ export const optionalProtectRoute = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log("Error in optionalProtectRoute middleware", error.message);
+    logger.error("Error in optionalProtectRoute middleware", { error: error.message });
     next(); // Continue without user if token is invalid
   }
 };

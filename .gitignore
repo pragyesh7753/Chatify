@@ -7,6 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Keep log directory structure but ignore log files
+!logs/.gitkeep
+
 node_modules
 dist
 dist-ssr

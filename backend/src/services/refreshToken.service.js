@@ -1,5 +1,6 @@
 import { databases, DATABASE_ID, REFRESH_TOKENS_COLLECTION_ID, Query } from "../lib/appwrite.js";
 import { ID } from "node-appwrite";
+import logger from "../lib/logger.js";
 
 export const RefreshTokenService = {
   async create(userId, refreshToken, expiresAt) {

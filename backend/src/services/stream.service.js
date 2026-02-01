@@ -1,4 +1,5 @@
 import { StreamClient } from "@stream-io/node-sdk";
+import logger from "../lib/logger.js";
 
 /**
  * Stream Video Service
@@ -49,7 +50,7 @@ export const StreamService = {
         apiKey: process.env.STREAM_API_KEY
       };
     } catch (error) {
-      console.error("Error generating Stream token:", error);
+      logger.error("Error generating Stream token", { error: error.message, userId });
       throw new Error("Failed to generate Stream token");
     }
   },

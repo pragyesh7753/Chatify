@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { getFCMTokenService } from "../services/fcm.service.js";
 import { sendPushNotification } from "./fcm.js";
 import { databases, DATABASE_ID, Query } from "./appwrite.js";
+import logger from "./logger.js";
 
 const USERS_COLLECTION_ID = process.env.APPWRITE_USERS_COLLECTION_ID;
 
@@ -44,25 +45,26 @@ export const initializeSocket = (server) => {
       return next(new Error("Authentication error: No token provided"));
     }
 
+    let decoded;
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
       socket.userId = decoded.userId;
       next();
     } catch (error) {
       // Handle expired tokens gracefully (expected behavior, not an error)
       if (error.name === 'TokenExpiredError') {
-        console.log("Socket connection rejected: Token expired (client will refresh and reconnect)");
+        logger.info("Socket connection rejected: Token expired (client will refresh and reconnect)");
         return next(new Error("Authentication error: Token expired"));
       }
       
       // Log other authentication errors
-      console.error("Socket authentication error:", error.message);
+      logger.error("Socket authentication error", { error: error.message });
       next(new Error("Authentication error: Invalid token"));
     }
   });
 
   io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.userId}`);
+    logger.info("User connected via Socket.io", { userId: socket.userId, socketId: socket.id });
     
     // Store the connected user
     connectedUsers.set(socket.userId, socket.id);
@@ -76,13 +78,13 @@ export const initializeSocket = (server) => {
     // Handle joining a chat channel
     socket.on("join-channel", (channelId) => {
       socket.join(channelId);
-      console.log(`User ${socket.userId} joined channel ${channelId}`);
+      logger.debug("User joined channel", { userId: socket.userId, channelId });
     });
 
     // Handle leaving a chat channel
     socket.on("leave-channel", (channelId) => {
       socket.leave(channelId);
-      console.log(`User ${socket.userId} left channel ${channelId}`);
+      logger.debug("User left channel", { userId: socket.userId, channelId });
     });
 
     // Handle sending a message

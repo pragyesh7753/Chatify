@@ -4,12 +4,22 @@ import { verifyEmailChange } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { optionalProtectRoute } from "../middleware/optionalAuth.middleware.js";
 import { upload } from "../middleware/upload.js";
+import { 
+  signupValidation, 
+  loginValidation, 
+  forgotPasswordValidation, 
+  resetPasswordValidation,
+  sanitizeInput
+} from "../middleware/validation.js";
 import passport from "passport";
 
 const router = express.Router();
 
-router.post("/signup", signup);
-router.post("/login", login);
+// Apply input sanitization to all routes
+router.use(sanitizeInput);
+
+router.post("/signup", signupValidation, signup);
+router.post("/login", loginValidation, login);
 router.post("/logout", optionalProtectRoute, logout);
 router.post("/refresh-token", refreshToken);
 
@@ -42,8 +52,8 @@ router.post("/onboarding", protectRoute, upload.single('profilePic'), (error, re
 router.get("/verify-email/:token", verifyEmail);
 router.get("/verify-email-change/:token", verifyEmailChange);
 router.post("/resend-verification", resendVerificationEmail);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password/:token", resetPassword);
+router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
+router.post("/reset-password/:token", resetPasswordValidation, resetPassword);
 router.post("/change-password", protectRoute, changePassword);
 
 // check if user is logged in

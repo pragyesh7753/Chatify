@@ -1,4 +1,5 @@
 import admin from "firebase-admin";
+import logger from "./logger.js";
 
 let fcmInitialized = false;
 
@@ -13,9 +14,9 @@ export const initializeFCM = () => {
     });
     
     fcmInitialized = true;
-    console.log("FCM initialized successfully");
+    logger.info("FCM initialized successfully");
   } catch (error) {
-    console.error("FCM initialization failed:", error.message);
+    logger.error("FCM initialization failed", { error: error.message });
   }
 };
 

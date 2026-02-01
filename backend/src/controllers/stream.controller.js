@@ -1,4 +1,5 @@
 import { StreamService } from "../services/stream.service.js";
+import logger from "../lib/logger.js";
 
 /**
  * Stream Token Controller
@@ -34,7 +35,7 @@ export const generateStreamToken = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in generateStreamToken:", error);
+    logger.logError(req, error, "Error in generateStreamToken");
     res.status(500).json({ 
       message: "Failed to generate Stream token",
       error: error.message 

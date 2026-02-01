@@ -4,6 +4,7 @@ import { RefreshTokenService } from "../services/refreshToken.service.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../lib/cloudinary.js";
 import { generateAccessToken, generateRefreshToken, getRefreshTokenExpiration, setTokenCookies, clearTokenCookies } from "../utils/token.js";
+import logger from "../lib/logger.js";
 
 // Sign up (creates unverified user and sends verification email)
 export async function signup(req, res) {
@@ -95,7 +96,7 @@ export async function signup(req, res) {
       email: newUser.email,
     });
   } catch (error) {
-    console.log("Error in signup controller", error);
+    logger.logError(req, error, "Error in signup controller");
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }
@@ -259,7 +260,7 @@ export async function login(req, res) {
     const { password: userPassword, ...userWithoutPassword } = user;
     return res.status(200).json({ success: true, user: userWithoutPassword });
   } catch (error) {
-    console.log("Error in login controller", error.message);
+    logger.logError(req, error, "Error in login controller");
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }
