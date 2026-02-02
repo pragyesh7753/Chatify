@@ -42,7 +42,11 @@ export const initializeSocket = (server) => {
     const token = socket.handshake.auth.token;
     
     if (!token) {
-      return next(new Error("Authentication error: No token provided"));
+      logger.warn('Socket connection rejected: No token provided', { 
+        socketId: socket.id,
+        ip: socket.handshake.address 
+      });
+      return next(new Error("Authentication error"));
     }
 
     let decoded;
@@ -51,15 +55,15 @@ export const initializeSocket = (server) => {
       socket.userId = decoded.userId;
       next();
     } catch (error) {
-      // Handle expired tokens gracefully (expected behavior, not an error)
       if (error.name === 'TokenExpiredError') {
-        logger.info("Socket connection rejected: Token expired (client will refresh and reconnect)");
-        return next(new Error("Authentication error: Token expired"));
+        logger.info("Socket connection rejected: Token expired", { socketId: socket.id });
+      } else {
+        logger.warn("Socket authentication failed", { 
+          socketId: socket.id,
+          error: error.message 
+        });
       }
-      
-      // Log other authentication errors
-      logger.error("Socket authentication error", { error: error.message });
-      next(new Error("Authentication error: Invalid token"));
+      return next(new Error("Authentication error"));
     }
   });
 

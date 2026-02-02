@@ -11,6 +11,7 @@ import {
   resetPasswordValidation,
   sanitizeInput
 } from "../middleware/validation.js";
+import { authLimiter, strictLimiter } from "../middleware/rateLimiter.js";
 import passport from "passport";
 
 const router = express.Router();
@@ -18,8 +19,8 @@ const router = express.Router();
 // Apply input sanitization to all routes
 router.use(sanitizeInput);
 
-router.post("/signup", signupValidation, signup);
-router.post("/login", loginValidation, login);
+router.post("/signup", signupValidation, authLimiter, signup);
+router.post("/login", loginValidation, authLimiter, login);
 router.post("/logout", optionalProtectRoute, logout);
 router.post("/refresh-token", refreshToken);
 
@@ -51,8 +52,8 @@ router.post("/onboarding", protectRoute, upload.single('profilePic'), (error, re
 
 router.get("/verify-email/:token", verifyEmail);
 router.get("/verify-email-change/:token", verifyEmailChange);
-router.post("/resend-verification", resendVerificationEmail);
-router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
+router.post("/resend-verification", strictLimiter, resendVerificationEmail);
+router.post("/forgot-password", forgotPasswordValidation, strictLimiter, forgotPassword);
 router.post("/reset-password/:token", resetPasswordValidation, resetPassword);
 router.post("/change-password", protectRoute, changePassword);
 

@@ -5,7 +5,6 @@ import cors from "cors";
 import path from "path";
 import passport from "passport";
 import { createServer } from "http";
-import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
 import authRoutes from "./routes/auth.route.js";
@@ -21,6 +20,7 @@ import { initializeFCM } from "./lib/fcm.js";
 import logger from "./lib/logger.js";
 import { validateEnv, getEnvInfo } from "./config/validate-env.js";
 import { requestId } from "./middleware/requestId.js";
+import { apiLimiter } from "./middleware/rateLimiter.js";
 import "./lib/passport.js"; // Initialize passport strategies
 
 // Validate environment variables before starting server
@@ -44,96 +44,71 @@ app.set('trust proxy', 1);
 app.use(requestId);
 
 // Security headers
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow Cloudinary images
-  contentSecurityPolicy: false, // Disable CSP for now (can configure later)
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
 
-// Rate limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: { 
-    success: false, 
-    message: 'Too many requests from this IP, please try again later.' 
-  },
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  handler: (req, res) => {
-    logger.warn('Rate limit exceeded', {
-      requestId: req.id,
-      ip: req.ip,
-      path: req.path,
-    });
-    res.status(429).json({
-      success: false,
-      message: 'Too many requests from this IP, please try again later.',
-    });
-  },
-});
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://res.cloudinary.com"
+        ],
+      },
+    },
+  })
+);
 
-// Strict rate limiting for authentication endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 auth requests per windowMs
-  skipSuccessfulRequests: true, // Don't count successful logins
-  message: { 
-    success: false, 
-    message: 'Too many authentication attempts, please try again later.' 
-  },
-  handler: (req, res) => {
-    logger.warn('Auth rate limit exceeded', {
-      requestId: req.id,
-      ip: req.ip,
-      path: req.path,
-    });
-    res.status(429).json({
-      success: false,
-      message: 'Too many authentication attempts, please try again later.',
-    });
-  },
-});
 
 // Updated CORS configuration for production
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // Block non-browser requests in production
+    if (!origin && process.env.NODE_ENV === 'production') {
+      return callback(new Error('CORS blocked: no origin'), false);
+    }
+
+    // Allow Postman / curl in dev
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
-      'https://chatify.studio',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:4173'
-    ];
+      process.env.FRONTEND_URL?.replace(/\/$/, "")
+    ].filter(Boolean);
 
-    if (allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin.replace(/\/$/, "");
+
+    if (allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
 
-    // Return false instead of Error to prevent CORS error exposure
-    logger.warn('CORS rejected origin', { origin, requestId: req?.id });
-    return callback(null, false);
+    logger.warn('CORS rejected origin', { origin });
+    return callback(new Error('Not allowed by CORS'), false);
   },
+
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  optionsSuccessStatus: 200
 }));
 
-app.use(express.json());
+
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
 // Initialize Passport (without sessions)
 app.use(passport.initialize());
 
-// Apply rate limiters
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/signup", authLimiter);
-app.use("/api/auth/refresh-token", authLimiter);
-app.use("/api/", apiLimiter);
+// Apply general rate limiter to non-auth routes
+app.use("/api/users", apiLimiter);
+app.use("/api/chat", apiLimiter);
+app.use("/api/fcm", apiLimiter);
+app.use("/api/stream", apiLimiter);
 
-// Routes
+// Routes (auth limiter is applied inside auth routes)
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
@@ -151,12 +126,13 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Keep-alive endpoint for preventing idling on  Railway
+// Keep-alive endpoint for preventing idling on Railway
 app.get("/api/internal/keepalive", async (req, res) => {
   try {
+    // Always require secret in production
     if (process.env.NODE_ENV === "production") {
-      if (req.query.secret !== process.env.CRON_SECRET) {
-        return res.status(401).end();
+      if (!req.query.secret || req.query.secret !== process.env.CRON_SECRET) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
       await fetch("https://httpbin.org/get", {
@@ -170,29 +146,39 @@ app.get("/api/internal/keepalive", async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     logger.error("Keep-alive endpoint error", { error: error.message, requestId: req.id });
-    res.status(500).json({ error: "Internal server error", message: error.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// OAuth configuration check endpoint
-app.get("/api/oauth-check", (req, res) => {
-  res.json({
-    status: "ok",
-    oauth: {
-      googleClientIdConfigured: !!process.env.GOOGLE_CLIENT_ID,
-      googleClientSecretConfigured: !!process.env.GOOGLE_CLIENT_SECRET,
-      googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,
-      frontendUrl: process.env.FRONTEND_URL,
-      nodeEnv: process.env.NODE_ENV,
-      sessionSecretConfigured: !!process.env.SESSION_SECRET,
-    },
-    timestamp: new Date().toISOString()
+// OAuth configuration check endpoint - REMOVE IN PRODUCTION
+if (process.env.NODE_ENV !== 'production') {
+  app.get("/api/oauth-check", (req, res) => {
+    res.json({
+      status: "ok",
+      oauth: {
+        googleClientIdConfigured: !!process.env.GOOGLE_CLIENT_ID,
+        googleClientSecretConfigured: !!process.env.GOOGLE_CLIENT_SECRET,
+        googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,
+        frontendUrl: process.env.FRONTEND_URL,
+        nodeEnv: process.env.NODE_ENV,
+        sessionSecretConfigured: !!process.env.SESSION_SECRET,
+      },
+      timestamp: new Date().toISOString()
+    });
   });
-});
+}
 
-// Manual cleanup endpoint (for admin purposes)
+// Manual cleanup endpoint (for admin purposes) - SECURE THIS
 app.post("/api/cleanup", async (req, res) => {
   try {
+    // Require authentication or secret key in production
+    if (process.env.NODE_ENV === 'production') {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || authHeader !== `Bearer ${process.env.ADMIN_SECRET}`) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+    }
+    
     await cleanupExpiredTokens();
     res.json({
       status: "success",
