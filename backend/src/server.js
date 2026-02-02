@@ -63,7 +63,6 @@ app.use(
   })
 );
 
-
 // Updated CORS configuration for production
 app.use(cors({
   origin: function (origin, callback) {
@@ -168,32 +167,6 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Manual cleanup endpoint (for admin purposes) - SECURE THIS
-app.post("/api/cleanup", async (req, res) => {
-  try {
-    // Require authentication or secret key in production
-    if (process.env.NODE_ENV === 'production') {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || authHeader !== `Bearer ${process.env.ADMIN_SECRET}`) {
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-    }
-    
-    await cleanupExpiredTokens();
-    res.json({
-      status: "success",
-      message: "Cleanup completed",
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    logger.error("Manual cleanup failed", { error: error.message, requestId: req.id });
-    res.status(500).json({
-      status: "error",
-      message: "Cleanup failed"
-    });
-  }
-});
-
 // Remove static file serving since frontend will be on Vercel
 // if (process.env.NODE_ENV === "production") {
 //   app.use(express.static(path.join(__dirname, "../frontend/dist")));
@@ -220,8 +193,8 @@ app.use((err, req, res, next) => {
 
   res.status(err.status || 500).json({
     success: false,
-    message: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
+    message: process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
       : err.message,
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
@@ -232,7 +205,7 @@ httpServer.listen(PORT, () => {
     port: PORT,
     ...getEnvInfo(),
   });
-  
+
   connectAppwrite();
   initializeFCM();
 
@@ -248,10 +221,10 @@ httpServer.listen(PORT, () => {
 // Graceful shutdown handler
 const gracefulShutdown = async (signal) => {
   logger.info(`${signal} received, closing server gracefully`);
-  
+
   httpServer.close(async () => {
     logger.info('HTTP server closed');
-    
+
     // Close socket connections
     const io = (await import('./lib/socket.js')).getIO();
     if (io) {
@@ -259,10 +232,10 @@ const gracefulShutdown = async (signal) => {
         logger.info('Socket.io closed');
       });
     }
-    
+
     process.exit(0);
   });
-  
+
   // Force close after 30 seconds
   setTimeout(() => {
     logger.error('Forced shutdown after timeout');
@@ -275,7 +248,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception', { 
+  logger.error('Uncaught Exception', {
     error: {
       message: error.message,
       stack: error.stack,
