@@ -46,23 +46,15 @@ app.use(requestId);
 // Keep-alive endpoint BEFORE CORS (for cron-job.org)
 app.get("/api/internal/keepalive", async (req, res) => {
   try {
-    if (process.env.NODE_ENV === "production") {
-      if (!req.query.secret || req.query.secret !== process.env.CRON_SECRET) {
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-
-      await fetch("https://httpbin.org/get", {
-        method: "HEAD",
-        signal: AbortSignal.timeout(5000),
-      });
-
-      await databases.list({ queries: [Query.limit(1)] });
+    const secret = req.query.secret || req.headers['x-cron-secret'];
+    
+    if (process.env.NODE_ENV === "production" && secret !== process.env.CRON_SECRET) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    res.json({ ok: true });
+    res.json({ ok: true, timestamp: Date.now() });
   } catch (error) {
-    logger.error("Keep-alive endpoint error", { error: error.message, requestId: req.id });
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: error.message });
   }
 });
 
