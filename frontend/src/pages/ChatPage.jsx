@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { ArrowLeft, Send, Paperclip, Phone, Video } from "lucide-react";
 import ChatLoader from "../components/ChatLoader";
 import EmojiPicker from "../components/EmojiPicker";
+import UserProfileModal from "../components/UserProfileModal";
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
@@ -24,6 +25,7 @@ const ChatPage = () => {
   const [channelId, setChannelId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -83,7 +85,7 @@ const ChatPage = () => {
 
       // Handle both formats: direct message or wrapped in data object
       const message = data.message || data;
-      
+
       setMessages((prev) => [...prev, message]);
       scrollToBottom();
     };
@@ -189,7 +191,7 @@ const ChatPage = () => {
       toast.error("Already in a call");
       return;
     }
-    
+
     if (!targetUser) {
       toast.error("User not found");
       return;
@@ -204,7 +206,7 @@ const ChatPage = () => {
       toast.error("Already in a call");
       return;
     }
-    
+
     if (!targetUser) {
       toast.error("User not found");
       return;
@@ -212,6 +214,10 @@ const ChatPage = () => {
 
     initiateCall(targetUser, "video");
   };
+
+  const handleCloseProfileModal = useCallback(() => {
+    setIsProfileModalOpen(false);
+  }, []);
 
   if (channelLoading || messagesLoading || !targetUser) {
     return <ChatLoader />;
@@ -235,7 +241,7 @@ const ChatPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsProfileModalOpen(true)}>
           <h2 className="font-semibold text-sm sm:text-base truncate">{targetUser.fullName}</h2>
           <p className="text-[10px] sm:text-xs text-base-content/60">
             {isConnected ? "Online" : "Offline"}
@@ -275,7 +281,7 @@ const ChatPage = () => {
             const showSenderName =
               !isOwnMessage &&
               (index === 0 || messages[index - 1]?.senderId !== message.senderId);
-            
+
             // Check if message is emoji only
             const isEmojiOnly = /^[\p{Emoji}\s]+$/u.test(message.text.trim());
 
@@ -367,6 +373,13 @@ const ChatPage = () => {
           </button>
         </div>
       </form>
+
+      <UserProfileModal
+        user={targetUser}
+        isOpen={isProfileModalOpen}
+        onClose={handleCloseProfileModal}
+        isOnline={isConnected}
+      />
     </div>
   );
 };
