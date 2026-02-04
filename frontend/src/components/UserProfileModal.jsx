@@ -1,8 +1,9 @@
-import { X, MapPin, Calendar, Globe, Mail } from "lucide-react";
-import { useEffect, useRef, memo } from "react";
+import { X, MapPin, Calendar, Globe, Mail, ZoomIn } from "lucide-react";
+import { useEffect, useRef, memo, useState } from "react";
 
 const UserProfileModal = memo(({ user, isOpen, onClose, isOnline }) => {
     const modalRef = useRef(null);
+    const [isImageExpanded, setIsImageExpanded] = useState(false);
 
     // Close on click outside
     useEffect(() => {
@@ -12,20 +13,24 @@ const UserProfileModal = memo(({ user, isOpen, onClose, isOnline }) => {
             }
         };
 
-        if (isOpen) {
+        if (isOpen && !isImageExpanded) {
             document.addEventListener("mousedown", handleClickOutside);
         }
 
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, isImageExpanded]);
 
     // Close on escape key
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === "Escape" && isOpen) {
-                onClose();
+            if (e.key === "Escape") {
+                if (isImageExpanded) {
+                    setIsImageExpanded(false);
+                } else if (isOpen) {
+                    onClose();
+                }
             }
         };
 
@@ -33,12 +38,33 @@ const UserProfileModal = memo(({ user, isOpen, onClose, isOnline }) => {
             document.addEventListener("keydown", handleKeyDown);
         }
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, isImageExpanded]);
 
     if (!isOpen || !user) return null;
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            {/* Expanded Image Modal */}
+            {isImageExpanded && (
+                <div
+                    className="fixed inset-0 bg-black/30 backdrop-blur-md z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setIsImageExpanded(false)}
+                >
+                    <button
+                        onClick={() => setIsImageExpanded(false)}
+                        className="absolute top-4 right-4 btn btn-circle btn-ghost text-white"
+                    >
+                        <X className="w-8 h-8" />
+                    </button>
+                    <img
+                        src={user.profilePic || "/default-avatar.svg"}
+                        alt={user.fullName}
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
+
             <div
                 ref={modalRef}
                 className="bg-base-100 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200"
@@ -56,13 +82,17 @@ const UserProfileModal = memo(({ user, isOpen, onClose, isOnline }) => {
                 {/* Profile Content */}
                 <div className="px-6 pb-8 -mt-12 relative flex flex-col items-center">
                     {/* Avatar */}
-                    <div className="relative">
-                        <div className="w-24 h-24 rounded-full ring-4 ring-base-100 overflow-hidden bg-base-200">
+                    <div className="relative group cursor-pointer" onClick={() => setIsImageExpanded(true)}>
+                        <div className="w-24 h-24 rounded-full ring-4 ring-base-100 overflow-hidden bg-base-200 relative">
                             <img
                                 src={user.profilePic || "/default-avatar.svg"}
                                 alt={user.fullName}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             />
+                            {/* Overlay on hover */}
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <ZoomIn className="w-8 h-8 text-white" />
+                            </div>
                         </div>
                         {isOnline && (
                             <div className="absolute bottom-1 right-1 w-5 h-5 bg-success rounded-full ring-2 ring-base-100" title="Online" />

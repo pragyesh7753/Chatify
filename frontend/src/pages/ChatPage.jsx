@@ -235,7 +235,7 @@ const ChatPage = () => {
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        <div className="avatar">
+        <div className="avatar cursor-pointer" onClick={() => setIsProfileModalOpen(true)}>
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full">
             <img src={targetUser.profilePic} alt={targetUser.fullName} />
           </div>
