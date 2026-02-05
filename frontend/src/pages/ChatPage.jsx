@@ -11,7 +11,7 @@ import {
 import { useSocket } from "../hooks/useSocket";
 import { useCall } from "../hooks/useCall";
 import toast from "react-hot-toast";
-import { ArrowLeft, Send, Paperclip, Phone, Video } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, Video, Reply, X } from "lucide-react";
 import ChatLoader from "../components/ChatLoader";
 import EmojiPicker from "../components/EmojiPicker";
 import UserProfileModal from "../components/UserProfileModal";
@@ -26,6 +26,7 @@ const ChatPage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -119,6 +120,7 @@ const ChatPage = () => {
     onSuccess: (data) => {
       setMessages((prev) => [...prev, data]);
       setNewMessage("");
+      setReplyingTo(null);
       scrollToBottom();
     },
     onError: (error) => {
@@ -140,11 +142,20 @@ const ChatPage = () => {
 
     if (!newMessage.trim() || !channelId) return;
 
-    sendMessageMutation.mutate({
+    const messagePayload = {
       channelId,
       text: newMessage.trim(),
       attachments: []
-    });
+    };
+
+    // Add reply metadata if replying to a message
+    if (replyingTo && replyingTo.$id) {
+      messagePayload.replyToMessageId = replyingTo.$id;
+      messagePayload.replyToText = replyingTo.text || "";
+      messagePayload.replyToSenderName = replyingTo.senderName || "Unknown";
+    }
+
+    sendMessageMutation.mutate(messagePayload);
 
     // Stop typing indicator
     if (socket) {
@@ -183,6 +194,14 @@ const ChatPage = () => {
 
   const handleEmojiSelect = (emoji) => {
     setNewMessage((prev) => prev + emoji.native);
+  };
+
+  const handleReply = (message) => {
+    setReplyingTo(message);
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
   };
 
   // Handle audio call
@@ -305,16 +324,44 @@ const ChatPage = () => {
             ) : (
               <div
                 key={message.$id || index}
-                className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
+                className={`chat ${isOwnMessage ? "chat-end" : "chat-start"} group`}
               >
-                {showSenderName && (
-                  <div className="chat-header mb-1">
-                    <span className="text-xs sm:text-sm font-semibold">{message.senderName}</span>
-                  </div>
-                )}
+                <div className="relative">
+                  <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
+                    {/* Show replied message if this is a reply */}
+                    {message.replyTo && (() => {
+                      try {
+                        const replyData = typeof message.replyTo === 'string'
+                          ? JSON.parse(message.replyTo)
+                          : message.replyTo;
 
-                <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
-                  {message.text}
+                        // Validate replyData has required fields
+                        if (!replyData || !replyData.text) {
+                          return null;
+                        }
+
+                        return (
+                          <div className="mb-2 pb-2 border-l-2 border-base-content/30 pl-2 opacity-70">
+                            <div className="text-xs font-semibold">{replyData.senderName || "Unknown"}</div>
+                            <div className="text-xs truncate">{replyData.text}</div>
+                          </div>
+                        );
+                      } catch (e) {
+                        console.error("Error parsing reply data:", e);
+                        return null;
+                      }
+                    })()}
+                    {message.text}
+                  </div>
+
+                  {/* Reply button - shows on hover */}
+                  <button
+                    onClick={() => handleReply(message)}
+                    className="absolute -top-2 right-0 btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Reply"
+                  >
+                    <Reply className="w-3 h-3" />
+                  </button>
                 </div>
 
                 <div className="chat-footer opacity-50">
@@ -342,37 +389,61 @@ const ChatPage = () => {
       </div>
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="flex-shrink-0 p-2 sm:p-3 md:p-4 border-t border-base-300 bg-base-200">
-        <div className="flex gap-1 sm:gap-2 items-center">
-          <EmojiPicker onEmojiSelect={handleEmojiSelect} disabled={!isConnected} />
+      <div className="flex-shrink-0 border-t border-base-300 bg-base-200">
+        {/* Reply Preview */}
+        {replyingTo && (
+          <div className="px-3 sm:px-4 pt-2 sm:pt-3 flex items-center gap-2 bg-base-300/50">
+            <Reply className="w-4 h-4 text-base-content/60" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-base-content/80">
+                Replying to {replyingTo.senderName}
+              </div>
+              <div className="text-xs text-base-content/60 truncate">
+                {replyingTo.text}
+              </div>
+            </div>
+            <button
+              onClick={handleCancelReply}
+              className="btn btn-ghost btn-xs btn-circle"
+              type="button"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
-          <button
-            type="button"
-            className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
-            aria-label="Attach file"
-          >
-            <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+        <form onSubmit={handleSendMessage} className="p-2 sm:p-3 md:p-4">
+          <div className="flex gap-1 sm:gap-2 items-center">
+            <EmojiPicker onEmojiSelect={handleEmojiSelect} disabled={!isConnected} />
 
-          <input
-            type="text"
-            value={newMessage}
-            onChange={handleTyping}
-            placeholder="Type a message..."
-            className="input input-bordered flex-1 h-9 sm:h-12"
-            disabled={!isConnected}
-          />
+            <button
+              type="button"
+              className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
+              aria-label="Attach file"
+            >
+              <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-circle btn-sm sm:btn-md"
-            disabled={!newMessage.trim() || sendMessageMutation.isPending || !isConnected}
-            aria-label="Send message"
-          >
-            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        </div>
-      </form>
+            <input
+              type="text"
+              value={newMessage}
+              onChange={handleTyping}
+              placeholder="Type a message..."
+              className="input input-bordered flex-1 h-9 sm:h-12"
+              disabled={!isConnected}
+            />
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-circle btn-sm sm:btn-md"
+              disabled={!newMessage.trim() || sendMessageMutation.isPending || !isConnected}
+              aria-label="Send message"
+            >
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
+        </form>
+      </div>
 
       <UserProfileModal
         user={targetUser}

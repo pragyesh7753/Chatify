@@ -72,17 +72,24 @@ export const getUserChannels = async (userId) => {
 
 export const createMessage = async (messageData) => {
   try {
+    const documentData = {
+      channelId: messageData.channelId,
+      senderId: messageData.senderId,
+      senderName: messageData.senderName,
+      text: messageData.text,
+      attachments: messageData.attachments || []
+    };
+
+    // Add reply metadata as JSON string if present
+    if (messageData.replyTo) {
+      documentData.replyTo = JSON.stringify(messageData.replyTo);
+    }
+
     const message = await databases.createDocument(
       DATABASE_ID,
       MESSAGES_COLLECTION_ID,
       ID.unique(),
-      {
-        channelId: messageData.channelId,
-        senderId: messageData.senderId,
-        senderName: messageData.senderName,
-        text: messageData.text,
-        attachments: messageData.attachments || []
-      }
+      documentData
     );
 
     // Update channel's last message timestamp

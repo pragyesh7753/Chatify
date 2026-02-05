@@ -1,9 +1,9 @@
-import { 
-  createChannel, 
-  getChannelById, 
-  getUserChannels, 
-  createMessage, 
-  getChannelMessages 
+import {
+  createChannel,
+  getChannelById,
+  getUserChannels,
+  createMessage,
+  getChannelMessages
 } from "../services/message.service.js";
 import { getIO, isUserOnline } from "../lib/socket.js";
 import { getFCMTokenService } from "../services/fcm.service.js";
@@ -56,7 +56,7 @@ export async function getMessages(req, res) {
 
 export async function sendMessage(req, res) {
   try {
-    const { channelId, text, attachments } = req.body;
+    const { channelId, text, attachments, replyToMessageId, replyToText, replyToSenderName } = req.body;
     const user = req.user;
 
     const messageData = {
@@ -67,19 +67,28 @@ export async function sendMessage(req, res) {
       attachments: attachments || []
     };
 
+    // Add reply metadata as object if present
+    if (replyToMessageId && replyToText) {
+      messageData.replyTo = {
+        messageId: replyToMessageId,
+        text: replyToText.trim(),
+        senderName: replyToSenderName || "Unknown"
+      };
+    }
+
     const message = await createMessage(messageData);
 
     // Emit the message to all users in the channel (including sender for other devices)
     const io = getIO();
-    io.to(channelId).emit("new-message", { 
-      message, 
-      senderId: user._id 
+    io.to(channelId).emit("new-message", {
+      message,
+      senderId: user._id
     });
 
     // Send push notification to offline recipient (with small delay to avoid race condition)
     const members = channelId.split("-");
     const recipientId = members.find(id => id !== user._id);
-    
+
     setTimeout(async () => {
       if (recipientId && !isUserOnline(recipientId)) {
         try {
