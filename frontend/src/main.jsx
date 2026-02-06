@@ -1,13 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App.jsx";
+import "@/styles/index.css";
+import App from "@/app/App";
 
 import { BrowserRouter } from "react-router";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SocketProvider } from "./context/SocketContext.jsx";
-import { CallProvider } from "./context/CallProvider.jsx";
+import { SocketProvider } from "@/features/chat/context/SocketContext";
+import { CallProvider } from "@/features/call/context/CallProvider";
 
 // Export queryClient so it can be used in axios interceptors
 export const queryClient = new QueryClient({
