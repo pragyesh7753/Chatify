@@ -27,8 +27,10 @@ const ChatPage = () => {
   const [typingUser, setTypingUser] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [swipeOffset, setSwipeOffset] = useState({});
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const touchStateRef = useRef({});
 
   const { authUser } = useAuthUser();
   const { socket, isConnected } = useSocket();
@@ -305,15 +307,86 @@ const ChatPage = () => {
             // Check if message is emoji only
             const isEmojiOnly = /^[\p{Emoji}\s]+$/u.test(message.text.trim());
 
+            // --- SWIPE HANDLER START ---
+            // Touch event handlers for swipe-to-reply
+            const minSwipeDistance = 50; // px
+            const maxSwipeDistance = 100; // px - max visual feedback distance
+            const messageId = message.$id || index;
+
+            const onTouchStart = (e) => {
+              if (e.touches && e.touches.length === 1) {
+                touchStateRef.current[messageId] = {
+                  startX: e.touches[0].clientX,
+                  endX: null
+                };
+              }
+            };
+            const onTouchMove = (e) => {
+              if (e.touches && e.touches.length === 1 && touchStateRef.current[messageId]) {
+                touchStateRef.current[messageId].endX = e.touches[0].clientX;
+                const distance = touchStateRef.current[messageId].endX - touchStateRef.current[messageId].startX;
+                
+                // Only show visual feedback for right swipe
+                if (distance > 0) {
+                  // Limit the swipe distance for visual feedback
+                  const clampedDistance = Math.min(distance, maxSwipeDistance);
+                  setSwipeOffset(prev => ({ ...prev, [messageId]: clampedDistance }));
+                }
+              }
+            };
+            const onTouchEnd = () => {
+              if (touchStateRef.current[messageId] && 
+                  touchStateRef.current[messageId].startX !== null && 
+                  touchStateRef.current[messageId].endX !== null) {
+                const distance = touchStateRef.current[messageId].endX - touchStateRef.current[messageId].startX;
+                // Only allow right swipe for all messages
+                if (distance > minSwipeDistance) {
+                  handleReply(message);
+                }
+              }
+              // Reset swipe offset with smooth transition
+              setSwipeOffset(prev => ({ ...prev, [messageId]: 0 }));
+              // Clear touch state for this message
+              delete touchStateRef.current[messageId];
+            };
+            
+            const currentSwipeOffset = swipeOffset[messageId] || 0;
+            // --- SWIPE HANDLER END ---
+
             return isEmojiOnly ? (
               <div
                 key={message.$id || index}
-                className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} mb-3`}
+                className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} mb-3 relative`}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
               >
-                <div className="text-4xl sm:text-5xl py-1">
+                {/* Reply icon that appears during swipe */}
+                {currentSwipeOffset > 0 && (
+                  <div 
+                    className="absolute left-0 top-1/2 -translate-y-1/2 text-primary"
+                    style={{ opacity: Math.min(currentSwipeOffset / 50, 1) }}
+                  >
+                    <Reply className="w-5 h-5" />
+                  </div>
+                )}
+                
+                <div 
+                  className="text-4xl sm:text-5xl py-1"
+                  style={{
+                    transform: `translateX(${currentSwipeOffset}px)`,
+                    transition: currentSwipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+                  }}
+                >
                   {message.text}
                 </div>
-                <div className="opacity-50 px-2">
+                <div 
+                  className="opacity-50 px-2"
+                  style={{
+                    transform: `translateX(${currentSwipeOffset}px)`,
+                    transition: currentSwipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+                  }}
+                >
                   <time className="text-xs">
                     {new Date(message.$createdAt).toLocaleTimeString([], {
                       hour: "2-digit",
@@ -325,9 +398,28 @@ const ChatPage = () => {
             ) : (
               <div
                 key={message.$id || index}
-                className={`chat ${isOwnMessage ? "chat-end" : "chat-start"} group`}
+                className={`chat ${isOwnMessage ? "chat-end" : "chat-start"} group relative`}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
               >
-                <div className="relative">
+                {/* Reply icon that appears during swipe */}
+                {currentSwipeOffset > 0 && (
+                  <div 
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10"
+                    style={{ opacity: Math.min(currentSwipeOffset / 50, 1) }}
+                  >
+                    <Reply className="w-5 h-5" />
+                  </div>
+                )}
+                
+                <div 
+                  className="relative"
+                  style={{
+                    transform: `translateX(${currentSwipeOffset}px)`,
+                    transition: currentSwipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+                  }}
+                >
                   <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
                     {showSenderName && (
                       <div className="text-xs font-semibold mb-1 opacity-80">
@@ -370,7 +462,13 @@ const ChatPage = () => {
                   </button>
                 </div>
 
-                <div className="chat-footer opacity-50">
+                <div 
+                  className="chat-footer opacity-50"
+                  style={{
+                    transform: `translateX(${currentSwipeOffset}px)`,
+                    transition: currentSwipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+                  }}
+                >
                   <time className="text-xs">
                     {new Date(message.$createdAt).toLocaleTimeString([], {
                       hour: "2-digit",
