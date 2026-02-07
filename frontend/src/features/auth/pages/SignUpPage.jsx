@@ -16,19 +16,6 @@ const SignUpPage = () => {
 
   const [showVerificationNotice, setShowVerificationNotice] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-
-  // This is how we did it at first, without using our custom hook
-  // const queryClient = useQueryClient();
-  // const {
-  //   mutate: signupMutation,
-  //   isPending,
-  //   error,
-  // } = useMutation({
-  //   mutationFn: signup,
-  //   onSuccess: () => queryClient.invalidateQueries({ queryKey: ["authUser"] }),
-  // });
-
-  // This is how we did it using our custom hook - optimized version
   const { isPending, error, signupMutation } = useSignUp();
 
   const handleSignup = (e) => {
@@ -41,9 +28,13 @@ const SignUpPage = () => {
     });
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setSignupData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleGoogleSignup = () => {
-    // Redirect to backend Google OAuth endpoint
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`;
+    window.location.href = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth/google`;
   };
 
   return (
@@ -87,10 +78,11 @@ const SignUpPage = () => {
                       </label>
                       <input
                         type="text"
+                        name="fullName"
                         placeholder="John Doe"
                         className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.fullName}
-                        onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                        onChange={handleChange}
                         required
                       />
                     </div>
@@ -101,10 +93,11 @@ const SignUpPage = () => {
                       </label>
                       <input
                         type="email"
+                        name="email"
                         placeholder="john@gmail.com"
                         className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.email}
-                        onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                        onChange={handleChange}
                         required
                       />
                     </div>
@@ -117,7 +110,8 @@ const SignUpPage = () => {
                         placeholder="********"
                         className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.password}
-                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                        onChange={handleChange}
+                        name="password"
                         required
                       />
                       <p className="text-xs opacity-70 mt-1">
@@ -134,16 +128,15 @@ const SignUpPage = () => {
                         placeholder="********"
                         className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.confirmPassword}
-                        onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                        onChange={handleChange}
+                        name="confirmPassword"
                         required
                       />
-                      {signupData.password && signupData.confirmPassword && (
-                        signupData.password !== signupData.confirmPassword ? (
-                          <p className="text-xs text-error mt-1">Passwords do not match</p>
-                        ) : (
-                          <p className="text-xs text-success mt-1">Passwords match</p>
-                        )
-                      )}
+                      {signupData.password && signupData.confirmPassword && (signupData.password !== signupData.confirmPassword ? (
+                        <p className="text-xs text-error mt-1">Passwords do not match</p>
+                      ) : (
+                        <p className="text-xs text-success mt-1">Passwords match</p>
+                      ))}
                     </div>
 
                     <div className="form-control">
@@ -171,8 +164,8 @@ const SignUpPage = () => {
 
                   <div className="divider">OR</div>
 
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleGoogleSignup}
                     className="btn btn-outline w-full flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
