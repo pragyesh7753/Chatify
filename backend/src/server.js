@@ -81,13 +81,11 @@ app.use(
 // Updated CORS configuration for production
 app.use(cors({
   origin: function (origin, callback) {
-    // Block non-browser requests in production
-    if (!origin && process.env.NODE_ENV === 'production') {
-      return callback(new Error('CORS blocked: no origin'), false);
-    }
 
-    // Allow Postman / curl in dev
-    if (!origin) return callback(null, true);
+    // ✅ Allow requests with no origin (OAuth, preflight, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
 
     const allowedOrigins = [
       process.env.FRONTEND_URL?.replace(/\/$/, "")
