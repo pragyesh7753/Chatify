@@ -356,7 +356,7 @@ const ChatPage = () => {
             return isEmojiOnly ? (
               <div
                 key={message.$id || index}
-                className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} mb-3 relative`}
+                className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} mb-3 relative group`}
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
@@ -371,14 +371,24 @@ const ChatPage = () => {
                   </div>
                 )}
                 
-                <div 
-                  className="text-4xl sm:text-5xl py-1"
-                  style={{
-                    transform: `translateX(${currentSwipeOffset}px)`,
-                    transition: currentSwipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
-                  }}
-                >
-                  {message.text}
+                <div className={`flex items-center gap-2 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}>
+                  <div 
+                    className="text-4xl sm:text-5xl py-1"
+                    style={{
+                      transform: `translateX(${currentSwipeOffset}px)`,
+                      transition: currentSwipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+                    }}
+                  >
+                    {message.text}
+                  </div>
+                  {/* Reply button - shows on hover (hidden on mobile) */}
+                  <button
+                    onClick={() => handleReply(message)}
+                    className="hidden md:inline-flex btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    title="Reply"
+                  >
+                    <Reply className="w-3 h-3" />
+                  </button>
                 </div>
                 <div 
                   className="opacity-50 px-2"
@@ -414,48 +424,50 @@ const ChatPage = () => {
                 )}
                 
                 <div 
-                  className="relative"
+                  className={`flex items-center gap-2 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}
                   style={{
                     transform: `translateX(${currentSwipeOffset}px)`,
                     transition: currentSwipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
                   }}
                 >
-                  <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
-                    {showSenderName && (
-                      <div className="text-xs font-semibold mb-1 opacity-80">
-                        {senderLabel}
-                      </div>
-                    )}
-                    {/* Show replied message if this is a reply */}
-                    {message.replyTo && (() => {
-                      try {
-                        const replyData = typeof message.replyTo === 'string'
-                          ? JSON.parse(message.replyTo)
-                          : message.replyTo;
+                  <div className="relative">
+                    <div className={`chat-bubble ${isOwnMessage ? "chat-bubble-primary" : ""}`}>
+                      {showSenderName && (
+                        <div className="text-xs font-semibold mb-1 opacity-80">
+                          {senderLabel}
+                        </div>
+                      )}
+                      {/* Show replied message if this is a reply */}
+                      {message.replyTo && (() => {
+                        try {
+                          const replyData = typeof message.replyTo === 'string'
+                            ? JSON.parse(message.replyTo)
+                            : message.replyTo;
 
-                        // Validate replyData has required fields
-                        if (!replyData || !replyData.text) {
+                          // Validate replyData has required fields
+                          if (!replyData || !replyData.text) {
+                            return null;
+                          }
+
+                          return (
+                            <div className="mb-2 pb-2 border-l-2 border-base-content/30 pl-2 opacity-70">
+                              <div className="text-xs font-semibold">{replyData.senderName || "Unknown"}</div>
+                              <div className="text-xs truncate">{replyData.text}</div>
+                            </div>
+                          );
+                        } catch (e) {
+                          console.error("Error parsing reply data:", e);
                           return null;
                         }
-
-                        return (
-                          <div className="mb-2 pb-2 border-l-2 border-base-content/30 pl-2 opacity-70">
-                            <div className="text-xs font-semibold">{replyData.senderName || "Unknown"}</div>
-                            <div className="text-xs truncate">{replyData.text}</div>
-                          </div>
-                        );
-                      } catch (e) {
-                        console.error("Error parsing reply data:", e);
-                        return null;
-                      }
-                    })()}
-                    {message.text}
+                      })()}
+                      {message.text}
+                    </div>
                   </div>
 
-                  {/* Reply button - shows on hover */}
+                  {/* Reply button - shows on hover, positioned beside message (hidden on mobile) */}
                   <button
                     onClick={() => handleReply(message)}
-                    className="absolute -top-2 right-0 btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="hidden md:inline-flex btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                     title="Reply"
                   >
                     <Reply className="w-3 h-3" />
