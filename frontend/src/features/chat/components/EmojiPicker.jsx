@@ -1,42 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Smile, X } from "lucide-react";
+import { Smile } from "lucide-react";
+import EmojiPickerLib from "emoji-picker-react";
 
 const EmojiPicker = ({ onEmojiSelect, disabled = false }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [emojiData, setEmojiData] = useState(null);
-  const emojiPickerRef = useRef(null);
+  const pickerRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [pickerStyle, setPickerStyle] = useState(null);
 
-  // Load emoji-mart from CDN
-  useEffect(() => {
-    const loadEmojiMart = async () => {
-      try {
-        // Load emoji data
-        const response = await fetch('https://cdn.jsdelivr.net/npm/@emoji-mart/data');
-        const data = await response.json();
-        setEmojiData(data);
-
-        // Load Picker component if not already loaded
-        if (!window.EmojiMart) {
-          const script = document.createElement('script');
-          script.type = 'module';
-          script.innerHTML = `
-            import { Picker } from 'https://cdn.jsdelivr.net/npm/emoji-mart@latest/+esm';
-            window.EmojiMart = { Picker };
-          `;
-          document.head.appendChild(script);
-        }
-      } catch (error) {
-        console.error('Failed to load emoji-mart:', error);
-      }
-    };
-
-    loadEmojiMart();
-  }, []);
-
-  // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+      if (pickerRef.current && !pickerRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)) {
         setShowEmojiPicker(false);
       }
     };
@@ -47,16 +21,65 @@ const EmojiPicker = ({ onEmojiSelect, disabled = false }) => {
     }
   }, [showEmojiPicker]);
 
-  const handleEmojiSelect = (emoji) => {
-    onEmojiSelect(emoji);
+  // Compute position so picker opens above the button when possible
+  useEffect(() => {
+    if (!showEmojiPicker || !buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const margin = 8;
+
+    // Set temporary left so the picker can render and measure itself
+    const initialLeft = Math.max(margin, rect.left);
+    // default top above the button with an estimated height
+    const estimatedHeight = 300;
+    let top = rect.top - estimatedHeight - margin;
+
+    // If there's not enough space above, open below
+    if (top < margin) {
+      top = rect.bottom + margin;
+    }
+
+    setPickerStyle({ position: 'fixed', left: initialLeft, top, zIndex: 9999 });
+
+    // After render, measure actual height and adjust if needed
+    requestAnimationFrame(() => {
+      const el = pickerRef.current;
+      if (!el) return;
+      const pickerRect = el.getBoundingClientRect();
+      let finalTop = rect.top - pickerRect.height - margin;
+      if (finalTop < margin) {
+        finalTop = rect.bottom + margin;
+      }
+
+      // Prevent overflow to the right
+      let finalLeft = rect.left;
+      if (finalLeft + pickerRect.width > window.innerWidth - margin) {
+        finalLeft = Math.max(margin, window.innerWidth - margin - pickerRect.width);
+      }
+
+      setPickerStyle({ position: 'fixed', left: finalLeft, top: finalTop, zIndex: 9999 });
+    });
+  }, [showEmojiPicker]);
+
+  const handleEmojiClick = (emojiData, event) => {
+    let char;
+
+    if (!emojiData && event && typeof event === 'string') char = event;
+    else if (typeof emojiData === 'string') char = emojiData;
+    else if (emojiData && typeof emojiData === 'object') char = emojiData.emoji || emojiData.native || emojiData.unified || null;
+    if (!char && event && typeof event === 'object') char = event.emoji || event.native || null;
+    if (!char) return;
+
+    onEmojiSelect({ native: char });
     setShowEmojiPicker(false);
   };
 
   return (
     <>
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+        onClick={() => setShowEmojiPicker((s) => !s)}
         className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
         aria-label="Add emoji"
         disabled={disabled}
@@ -66,59 +89,15 @@ const EmojiPicker = ({ onEmojiSelect, disabled = false }) => {
 
       {showEmojiPicker && (
         <div
-          ref={emojiPickerRef}
-          className="fixed md:absolute bottom-[76px] left-2 sm:left-4 z-20 shadow-xl rounded-lg overflow-hidden"
+          ref={pickerRef}
+          style={pickerStyle || { position: 'fixed', zIndex: 9999 }}
+          className="shadow-xl rounded-lg overflow-hidden bg-base-100 p-2"
         >
-          <div className="bg-base-200 p-2 flex justify-between items-center border-b border-base-300">
-            <span className="text-sm font-semibold">Pick an emoji</span>
-            <button
-              onClick={() => setShowEmojiPicker(false)}
-              className="btn btn-ghost btn-xs btn-circle"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div id="emoji-picker-container"></div>
+          <EmojiPickerLib onEmojiClick={handleEmojiClick} theme="auto" />
         </div>
-      )}
-
-      {showEmojiPicker && emojiData && (
-        <EmojiPickerRenderer
-          data={emojiData}
-          onEmojiSelect={handleEmojiSelect}
-        />
       )}
     </>
   );
-};
-
-// Component to handle emoji picker rendering
-const EmojiPickerRenderer = ({ data, onEmojiSelect }) => {
-  useEffect(() => {
-    const container = document.getElementById('emoji-picker-container');
-    if (container && window.EmojiMart) {
-      const picker = new window.EmojiMart.Picker({
-        data: data,
-        onEmojiSelect: onEmojiSelect,
-        theme: 'auto',
-        previewPosition: 'none',
-        skinTonePosition: 'search',
-        perLine: 7,
-        maxFrequentRows: 2,
-        emojiSize: 24
-      });
-      container.innerHTML = '';
-      container.appendChild(picker);
-      
-      // Apply custom height constraint
-      const pickerElement = container.querySelector('em-emoji-picker');
-      if (pickerElement) {
-        pickerElement.style.height = '280px';
-      }
-    }
-  }, [data, onEmojiSelect]);
-
-  return null;
 };
 
 export default EmojiPicker;
