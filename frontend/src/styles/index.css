@@ -75,3 +75,17 @@ body,
   }
 }
 
+/* Animated icons used in the sidebar: subtle scale + lift on hover */
+.animated-icon {
+  transition: transform 160ms ease, opacity 160ms ease, color 160ms ease;
+  will-change: transform, opacity;
+}
+.animated-icon:hover {
+  transform: translateY(-3px) scale(1.12);
+  opacity: 1 !important;
+}
+
+.animated-icon-press:active {
+  transform: translateY(0) scale(0.98);
+}
+

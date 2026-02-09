@@ -72,13 +72,13 @@ const Sidebar = ({ friends = [] }) => {
                         </Link>
                         <div className="flex items-center gap-2">
                             <Link to="/friends" className="btn btn-ghost btn-sm btn-circle" title="Friends">
-                                <UsersIcon className="h-5 w-5 text-base-content opacity-70" />
+                                <UsersIcon className="h-5 w-5 text-base-content opacity-70 animated-icon" />
                             </Link>
                             <Link to="/notifications" className="btn btn-ghost btn-sm btn-circle" title="Notifications">
-                                <BellIcon className="h-5 w-5 text-base-content opacity-70" />
+                                <BellIcon className="h-5 w-5 text-base-content opacity-70 animated-icon" />
                             </Link>
                             <Link to="/settings" className="btn btn-ghost btn-sm btn-circle" title="Settings">
-                                <Settings className="h-5 w-5 text-base-content opacity-70" />
+                                <Settings className="h-5 w-5 text-base-content opacity-70 animated-icon" />
                             </Link>
                         </div>
                     </>
@@ -128,13 +128,13 @@ const Sidebar = ({ friends = [] }) => {
             {isCollapsed && (
                 <div className="flex flex-col items-center gap-2 py-2 border-b border-base-300">
                     <Link to="/friends" className="btn btn-ghost btn-sm btn-circle" title="Friends">
-                        <UsersIcon className="h-5 w-5 text-base-content opacity-70" />
+                        <UsersIcon className="h-5 w-5 text-base-content opacity-70 animated-icon" />
                     </Link>
                     <Link to="/notifications" className="btn btn-ghost btn-sm btn-circle" title="Notifications">
-                        <BellIcon className="h-5 w-5 text-base-content opacity-70" />
+                        <BellIcon className="h-5 w-5 text-base-content opacity-70 animated-icon" />
                     </Link>
                     <Link to="/settings" className="btn btn-ghost btn-sm btn-circle" title="Settings">
-                        <Settings className="h-5 w-5 text-base-content opacity-70" />
+                        <Settings className="h-5 w-5 text-base-content opacity-70 animated-icon" />
                     </Link>
                 </div>
             )}
@@ -153,7 +153,7 @@ const Sidebar = ({ friends = [] }) => {
                                     Start a conversation with your friends
                                 </p>
                                 <Link to="/friends" className="btn btn-sm btn-primary">
-                                    <UsersIcon className="h-4 w-4 mr-2" />
+                                    <UsersIcon className="h-4 w-4 mr-2 animated-icon" />
                                     Find Friends
                                 </Link>
                             </>
