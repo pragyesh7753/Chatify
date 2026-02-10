@@ -29,3 +29,5 @@ frontend/package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+todo.txt
