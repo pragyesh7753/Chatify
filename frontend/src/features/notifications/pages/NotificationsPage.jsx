@@ -30,7 +30,6 @@ const NotificationsPage = () => {
 
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <span className="loading loading-spinner loading-lg"></span>
           </div>
         ) : (
           <>

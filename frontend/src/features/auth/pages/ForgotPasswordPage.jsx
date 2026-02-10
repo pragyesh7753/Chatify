@@ -44,19 +44,19 @@ const ForgotPasswordPage = () => {
                 We've sent a password reset link to <strong>{email}</strong>
               </p>
             </div>
-            
+
             <div className="space-y-4">
               <p className="text-sm text-base-content/60">
                 Didn't receive the email? Check your spam folder or try again.
               </p>
-              
+
               <button
                 onClick={() => setIsSubmitted(false)}
                 className="btn btn-outline btn-sm"
               >
                 Try Different Email
               </button>
-              
+
               <div className="pt-4">
                 <Link to="/login" className="text-primary hover:underline text-sm">
                   ← Back to Login
@@ -106,10 +106,7 @@ const ForgotPasswordPage = () => {
             disabled={isPending}
           >
             {isPending ? (
-              <>
-                <span className="loading loading-spinner loading-xs"></span>
-                Sending...
-              </>
+              <span className="loading loading-ring loading-sm"></span>
             ) : (
               "Send Reset Link"
             )}

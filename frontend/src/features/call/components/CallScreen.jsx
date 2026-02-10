@@ -109,7 +109,6 @@ const CallScreen = ({ client, chatId, mode, onClose }) => {
     return (
       <div className="fixed inset-0 bg-base-300 z-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="loading loading-spinner loading-md sm:loading-lg mb-3 sm:mb-4"></div>
           <p className="text-base sm:text-lg">Connecting to call...</p>
         </div>
       </div>
@@ -166,7 +165,6 @@ const CallUI = ({ mode, onEndCall }) => {
     return (
       <div className="flex items-center justify-center h-full bg-base-300 p-4">
         <div className="text-center">
-          <div className="loading loading-spinner loading-md sm:loading-lg mb-3 sm:mb-4"></div>
           <p className="text-base sm:text-lg">Joining call...</p>
         </div>
       </div>

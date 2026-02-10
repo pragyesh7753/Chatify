@@ -68,7 +68,6 @@ const EmailVerificationPage = () => {
                 <div className="card-body text-center">
                     {verificationStatus === "verifying" && (
                         <>
-                            <div className="loading loading-spinner loading-lg mx-auto"></div>
                             <h2 className="card-title justify-center">Verifying Email...</h2>
                             <p>Please wait while we verify your email address.</p>
                         </>
@@ -107,10 +106,7 @@ const EmailVerificationPage = () => {
                                 disabled={!email || resendMutation.isPending}
                             >
                                 {resendMutation.isPending ? (
-                                    <>
-                                        <span className="loading loading-spinner loading-xs"></span>
-                                        Sending...
-                                    </>
+                                    <span className="loading loading-ring loading-sm"></span>
                                 ) : (
                                     <>
                                         <EnvelopeIcon className="w-4 h-4" />

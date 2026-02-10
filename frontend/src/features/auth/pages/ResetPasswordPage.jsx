@@ -9,7 +9,7 @@ const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
-  
+
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
@@ -35,7 +35,7 @@ const ResetPasswordPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!formData.password || !formData.confirmPassword) {
       toast.error("Please fill in all fields");
       return;
@@ -112,10 +112,7 @@ const ResetPasswordPage = () => {
             disabled={isPending}
           >
             {isPending ? (
-              <>
-                <span className="loading loading-spinner loading-xs"></span>
-                Resetting...
-              </>
+              <span className="loading loading-ring loading-sm"></span>
             ) : (
               "Reset Password"
             )}

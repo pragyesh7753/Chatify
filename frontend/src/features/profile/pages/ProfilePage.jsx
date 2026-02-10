@@ -57,13 +57,13 @@ const ProfilePage = () => {
 
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.fullName.trim()) {
       toast.error("Full name is required");
       return;
     }
-    
+
     if (formData.fullName.trim().length < 2) {
       toast.error("Full name must be at least 2 characters long");
       return;
@@ -73,7 +73,7 @@ const ProfilePage = () => {
       toast.error("Username is required");
       return;
     }
-    
+
     if (formData.username.trim().length < 3) {
       toast.error("Username must be at least 3 characters long");
       return;
@@ -100,12 +100,12 @@ const ProfilePage = () => {
       toast.error("Please enter a valid email address");
       return;
     }
-    
+
     const submitData = { ...formData };
     if (selectedFile) {
       submitData.profilePic = selectedFile;
     }
-    
+
     updateProfile(submitData);
     setIsEditing(false);
   }, [formData, selectedFile, updateProfile]);
@@ -144,7 +144,7 @@ const ProfilePage = () => {
         toast.error('File size must be less than 5MB');
         return;
       }
-      
+
       if (!file.type.startsWith('image/')) {
         toast.error('Please select an image file');
         return;
@@ -184,7 +184,7 @@ const ProfilePage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="loading loading-spinner loading-lg"></span>
+        <span className="loading loading-ring loading-lg text-primary"></span>
       </div>
     );
   }
@@ -194,8 +194,8 @@ const ProfilePage = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-error">Failed to load profile</p>
-          <button 
-            className="btn btn-primary mt-4" 
+          <button
+            className="btn btn-primary mt-4"
             onClick={() => window.location.reload()}
           >
             Retry
@@ -235,11 +235,13 @@ const ProfilePage = () => {
                 disabled={isUpdating}
               >
                 {isUpdating ? (
-                  <span className="loading loading-spinner loading-xs sm:loading-sm mr-2"></span>
+                  <span className="loading loading-ring loading-sm"></span>
                 ) : (
-                  <SaveIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                  <>
+                    <SaveIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                    Save Changes
+                  </>
                 )}
-                Save Changes
               </button>
             </div>
           )}
@@ -252,16 +254,16 @@ const ProfilePage = () => {
               <div className="card-body items-center text-center p-4 sm:p-6">
                 <div className="avatar mb-3 sm:mb-4">
                   <div className="w-24 sm:w-28 md:w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                    <img 
-                      src={previewUrl || formData.profilePic || "/default-avatar.svg"} 
-                      alt="Profile" 
+                    <img
+                      src={previewUrl || formData.profilePic || "/default-avatar.svg"}
+                      alt="Profile"
                       onError={(e) => {
                         e.target.src = "/default-avatar.svg";
                       }}
                     />
                   </div>
                 </div>
-                
+
                 {isEditing ? (
                   <div className="space-y-3 sm:space-y-4 w-full">
                     <input
@@ -474,7 +476,7 @@ const ProfilePage = () => {
                               className="btn btn-warning btn-xs text-[10px] sm:text-xs ml-2 flex-shrink-0"
                             >
                               {resendVerificationMutation.isPending ? (
-                                <span className="loading loading-spinner loading-xs"></span>
+                                <span className="loading loading-ring loading-xs"></span>
                               ) : (
                                 "Verify"
                               )}

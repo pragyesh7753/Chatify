@@ -43,7 +43,6 @@ const EmailChangeVerificationPage = () => {
         switch (verificationStatus) {
             case "verifying":
                 return {
-                    icon: <span className="loading loading-spinner loading-lg text-primary"></span>,
                     title: "Verifying Email Change...",
                     message: "Please wait while we verify your new email address.",
                     bgColor: "bg-base-100",

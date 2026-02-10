@@ -237,7 +237,6 @@ const SettingsPage = () => {
                       >
                         {isChangingPassword ? (
                           <>
-                            <span className="loading loading-spinner loading-xs"></span>
                             <span className="text-xs sm:text-sm">Changing...</span>
                           </>
                         ) : (
@@ -277,7 +276,6 @@ const SettingsPage = () => {
                 >
                   {isLoggingOut ? (
                     <>
-                      <span className="loading loading-spinner loading-xs"></span>
                       <span className="text-xs sm:text-sm">Logging out...</span>
                     </>
                   ) : (
@@ -408,7 +406,6 @@ const SettingsPage = () => {
                       >
                         {isRequestingPermission ? (
                           <>
-                            <span className="loading loading-spinner loading-xs"></span>
                             <span>Requesting...</span>
                           </>
                         ) : (

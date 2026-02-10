@@ -51,10 +51,7 @@ const EmailVerificationNotice = ({ email, onClose }) => {
                             disabled={countdown > 0 || resendMutation.isPending}
                         >
                             {resendMutation.isPending ? (
-                                <>
-                                    <span className="loading loading-spinner loading-xs"></span>
-                                    Sending...
-                                </>
+                                <span className="loading loading-ring loading-sm"></span>
                             ) : countdown > 0 ? (
                                 `Resend in ${countdown}s`
                             ) : (

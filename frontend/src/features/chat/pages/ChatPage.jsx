@@ -325,7 +325,7 @@ const ChatPage = () => {
               if (e.touches && e.touches.length === 1 && touchStateRef.current[messageId]) {
                 touchStateRef.current[messageId].endX = e.touches[0].clientX;
                 const distance = touchStateRef.current[messageId].endX - touchStateRef.current[messageId].startX;
-                
+
                 // Only show visual feedback for right swipe
                 if (distance > 0) {
                   // Limit the swipe distance for visual feedback
@@ -335,9 +335,9 @@ const ChatPage = () => {
               }
             };
             const onTouchEnd = () => {
-              if (touchStateRef.current[messageId] && 
-                  touchStateRef.current[messageId].startX !== null && 
-                  touchStateRef.current[messageId].endX !== null) {
+              if (touchStateRef.current[messageId] &&
+                touchStateRef.current[messageId].startX !== null &&
+                touchStateRef.current[messageId].endX !== null) {
                 const distance = touchStateRef.current[messageId].endX - touchStateRef.current[messageId].startX;
                 // Only allow right swipe for all messages
                 if (distance > minSwipeDistance) {
@@ -349,7 +349,7 @@ const ChatPage = () => {
               // Clear touch state for this message
               delete touchStateRef.current[messageId];
             };
-            
+
             const currentSwipeOffset = swipeOffset[messageId] || 0;
             // --- SWIPE HANDLER END ---
 
@@ -363,16 +363,16 @@ const ChatPage = () => {
               >
                 {/* Reply icon that appears during swipe */}
                 {currentSwipeOffset > 0 && (
-                  <div 
+                  <div
                     className="absolute left-0 top-1/2 -translate-y-1/2 text-primary"
                     style={{ opacity: Math.min(currentSwipeOffset / 50, 1) }}
                   >
                     <Reply className="w-5 h-5" />
                   </div>
                 )}
-                
+
                 <div className={`flex items-center gap-2 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}>
-                  <div 
+                  <div
                     className="text-4xl sm:text-5xl py-1"
                     style={{
                       transform: `translateX(${currentSwipeOffset}px)`,
@@ -390,7 +390,7 @@ const ChatPage = () => {
                     <Reply className="w-3 h-3" />
                   </button>
                 </div>
-                <div 
+                <div
                   className="opacity-50 px-2"
                   style={{
                     transform: `translateX(${currentSwipeOffset}px)`,
@@ -415,15 +415,15 @@ const ChatPage = () => {
               >
                 {/* Reply icon that appears during swipe */}
                 {currentSwipeOffset > 0 && (
-                  <div 
+                  <div
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10"
                     style={{ opacity: Math.min(currentSwipeOffset / 50, 1) }}
                   >
                     <Reply className="w-5 h-5" />
                   </div>
                 )}
-                
-                <div 
+
+                <div
                   className={`flex items-center gap-2 ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}
                   style={{
                     transform: `translateX(${currentSwipeOffset}px)`,
@@ -474,7 +474,7 @@ const ChatPage = () => {
                   </button>
                 </div>
 
-                <div 
+                <div
                   className="chat-footer opacity-50"
                   style={{
                     transform: `translateX(${currentSwipeOffset}px)`,
@@ -496,7 +496,7 @@ const ChatPage = () => {
         {isTyping && typingUser && (
           <div className="chat chat-start">
             <div className="chat-bubble">
-              <span className="loading loading-dots loading-sm"></span>
+              <span className="loading loading-ring loading-sm"></span>
             </div>
           </div>
         )}

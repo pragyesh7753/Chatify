@@ -75,7 +75,7 @@ const FriendsPage = () => {
 
             {isLoading ? (
               <div className="flex justify-center py-12">
-                <span className="loading loading-spinner loading-lg text-primary" />
+                <span className="loading loading-ring loading-lg text-primary" />
               </div>
             ) : friends.length === 0 ? (
               <NoFriendsFound />
@@ -125,7 +125,7 @@ const FriendsPage = () => {
             {/* Search Results */}
             {loadingSearch ? (
               <div className="flex justify-center py-12">
-                <span className="loading loading-spinner loading-lg text-primary" />
+                <span className="loading loading-ring loading-lg text-primary" />
               </div>
             ) : debouncedSearchQuery.length >= 2 && searchResults.length === 0 ? (
               <div className="card bg-base-200 p-4 sm:p-6 text-center">

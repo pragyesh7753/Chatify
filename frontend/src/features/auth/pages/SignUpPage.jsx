@@ -24,7 +24,7 @@ const SignUpPage = () => {
   const handleSignup = (e) => {
     e.preventDefault();
     setValidationError("");
-    
+
     // Frontend validation
     const fullNameError = validateFullName(signupData.fullName);
     if (fullNameError) {
@@ -32,28 +32,28 @@ const SignUpPage = () => {
       setShowErrorModal(true);
       return;
     }
-    
+
     const emailError = validateEmail(signupData.email);
     if (emailError) {
       setValidationError(emailError);
       setShowErrorModal(true);
       return;
     }
-    
+
     const passwordMatchError = validatePasswordMatch(signupData.password, signupData.confirmPassword);
     if (passwordMatchError) {
       setValidationError(passwordMatchError);
       setShowErrorModal(true);
       return;
     }
-    
+
     const passwordError = validatePassword(signupData.password);
     if (passwordError) {
       setValidationError(passwordError);
       setShowErrorModal(true);
       return;
     }
-    
+
     signupMutation(signupData, {
       onSuccess: () => {
         setUserEmail(signupData.email);
@@ -185,14 +185,18 @@ const SignUpPage = () => {
                     </div>
                   </div>
 
-                  <button className="btn btn-primary btn-sm sm:btn-md w-full text-xs sm:text-sm" type="submit">
+                  <button
+                    className="btn btn-primary btn-sm sm:btn-md w-full text-xs sm:text-sm"
+                    type="submit"
+                    disabled={isPending}
+                  >
                     {isPending ? (
-                      <>
-                        <span className="loading loading-spinner loading-xs sm:loading-sm"></span>
-                        <span className="text-xs sm:text-sm">Loading...</span>
-                      </>
+                      <span className="loading loading-ring loading-sm"></span>
                     ) : (
-                      "Create Account"
+                      <>
+                        <UserPlusIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                        Sign Up
+                      </>
                     )}
                   </button>
 

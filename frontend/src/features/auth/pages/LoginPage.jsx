@@ -112,10 +112,7 @@ const LoginPage = () => {
 
                   <button type="submit" className="btn btn-primary w-full text-sm sm:text-base" disabled={isPending}>
                     {isPending ? (
-                      <>
-                        <span className="loading loading-spinner loading-xs"></span>
-                        <span className="text-sm sm:text-base">Signing in...</span>
-                      </>
+                      <span className="loading loading-ring loading-sm"></span>
                     ) : (
                       "Sign In"
                     )}
@@ -123,8 +120,8 @@ const LoginPage = () => {
 
                   <div className="divider">OR</div>
 
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleGoogleLogin}
                     className="btn btn-outline w-full flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
