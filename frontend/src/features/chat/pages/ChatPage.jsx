@@ -275,7 +275,7 @@ const ChatPage = () => {
             onClick={handleAudioCall}
             className="btn btn-ghost btn-sm btn-circle"
             title="Audio call"
-            disabled={!isConnected || callState.state !== CALL_STATES.IDLE}
+            disabled={callState.state !== CALL_STATES.IDLE}
           >
             <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
@@ -283,7 +283,7 @@ const ChatPage = () => {
             onClick={handleVideoCall}
             className="btn btn-ghost btn-sm btn-circle"
             title="Video call"
-            disabled={!isConnected || callState.state !== CALL_STATES.IDLE}
+            disabled={callState.state !== CALL_STATES.IDLE}
           >
             <Video className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>

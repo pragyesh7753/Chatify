@@ -12,6 +12,7 @@ import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
 import fcmRoutes from "./routes/fcm.route.js";
 import streamRoutes from "./routes/stream.route.js";
+import callRoutes from "./routes/call.route.js";
 
 import { connectAppwrite, databases, Query } from "./lib/appwrite.js";
 import { cleanupExpiredTokens } from "./lib/cleanup.js";
@@ -47,7 +48,7 @@ app.use(requestId);
 app.get("/api/internal/keepalive", async (req, res) => {
   try {
     const secret = req.query.secret || req.headers['x-cron-secret'];
-    
+
     if (process.env.NODE_ENV === "production" && secret !== process.env.CRON_SECRET) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -119,6 +120,7 @@ app.use("/api/users", apiLimiter);
 app.use("/api/chat", apiLimiter);
 app.use("/api/fcm", apiLimiter);
 app.use("/api/stream", apiLimiter);
+app.use("/api/calls", apiLimiter);
 
 // Routes (auth limiter is applied inside auth routes)
 app.use("/api/auth", authRoutes);
@@ -126,6 +128,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/fcm", fcmRoutes);
 app.use("/api/stream", streamRoutes);
+app.use("/api/calls", callRoutes);
 
 // Add a health check endpoint for debugging
 app.get("/api/health", (req, res) => {

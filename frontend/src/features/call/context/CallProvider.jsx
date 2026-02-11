@@ -1,4 +1,4 @@
-import {  useReducer, useEffect, useState } from "react";
+import { useReducer, useEffect, useState, useRef } from "react";
 import { useSocket } from "@/features/chat/hooks/useSocket";
 import useAuthUser from "@/features/auth/hooks/useAuthUser";
 import toast from "react-hot-toast";
@@ -165,6 +165,110 @@ export const CallProvider = ({ children }) => {
     }, []); // Only run on unmount
 
     /**
+     * Listen for service worker messages (from push notification clicks)
+     */
+    useEffect(() => {
+        const handleServiceWorkerMessage = (event) => {
+            // Only handle messages from service worker
+            if (event.data && event.data.type) {
+                if (event.data.type === "ACCEPT_CALL") {
+                    const { callData } = event.data;
+
+                    // Simulate incoming call and auto-accept
+                    dispatch({
+                        type: CALL_ACTIONS.INCOMING_CALL,
+                        payload: {
+                            roomName: callData.roomName,
+                            mode: callData.mode,
+                            caller: {
+                                _id: callData.callerId,
+                                fullName: callData.callerName
+                            }
+                        }
+                    });
+
+                    // Auto-accept the call after a brief delay
+                    setTimeout(() => {
+                        if (socket && streamClient) {
+                            dispatch({ type: CALL_ACTIONS.ACCEPT_CALL });
+                            socket.emit("call-accepted", {
+                                roomName: callData.roomName,
+                                targetUserId: callData.callerId
+                            });
+                        } else {
+                            console.error("Cannot accept call: socket or streamClient not ready", {
+                                hasSocket: !!socket,
+                                hasStreamClient: !!streamClient
+                            });
+                        }
+                    }, 500);
+                } else if (event.data.type === "REJECT_CALL") {
+                    const { callData } = event.data;
+
+                    if (socket) {
+                        socket.emit("call-rejected", {
+                            roomName: callData.roomName,
+                            targetUserId: callData.callerId
+                        });
+                    }
+                }
+            }
+        };
+
+        // Listen on window for messages from service worker
+        window.addEventListener("message", handleServiceWorkerMessage);
+
+        return () => {
+            window.removeEventListener("message", handleServiceWorkerMessage);
+        };
+    }, [socket, streamClient]);
+
+    /**
+     * Check URL parameters on mount for call acceptance from push notification
+     */
+    const urlCallProcessedRef = useRef(false);
+
+    useEffect(() => {
+        // Only process once
+        if (urlCallProcessedRef.current) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const acceptCall = urlParams.get("acceptCall");
+        const roomName = urlParams.get("roomName");
+        const callerId = urlParams.get("callerId");
+        const mode = urlParams.get("mode");
+
+        if (acceptCall === "true" && roomName && callerId && mode && socket && streamClient && authUser) {
+            urlCallProcessedRef.current = true; // Mark as processed
+
+            // Set incoming call state
+            dispatch({
+                type: CALL_ACTIONS.INCOMING_CALL,
+                payload: {
+                    roomName,
+                    mode,
+                    caller: {
+                        _id: callerId,
+                        fullName: "Caller" // We don't have the name from URL
+                    }
+                }
+            });
+
+            // Auto-accept after brief delay
+            setTimeout(() => {
+                dispatch({ type: CALL_ACTIONS.ACCEPT_CALL });
+                socket.emit("call-accepted", {
+                    roomName,
+                    targetUserId: callerId
+                });
+
+                // Clean up URL parameters
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 500);
+        }
+    }, [socket, streamClient, authUser]); // Re-run when these become available
+
+    /**
      * Socket event listeners for call signaling
      * 
      * All call coordination happens via Socket.io:
@@ -205,7 +309,10 @@ export const CallProvider = ({ children }) => {
             if (data.reason === "busy") {
                 toast.error("User is currently busy");
             } else if (data.reason === "offline") {
-                toast.error("User is offline");
+                toast("User is currently unavailable. They'll be notified about your call.", {
+                    icon: "📞",
+                    duration: 4000
+                });
             } else {
                 toast.error("Call was rejected");
             }

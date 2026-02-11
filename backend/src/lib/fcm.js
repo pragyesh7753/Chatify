@@ -21,12 +21,20 @@ export const initializeFCM = () => {
 };
 
 export const sendPushNotification = async (token, { title, body, data = {}, link }) => {
-  if (!fcmInitialized) return;
+  if (!fcmInitialized) {
+    logger.warn("FCM not initialized, cannot send push notification");
+    return;
+  }
 
   try {
+    logger.info("Attempting to send push notification", { 
+      title, 
+      tokenPreview: `${token.substring(0, 20)}...` 
+    });
+    
     // Send data-only message to avoid duplicate notifications
     // The service worker will handle displaying the notification
-    await admin.messaging().send({
+    const result = await admin.messaging().send({
       token,
       data: {
         ...data,
@@ -37,7 +45,17 @@ export const sendPushNotification = async (token, { title, body, data = {}, link
         badge: "/pwa-64x64.png"
       }
     });
+    
+    logger.info("Push notification sent successfully", { 
+      messageId: result,
+      title 
+    });
   } catch (error) {
-    console.error("Push notification failed:", error.message);
+    logger.error("Push notification failed", { 
+      error: error.message,
+      code: error.code,
+      title 
+    });
+    throw error;
   }
 };

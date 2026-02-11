@@ -18,7 +18,7 @@ messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
   const notificationTitle = data.title || payload.notification?.title || "New Message";
   const notificationBody = data.body || payload.notification?.body || "You have a new message";
-  
+
   const notificationOptions = {
     body: notificationBody,
     icon: data.icon || "/pwa-192x192.png",
@@ -46,37 +46,85 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  
+
+  const notificationData = event.notification.data || {};
+
   // Handle action buttons
   if (event.action === "answer") {
     event.waitUntil(
       clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-        const url = event.notification.data.link || "/";
-        
+        const url = notificationData.link || "/";
+
         // Check if app is already open
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && "focus" in client) {
             client.focus();
-            client.postMessage({ type: "NAVIGATE", url });
+            // Send message to accept the call
+            client.postMessage({
+              type: "ACCEPT_CALL",
+              callData: {
+                roomName: notificationData.roomName,
+                callerId: notificationData.callerId,
+                callerName: notificationData.callerName,
+                mode: notificationData.mode
+              }
+            });
             return;
           }
         }
-        
-        // Open new window if not open
+
+        // Open new window if not open - with call data in URL
         if (clients.openWindow) {
-          return clients.openWindow(url);
+          const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&mode=${notificationData.mode}`;
+          return clients.openWindow(callUrl);
         }
       })
     );
   } else if (event.action === "reject") {
-    // Just close the notification
-    return;
+    // Send reject message to backend
+    event.waitUntil(
+      clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        let messageHandled = false;
+
+        // Try to send message to open clients first
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin)) {
+            client.postMessage({
+              type: "REJECT_CALL",
+              callData: {
+                roomName: notificationData.roomName,
+                callerId: notificationData.callerId
+              }
+            });
+            messageHandled = true;
+          }
+        }
+
+        // If no clients are open, send rejection directly to backend
+        if (!messageHandled) {
+          const backendUrl = notificationData.backendUrl;
+
+          return fetch(`${backendUrl}/api/calls/reject`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              roomName: notificationData.roomName,
+              callerId: notificationData.callerId
+            })
+          }).catch((error) => {
+            console.error("Failed to send call rejection to backend:", error);
+          });
+        }
+      })
+    );
   } else {
     // Default action - open the app
     event.waitUntil(
       clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-        const url = event.notification.data.link || "/";
-        
+        const url = notificationData.link || "/";
+
         // Check if app is already open
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && "focus" in client) {
@@ -85,7 +133,7 @@ self.addEventListener("notificationclick", (event) => {
             return;
           }
         }
-        
+
         // Open new window if not open
         if (clients.openWindow) {
           return clients.openWindow(url);

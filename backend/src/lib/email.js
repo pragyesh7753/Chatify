@@ -12,7 +12,7 @@ if (!process.env.FRONTEND_URL) {
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (email, verificationToken, fullName) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL;
   const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
   const emailData = {
@@ -61,7 +61,7 @@ export const generateVerificationToken = () => {
 };
 
 export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fullName) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL;
   const verificationUrl = `${frontendUrl}/verify-email-change?token=${emailChangeToken}`;
 
   const emailData = {
@@ -106,7 +106,7 @@ export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fu
 };
 
 export const sendPasswordResetEmail = async (email, resetToken, fullName) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL;
   const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
   const emailData = {
