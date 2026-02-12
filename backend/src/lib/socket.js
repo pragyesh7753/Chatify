@@ -154,6 +154,7 @@ export const initializeSocket = (server) => {
             await sendPushNotification(fcmToken, {
               title: `Incoming ${callType} Call`,
               body: `${caller.fullName} is calling you`,
+              link: process.env.FRONTEND_URL || "https://chatify.com",
               data: {
                 type: "call",
                 callerId: caller._id,
@@ -195,6 +196,7 @@ export const initializeSocket = (server) => {
               await sendPushNotification(fcmToken, {
                 title: `Missed ${callType} Call`,
                 body: `You missed a ${callType.toLowerCase()} call from ${caller.fullName}`,
+                link: process.env.FRONTEND_URL || "https://chatify.com",
                 data: {
                   type: "missed_call",
                   callerId: caller._id,

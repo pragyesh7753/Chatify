@@ -45,6 +45,7 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener("notificationclick", (event) => {
+  console.log("[SW] Notification clicked, action:", event.action);
   event.notification.close();
 
   const notificationData = event.notification.data || {};
@@ -126,25 +127,58 @@ self.addEventListener("notificationclick", (event) => {
       })
     );
   } else {
-    // Default action - open the app
-    event.waitUntil(
-      clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-        const url = notificationData.link || "/";
+    console.log("[SW] Notification body clicked (no action)");
 
-        // Check if app is already open
-        for (const client of clientList) {
-          if (client.url.includes(self.location.origin) && "focus" in client) {
-            client.focus();
-            client.postMessage({ type: "NAVIGATE", url });
-            return;
+    // If it's a call notification, treat body click as "answer"
+    if (notificationData.type === "call") {
+      console.log("[SW] Call notification - auto-accepting");
+
+      event.waitUntil(
+        clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+          const url = notificationData.link || "/";
+
+          for (const client of clientList) {
+            if (client.url.includes(self.location.origin) && "focus" in client) {
+              client.focus();
+              client.postMessage({
+                type: "ACCEPT_CALL",
+                callData: {
+                  roomName: notificationData.roomName,
+                  callerId: notificationData.callerId,
+                  callerName: notificationData.callerName,
+                  mode: notificationData.mode
+                }
+              });
+              return;
+            }
           }
-        }
 
-        // Open new window if not open
-        if (clients.openWindow) {
-          return clients.openWindow(url);
-        }
-      })
-    );
+          if (clients.openWindow) {
+            const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&callerName=${encodeURIComponent(notificationData.callerName || 'Caller')}&mode=${notificationData.mode}`;
+            console.log("[SW] Opening window with call URL:", callUrl);
+            return clients.openWindow(callUrl);
+          }
+        })
+      );
+    } else {
+      // Default action - open the app
+      event.waitUntil(
+        clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+          const url = notificationData.link || "/";
+
+          for (const client of clientList) {
+            if (client.url.includes(self.location.origin) && "focus" in client) {
+              client.focus();
+              client.postMessage({ type: "NAVIGATE", url });
+              return;
+            }
+          }
+
+          if (clients.openWindow) {
+            return clients.openWindow(url);
+          }
+        })
+      );
+    }
   }
 });
