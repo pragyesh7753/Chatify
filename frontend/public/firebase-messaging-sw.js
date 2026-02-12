@@ -51,13 +51,18 @@ self.addEventListener("notificationclick", (event) => {
 
   // Handle action buttons
   if (event.action === "answer") {
+    console.log("[SW] Answer button clicked");
+
     event.waitUntil(
       clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        console.log("[SW] Found clients:", clientList.length);
+
         const url = notificationData.link || "/";
 
         // Check if app is already open
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && "focus" in client) {
+            console.log("[SW] App already open, sending message to client");
             client.focus();
             // Send message to accept the call
             client.postMessage({
@@ -76,6 +81,7 @@ self.addEventListener("notificationclick", (event) => {
         // Open new window if not open - with call data in URL
         if (clients.openWindow) {
           const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&callerName=${encodeURIComponent(notificationData.callerName || 'Caller')}&mode=${notificationData.mode}`;
+          console.log("[SW] Opening new window with URL:", callUrl);
           return clients.openWindow(callUrl);
         }
       })
