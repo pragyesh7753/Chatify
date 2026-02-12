@@ -75,7 +75,7 @@ self.addEventListener("notificationclick", (event) => {
 
         // Open new window if not open - with call data in URL
         if (clients.openWindow) {
-          const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&mode=${notificationData.mode}`;
+          const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&callerName=${encodeURIComponent(notificationData.callerName || 'Caller')}&mode=${notificationData.mode}`;
           return clients.openWindow(callUrl);
         }
       })

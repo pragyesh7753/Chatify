@@ -236,10 +236,24 @@ export const CallProvider = ({ children }) => {
         const acceptCall = urlParams.get("acceptCall");
         const roomName = urlParams.get("roomName");
         const callerId = urlParams.get("callerId");
+        const callerName = urlParams.get("callerName");
         const mode = urlParams.get("mode");
+
+        console.log("[CallProvider] URL params check:", {
+            acceptCall,
+            roomName,
+            callerId,
+            callerName,
+            mode,
+            hasSocket: !!socket,
+            hasStreamClient: !!streamClient,
+            hasAuthUser: !!authUser
+        });
 
         if (acceptCall === "true" && roomName && callerId && mode && socket && streamClient && authUser) {
             urlCallProcessedRef.current = true; // Mark as processed
+
+            console.log("[CallProvider] Auto-accepting call from URL parameters");
 
             // Set incoming call state
             dispatch({
@@ -249,13 +263,14 @@ export const CallProvider = ({ children }) => {
                     mode,
                     caller: {
                         _id: callerId,
-                        fullName: "Caller" // We don't have the name from URL
+                        fullName: callerName || "Caller"
                     }
                 }
             });
 
             // Auto-accept after brief delay
             setTimeout(() => {
+                console.log("[CallProvider] Emitting call-accepted to backend");
                 dispatch({ type: CALL_ACTIONS.ACCEPT_CALL });
                 socket.emit("call-accepted", {
                     roomName,
