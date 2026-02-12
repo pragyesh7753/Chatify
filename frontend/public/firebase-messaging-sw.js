@@ -45,7 +45,12 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener("notificationclick", (event) => {
-  console.log("[SW] Notification clicked, action:", event.action);
+  console.log("[SW] ===== NOTIFICATION CLICKED =====");
+  console.log("[SW] Action:", event.action);
+  console.log("[SW] Notification data:", JSON.stringify(event.notification.data));
+  console.log("[SW] Notification type:", event.notification.data?.type);
+  console.log("[SW] Link:", event.notification.data?.link);
+
   event.notification.close();
 
   const notificationData = event.notification.data || {};
@@ -156,7 +161,18 @@ self.addEventListener("notificationclick", (event) => {
           if (clients.openWindow) {
             const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&callerName=${encodeURIComponent(notificationData.callerName || 'Caller')}&mode=${notificationData.mode}`;
             console.log("[SW] Opening window with call URL:", callUrl);
-            return clients.openWindow(callUrl);
+
+            // Try to open the window
+            return clients.openWindow(callUrl).then(windowClient => {
+              console.log("[SW] Window opened successfully:", !!windowClient);
+              return windowClient;
+            }).catch(error => {
+              console.error("[SW] Failed to open window:", error);
+              // Fallback: try opening without parameters
+              return clients.openWindow(url);
+            });
+          } else {
+            console.error("[SW] clients.openWindow not available");
           }
         })
       );

@@ -64,7 +64,12 @@ export const sendPushNotification = async (token, { title, body, data = {}, link
     // The service worker will handle displaying the notification
     const result = await admin.messaging().send({
       token,
-      data: payload
+      data: payload,
+      webpush: {
+        fcmOptions: {
+          link: String(link || process.env.FRONTEND_URL || "/")
+        }
+      }
     });
 
     logger.info("Push notification sent successfully", {
