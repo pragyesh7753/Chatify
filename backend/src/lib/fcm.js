@@ -60,9 +60,10 @@ export const sendPushNotification = async (token, { title, body, data = {}, link
       dataTypes: Object.entries(payload).map(([k, v]) => `${k}: ${typeof v}`)
     });
 
-    // Send data-only message to avoid duplicate notifications
-    // The service worker will handle displaying the notification
-    const result = await admin.messaging().send({
+    // Send data-only message so the service worker's onBackgroundMessage
+    // is the sole handler – prevents the browser from auto-displaying a
+    // second "plain" notification alongside the one with action buttons.
+    const message = {
       token,
       data: payload,
       webpush: {
@@ -70,7 +71,9 @@ export const sendPushNotification = async (token, { title, body, data = {}, link
           link: String(link || process.env.FRONTEND_URL || "/")
         }
       }
-    });
+    };
+
+    const result = await admin.messaging().send(message);
 
     logger.info("Push notification sent successfully", {
       messageId: result,

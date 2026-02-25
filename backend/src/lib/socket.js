@@ -161,7 +161,13 @@ export const initializeSocket = (server) => {
                 callerName: caller.fullName,
                 roomName,
                 mode,
-                backendUrl: process.env.BACKEND_URL
+                // BACKEND_URL must be set in production so the service worker
+                // can call /api/calls/reject directly when the app is closed.
+                // Falls back to a local-dev address when NODE_ENV is not production.
+                backendUrl: process.env.BACKEND_URL ||
+                  (process.env.NODE_ENV !== "production"
+                    ? `http://localhost:${process.env.PORT || 5000}`
+                    : "")
               }
             });
 
@@ -253,6 +259,14 @@ export const initializeSocket = (server) => {
     socket.on("call-rejected", async (data) => {
       const { roomName, targetUserId, reason } = data;
 
+      // Cancel the pending 30-second offline-rejection timeout so the caller
+      // does not receive a second (confusing) "offline" rejection later.
+      if (pendingCallTimeouts.has(roomName)) {
+        clearTimeout(pendingCallTimeouts.get(roomName));
+        pendingCallTimeouts.delete(roomName);
+        logger.info("Cleared pending call timeout on explicit rejection", { roomName });
+      }
+
       const targetSocketId = connectedUsers.get(targetUserId);
       if (targetSocketId) {
         io.to(targetSocketId).emit("call-rejected", {
@@ -278,7 +292,7 @@ export const initializeSocket = (server) => {
 
     // Handle disconnection
     socket.on("disconnect", () => {
-      console.log(`User disconnected: ${socket.userId}`);
+      logger.info("User disconnected", { userId: socket.userId });
       connectedUsers.delete(socket.userId);
 
       // Emit offline status to all connected clients
@@ -300,4 +314,19 @@ export const getConnectedUsers = () => connectedUsers;
 
 export const isUserOnline = (userId) => {
   return connectedUsers.has(userId);
+};
+
+/**
+ * Clear the pending offline-rejection timeout for a call.
+ * Used by the HTTP /api/calls/reject route so that an explicit rejection
+ * via push-notification dismiss clears the 30-second timer.
+ */
+export const clearCallTimeout = (roomName) => {
+  if (pendingCallTimeouts.has(roomName)) {
+    clearTimeout(pendingCallTimeouts.get(roomName));
+    pendingCallTimeouts.delete(roomName);
+    logger.info("clearCallTimeout: cleared pending timeout", { roomName });
+    return true;
+  }
+  return false;
 };

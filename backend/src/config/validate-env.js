@@ -45,6 +45,9 @@ export function validateEnv() {
     'GOOGLE_CALLBACK_URL',
     'FIREBASE_SERVICE_ACCOUNT',
     'CRON_SECRET',
+    // Required for push-notification call rejection to work when the app is closed.
+    // Set this to the public URL of the backend (e.g., https://your-app.railway.app).
+    'BACKEND_URL',
   ];
 
   // Check for missing required variables

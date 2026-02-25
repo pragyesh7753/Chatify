@@ -45,30 +45,18 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener("notificationclick", (event) => {
-  console.log("[SW] ===== NOTIFICATION CLICKED =====");
-  console.log("[SW] Action:", event.action);
-  console.log("[SW] Notification data:", JSON.stringify(event.notification.data));
-  console.log("[SW] Notification type:", event.notification.data?.type);
-  console.log("[SW] Link:", event.notification.data?.link);
-
   event.notification.close();
 
   const notificationData = event.notification.data || {};
 
   // Handle action buttons
   if (event.action === "answer") {
-    console.log("[SW] Answer button clicked");
-
     event.waitUntil(
       clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-        console.log("[SW] Found clients:", clientList.length);
-
         const url = notificationData.link || "/";
 
-        // Check if app is already open
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && "focus" in client) {
-            console.log("[SW] App already open, sending message to client");
             client.focus();
             // Send message to accept the call
             client.postMessage({
@@ -84,21 +72,17 @@ self.addEventListener("notificationclick", (event) => {
           }
         }
 
-        // Open new window if not open - with call data in URL
         if (clients.openWindow) {
           const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&callerName=${encodeURIComponent(notificationData.callerName || 'Caller')}&mode=${notificationData.mode}`;
-          console.log("[SW] Opening new window with URL:", callUrl);
           return clients.openWindow(callUrl);
         }
       })
     );
   } else if (event.action === "reject") {
-    // Send reject message to backend
     event.waitUntil(
-      clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-        let messageHandled = false;
-
-        // Try to send message to open clients first
+      clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clientList) => {
+        // Step 1: notify any open clients immediately via postMessage so the
+        // in-app UI updates right away (handled by navigator.serviceWorker listener).
         for (const client of clientList) {
           if (client.url.includes(self.location.origin)) {
             client.postMessage({
@@ -108,36 +92,46 @@ self.addEventListener("notificationclick", (event) => {
                 callerId: notificationData.callerId
               }
             });
-            messageHandled = true;
           }
         }
 
-        // If no clients are open, send rejection directly to backend
-        if (!messageHandled) {
-          const backendUrl = notificationData.backendUrl;
+        // Step 2: call the backend HTTP endpoint directly if backendUrl is available.
+        // Note: .catch() only catches network errors, NOT 4xx/5xx – we must check
+        // response.ok explicitly so a misconfigured URL doesn't silently swallow
+        // the rejection.
+        const backendUrl = notificationData.backendUrl;
+        if (backendUrl) {
+          try {
+            const response = await fetch(`${backendUrl}/api/calls/reject`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                roomName: notificationData.roomName,
+                callerId: notificationData.callerId
+              })
+            });
+            if (response.ok) return;
+            console.warn("[SW] Backend HTTP reject returned non-OK status:", response.status);
+          } catch (error) {
+            console.error("[SW] HTTP reject request failed:", error);
+          }
+        }
 
-          return fetch(`${backendUrl}/api/calls/reject`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              roomName: notificationData.roomName,
-              callerId: notificationData.callerId
-            })
-          }).catch((error) => {
-            console.error("Failed to send call rejection to backend:", error);
-          });
+        // Step 3 (fallback): HTTP path is unavailable or failed.
+        // Open the app with ?rejectCall=true so the socket layer can notify
+        // the caller. Only needed when no client window is already open.
+        const hasOpenClient = clientList.some(c => c.url.includes(self.location.origin));
+        if (!hasOpenClient && clients.openWindow) {
+          const rejectUrl = `${self.location.origin}?rejectCall=true` +
+            `&roomName=${encodeURIComponent(notificationData.roomName)}` +
+            `&callerId=${encodeURIComponent(notificationData.callerId)}`;
+          return clients.openWindow(rejectUrl);
         }
       })
     );
   } else {
-    console.log("[SW] Notification body clicked (no action)");
-
-    // If it's a call notification, treat body click as "answer"
+    // If it's a call notification, treat body click as answer
     if (notificationData.type === "call") {
-      console.log("[SW] Call notification - auto-accepting");
-
       event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
           const url = notificationData.link || "/";
@@ -160,19 +154,7 @@ self.addEventListener("notificationclick", (event) => {
 
           if (clients.openWindow) {
             const callUrl = `${url}?acceptCall=true&roomName=${encodeURIComponent(notificationData.roomName)}&callerId=${notificationData.callerId}&callerName=${encodeURIComponent(notificationData.callerName || 'Caller')}&mode=${notificationData.mode}`;
-            console.log("[SW] Opening window with call URL:", callUrl);
-
-            // Try to open the window
-            return clients.openWindow(callUrl).then(windowClient => {
-              console.log("[SW] Window opened successfully:", !!windowClient);
-              return windowClient;
-            }).catch(error => {
-              console.error("[SW] Failed to open window:", error);
-              // Fallback: try opening without parameters
-              return clients.openWindow(url);
-            });
-          } else {
-            console.error("[SW] clients.openWindow not available");
+            return clients.openWindow(callUrl).catch(() => clients.openWindow(url));
           }
         })
       );

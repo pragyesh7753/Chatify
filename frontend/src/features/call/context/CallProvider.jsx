@@ -165,7 +165,9 @@ export const CallProvider = ({ children }) => {
     }, []); // Only run on unmount
 
     /**
-     * Listen for service worker messages (from push notification clicks)
+     * Listen for service worker messages (from push notification clicks).
+     * Service worker messages (client.postMessage) must be received via
+     * navigator.serviceWorker – NOT window.addEventListener("message").
      */
     useEffect(() => {
         const handleServiceWorkerMessage = (event) => {
@@ -215,11 +217,15 @@ export const CallProvider = ({ children }) => {
             }
         };
 
-        // Listen on window for messages from service worker
-        window.addEventListener("message", handleServiceWorkerMessage);
+        // Service worker messages arrive on navigator.serviceWorker, not window
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.addEventListener("message", handleServiceWorkerMessage);
+        }
 
         return () => {
-            window.removeEventListener("message", handleServiceWorkerMessage);
+            if (navigator.serviceWorker) {
+                navigator.serviceWorker.removeEventListener("message", handleServiceWorkerMessage);
+            }
         };
     }, [socket, streamClient]);
 
@@ -239,21 +245,8 @@ export const CallProvider = ({ children }) => {
         const callerName = urlParams.get("callerName");
         const mode = urlParams.get("mode");
 
-        console.log("[CallProvider] URL params check:", {
-            acceptCall,
-            roomName,
-            callerId,
-            callerName,
-            mode,
-            hasSocket: !!socket,
-            hasStreamClient: !!streamClient,
-            hasAuthUser: !!authUser
-        });
-
         if (acceptCall === "true" && roomName && callerId && mode && socket && streamClient && authUser) {
-            urlCallProcessedRef.current = true; // Mark as processed
-
-            console.log("[CallProvider] Auto-accepting call from URL parameters");
+            urlCallProcessedRef.current = true;
 
             // Set incoming call state
             dispatch({
@@ -268,9 +261,7 @@ export const CallProvider = ({ children }) => {
                 }
             });
 
-            // Auto-accept after brief delay
             setTimeout(() => {
-                console.log("[CallProvider] Emitting call-accepted to backend");
                 dispatch({ type: CALL_ACTIONS.ACCEPT_CALL });
                 socket.emit("call-accepted", {
                     roomName,
@@ -284,8 +275,36 @@ export const CallProvider = ({ children }) => {
     }, [socket, streamClient, authUser]); // Re-run when these become available
 
     /**
-     * Socket event listeners for call signaling
-     * 
+     * Handle URL parameters for call rejection from push notification.
+     * Fires when the SW falls back to opening the app (HTTP path unavailable).
+     * Pattern mirrors the acceptCall URL handler above.
+     */
+    const urlRejectProcessedRef = useRef(false);
+
+    useEffect(() => {
+        if (urlRejectProcessedRef.current) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const rejectCall = urlParams.get("rejectCall");
+        const roomName = urlParams.get("roomName");
+        const callerId = urlParams.get("callerId");
+
+        if (rejectCall === "true" && roomName && callerId && socket) {
+            urlRejectProcessedRef.current = true;
+
+            socket.emit("call-rejected", {
+                roomName,
+                targetUserId: callerId
+            });
+
+            // Clean up URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, [socket, authUser]); // Re-run when socket becomes available
+
+    /**
+     * Socket event listeners for call signaling.
+     *
      * All call coordination happens via Socket.io:
      * - call-invite: Incoming call from another user
      * - call-accepted: Receiver accepted the call
@@ -321,15 +340,18 @@ export const CallProvider = ({ children }) => {
         const handleCallRejected = (data) => {
             dispatch({ type: CALL_ACTIONS.CALL_REJECTED });
 
+            // Use a fixed toast id to prevent duplicate toasts if the event
+            // arrives more than once (e.g. socket path + HTTP path both fire).
             if (data.reason === "busy") {
-                toast.error("User is currently busy");
+                toast.error("User is currently busy", { id: "call-rejected" });
             } else if (data.reason === "offline") {
                 toast("User is currently unavailable. They'll be notified about your call.", {
+                    id: "call-rejected",
                     icon: "📞",
                     duration: 4000
                 });
             } else {
-                toast.error("Call was rejected");
+                toast.error("Call was rejected", { id: "call-rejected" });
             }
         };
 

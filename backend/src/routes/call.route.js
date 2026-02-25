@@ -1,5 +1,5 @@
 import express from "express";
-import { getIO, getConnectedUsers } from "../lib/socket.js";
+import { getIO, getConnectedUsers, clearCallTimeout } from "../lib/socket.js";
 import logger from "../lib/logger.js";
 
 const router = express.Router();
@@ -18,6 +18,13 @@ router.post("/reject", async (req, res) => {
 
         const io = getIO();
         const connectedUsers = getConnectedUsers();
+
+        // Cancel the pending 30-second offline-rejection timeout so the
+        // caller is updated immediately rather than waiting for the timer.
+        const timeoutCleared = clearCallTimeout(roomName);
+        if (timeoutCleared) {
+            logger.info("Cleared pending call timeout via HTTP reject", { roomName, callerId });
+        }
 
         // Get caller's socket ID
         const callerSocketId = connectedUsers.get(callerId);
