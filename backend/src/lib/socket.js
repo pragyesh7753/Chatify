@@ -164,10 +164,7 @@ export const initializeSocket = (server) => {
                 // BACKEND_URL must be set in production so the service worker
                 // can call /api/calls/reject directly when the app is closed.
                 // Falls back to a local-dev address when NODE_ENV is not production.
-                backendUrl: process.env.BACKEND_URL ||
-                  (process.env.NODE_ENV !== "production"
-                    ? `http://localhost:${process.env.PORT || 5000}`
-                    : "")
+                backendUrl: process.env.BACKEND_URL
               }
             });
 
