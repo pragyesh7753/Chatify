@@ -7,6 +7,8 @@ import { validateFullName, validateEmail, validatePassword, validatePasswordMatc
 import EmailVerificationNotice from "@/features/auth/components/EmailVerificationNotice";
 import PasswordInput from "@/shared/components/PasswordInput";
 
+import { UserPlusIcon } from "@heroicons/react/24/outline";
+
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
     fullName: "",
@@ -242,19 +244,21 @@ const SignUpPage = () => {
           </div>
 
           {/* SIGNUP FORM - RIGHT SIDE */}
-          <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center p-3">
-            <div className="max-w-md p-4">
-              {/* Illustration */}
-              <div className="relative aspect-square max-w-xs mx-auto">
-                <img src="/i.png" alt="Language connection illustration" className="w-full h-full" />
-              </div>
+          <div className="hidden lg:flex w-full lg:w-1/2 flex-col relative bg-primary/10 items-center justify-end overflow-hidden group pb-12 lg:pb-16">
+            {/* Illustration */}
+            <img 
+              src="/hero-illustration.png" 
+              alt="Language connection illustration" 
+              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 ease-in-out group-hover:scale-105" 
+            />
+            {/* Overlay to ensure text readability */}
+            <div className="absolute inset-0 bg-black/50"></div>
 
-              <div className="text-center space-y-2 mt-4">
-                <h2 className="text-base lg:text-lg font-semibold">Connect with anyone, anywhere</h2>
-                <p className="text-xs lg:text-sm opacity-70">
-                  Stay close to your friends, family, and groups with instant chats, voice & video calls, and threads.
-                </p>
-              </div>
+            <div className="relative z-10 max-w-lg text-center text-white space-y-3">
+              <h2 className="text-2xl lg:text-3xl font-bold drop-shadow-lg">Connect with anyone, anywhere</h2>
+              <p className="text-sm lg:text-base drop-shadow-md opacity-90">
+                Stay close to your friends, family, and groups with instant chats, voice & video calls, and threads.
+              </p>
             </div>
           </div>
         </div>

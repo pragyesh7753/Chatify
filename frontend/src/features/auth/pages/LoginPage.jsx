@@ -164,19 +164,25 @@ const LoginPage = () => {
         </div>
 
         {/* IMAGE SECTION */}
-        <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center p-4">
-          <div className="max-w-md p-6 lg:p-8">
-            {/* Illustration */}
-            <div className="relative aspect-square max-w-sm mx-auto">
-              <img src="/i.png" alt="Language connection illustration" className="w-full h-full" />
-            </div>
+        <div className="hidden lg:flex w-full lg:w-1/2 flex-col relative items-center justify-end overflow-hidden bg-primary/10 group pb-12 lg:pb-16">
+          {/* Illustration covering whole section */}
+          <img
+            src="/hero-illustration.png"
+            alt="Communication illustration"
+            className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 ease-in-out group-hover:scale-105"
+          />
 
-            <div className="text-center space-y-3 mt-6">
-              <h2 className="text-lg lg:text-xl font-semibold">All-in-one Communication</h2>
-              <p className="text-sm lg:text-base opacity-70">
-                Seamless messaging, voice & video calls, group chats, and threads—everything in one powerful app.
-              </p>
-            </div>
+          {/* Overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-black/50"></div>
+
+          {/* Text ON the image */}
+          <div className="relative z-10 max-w-md text-center space-y-3 text-white">
+            <h2 className="text-2xl lg:text-3xl font-bold drop-shadow-lg">
+              All-in-one Communication
+            </h2>
+            <p className="text-sm lg:text-base drop-shadow-md opacity-90">
+              Seamless messaging, voice & video calls, group chats, and threads—everything in one powerful app.
+            </p>
           </div>
         </div>
       </div>
