@@ -30,8 +30,12 @@ const ForgotPasswordPage = () => {
 
   if (isSubmitted) {
     return (
-      <div className="h-screen flex items-center justify-center p-4" data-theme="forest">
-        <div className="max-w-md w-full bg-base-100 rounded-xl shadow-lg p-8 border border-primary/25">
+      <div className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden bg-base-200/50" data-theme="forest">
+        {/* Background decoration */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-secondary/20 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-md w-full bg-base-100/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 border border-primary/10 relative z-10">
           <div className="text-center">
             <div className="mb-6">
               <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -70,12 +74,16 @@ const ForgotPasswordPage = () => {
   }
 
   return (
-    <div className="h-screen flex items-center justify-center p-4" data-theme="forest">
-      <div className="max-w-md w-full bg-base-100 rounded-xl shadow-lg p-8 border border-primary/25">
+    <div className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden bg-base-200/50" data-theme="forest">
+      {/* Background decoration */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-secondary/20 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="max-w-md w-full bg-base-100/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 border border-primary/10 relative z-10">
         <div className="mb-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <img src="/favicon.png" alt="favicon" className="size-8" />
-            <span className="text-2xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+            <span className="text-2xl font-black font-logo bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
               Chatify
             </span>
           </div>

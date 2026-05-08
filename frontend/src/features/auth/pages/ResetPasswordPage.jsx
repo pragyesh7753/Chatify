@@ -64,7 +64,7 @@ const ResetPasswordPage = () => {
         <div className="mb-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <img src="/favicon.png" alt="favicon" className="size-8" />
-            <span className="text-2xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+            <span className="text-2xl font-black font-logo bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
               Chatify
             </span>
           </div>

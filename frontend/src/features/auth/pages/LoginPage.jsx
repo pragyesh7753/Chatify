@@ -47,16 +47,20 @@ const LoginPage = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8"
+      className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden bg-base-200/50"
       data-theme="forest"
     >
-      <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-6xl mx-auto bg-base-100 rounded-lg sm:rounded-xl shadow-lg overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-secondary/20 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="border border-primary/10 flex flex-col lg:flex-row-reverse w-full max-w-6xl mx-auto bg-base-100/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden relative z-10">
         {/* LOGIN FORM SECTION */}
         <div className="w-full lg:w-1/2 p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col">
           {/* LOGO */}
           <div className="mb-4 sm:mb-6 flex items-center justify-start gap-2">
             <img src="/favicon.png" alt="favicon" className="size-8 sm:size-9 text-primary" />
-            <span className="text-2xl sm:text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
+            <span className="text-2xl sm:text-3xl font-black font-logo bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
               Chatify
             </span>
           </div>

@@ -1,11 +1,11 @@
 import { MessageCircleIcon, ShieldCheckIcon, ZapIcon } from "lucide-react";
 
-const FeatureCard = ({ Icon, label, color }) => (
+const FeatureCard = (props) => (
     <div className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-base-200/50 transition-all group">
-        <div className={`p-3 rounded-full bg-gradient-to-br from-${color}/10 to-${color}/5 group-hover:from-${color}/20 group-hover:to-${color}/10 transition-all`}>
-            <Icon className={`h-6 w-6 text-${color}`} />
+        <div className={`p-3 rounded-full bg-gradient-to-br from-${props.color}/10 to-${props.color}/5 group-hover:from-${props.color}/20 group-hover:to-${props.color}/10 transition-all`}>
+            <props.Icon className={`h-6 w-6 text-${props.color}`} />
         </div>
-        <span className="text-sm font-medium text-base-content/80">{label}</span>
+        <span className="text-sm font-medium text-base-content/80">{props.label}</span>
     </div>
 );
 

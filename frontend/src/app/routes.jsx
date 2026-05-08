@@ -1,8 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from "react-router";
 
 import HomePage from "@/features/home/pages/HomePage";
-import SignUpPage from "@/features/auth/pages/SignUpPage";
-import LoginPage from "@/features/auth/pages/LoginPage";
+import AuthPage from "@/features/auth/pages/AuthPage";
 import NotificationsPage from "@/features/notifications/pages/NotificationsPage";
 import FriendsPage from "@/features/friends/pages/FriendsPage";
 import ChatPage from "@/features/chat/pages/ChatPage";
@@ -57,8 +56,8 @@ const AppRoutes = ({ isAuthenticated, isOnboarded }) => (
       }
     />
     <Route element={<PublicRoutes isAuthenticated={isAuthenticated} isOnboarded={isOnboarded} />}>
-      <Route path="/signup" element={<SignUpPage />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<AuthPage />} />
+      <Route path="/login" element={<AuthPage />} />
       <Route path="/verify-email" element={<EmailVerificationPage />} />
       <Route path="/verify-email-change" element={<EmailChangeVerificationPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

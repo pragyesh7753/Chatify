@@ -84,29 +84,35 @@ const OnboardingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-100 overflow-y-auto">
-      <div className="min-h-screen py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="card bg-base-200 w-full shadow-lg sm:shadow-xl">
-            <div className="card-body p-4 sm:p-6 md:p-8">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6">Complete Your Profile</h1>
+    <div className="h-screen w-full relative overflow-x-hidden overflow-y-auto bg-base-200/50" data-theme="forest">
+      {/* Background decoration - fixed so it stays in place while scrolling */}
+      <div className="fixed top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[120px] pointer-events-none z-0" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-secondary/20 rounded-full blur-[120px] pointer-events-none z-0" />
 
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 md:space-y-6">
+      {/* Inner wrapper ensures scroll height expands and card stays vertically centered */}
+      <div className="min-h-full w-full py-10 px-4 sm:px-6 flex flex-col">
+        <div className="max-w-2xl w-full mx-auto my-auto bg-base-100/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 border border-primary/10 relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2">Complete Your Profile</h1>
+          <p className="text-center text-sm text-base-content/70 mb-8">Let's get to know you better!</p>
+
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 md:space-y-6">
                 {/* PROFILE PIC CONTAINER */}
                 <div className="flex flex-col items-center justify-center space-y-3 sm:space-y-4">
                   {/* IMAGE PREVIEW */}
-                  <div className="size-24 sm:size-28 md:size-32 rounded-full bg-base-300 overflow-hidden">
-                    {previewUrl || formState.profilePic ? (
-                      <img
-                        src={previewUrl || formState.profilePic}
-                        alt="Profile Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <CameraIcon className="size-10 sm:size-12 text-base-content opacity-40" />
-                      </div>
-                    )}
+                  <div className="relative group">
+                    <div className="size-24 sm:size-28 md:size-32 rounded-full bg-base-300 overflow-hidden border-4 border-base-100 shadow-xl transition-transform duration-300 group-hover:scale-105">
+                      {previewUrl || formState.profilePic ? (
+                        <img
+                          src={previewUrl || formState.profilePic}
+                          alt="Profile Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <CameraIcon className="size-10 sm:size-12 text-base-content opacity-40" />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Upload and Random Avatar Buttons */}
@@ -236,8 +242,6 @@ const OnboardingPage = () => {
                   )}
                 </button>
               </form>
-            </div>
-          </div>
         </div>
       </div>
     </div>

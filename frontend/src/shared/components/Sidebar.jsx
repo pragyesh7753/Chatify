@@ -66,7 +66,7 @@ const Sidebar = ({ friends = [] }) => {
                     <>
                         <Link to="/" className="flex items-center gap-2 flex-1 min-w-0">
                             <img src="/favicon.png" alt="Chatify" className="size-8 flex-shrink-0" />
-                            <span className="text-xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider truncate">
+                            <span className="text-xl font-black font-logo bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider truncate">
                                 Chatify
                             </span>
                         </Link>

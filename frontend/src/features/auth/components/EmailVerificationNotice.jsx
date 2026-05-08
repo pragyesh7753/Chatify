@@ -34,19 +34,22 @@ const EmailVerificationNotice = ({ email, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-base-100 rounded-lg p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all">
+            <div className="bg-base-100/90 backdrop-blur-xl border border-primary/10 shadow-2xl rounded-2xl p-6 sm:p-8 max-w-md w-full">
                 <div className="text-center">
-                    <EnvelopeIcon className="w-16 h-16 text-primary mx-auto mb-4" />
-                    <h3 className="text-xl font-bold mb-2">Check Your Email!</h3>
-                    <p className="text-sm opacity-70 mb-4">
-                        We've sent a verification link to <strong>{email}</strong>.
+                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <EnvelopeIcon className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3">Check Your Email!</h3>
+                    <p className="text-base-content/70 mb-8 leading-relaxed">
+                        We've sent a verification link to <strong className="text-base-content">{email}</strong>.
+                        <br />
                         Please click the link in the email to verify your account.
                     </p>
 
                     <div className="space-y-3">
                         <button
-                            className="btn btn-primary w-full"
+                            className="btn btn-primary w-full shadow-lg shadow-primary/20"
                             onClick={handleResend}
                             disabled={countdown > 0 || resendMutation.isPending}
                         >
@@ -59,7 +62,7 @@ const EmailVerificationNotice = ({ email, onClose }) => {
                             )}
                         </button>
 
-                        <button className="btn btn-ghost w-full" onClick={onClose}>
+                        <button className="btn btn-ghost w-full text-base-content/70 hover:text-base-content" onClick={onClose}>
                             I'll verify later
                         </button>
                     </div>

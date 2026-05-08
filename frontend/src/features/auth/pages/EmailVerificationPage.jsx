@@ -63,31 +63,42 @@ const EmailVerificationPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
-            <div className="card bg-base-200 w-full max-w-md shadow-xl">
-                <div className="card-body text-center">
+        <div className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden bg-base-200/50" data-theme="forest">
+            {/* Background decoration */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-secondary/20 rounded-full blur-[120px] pointer-events-none" />
+
+            <div className="max-w-md w-full bg-base-100/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 border border-primary/10 relative z-10">
+                <div className="text-center">
                     {verificationStatus === "verifying" && (
                         <>
-                            <h2 className="card-title justify-center">Verifying Email...</h2>
-                            <p>Please wait while we verify your email address.</p>
+                            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="loading loading-spinner loading-lg text-primary"></span>
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2">Verifying Email...</h2>
+                            <p className="text-base-content/70">Please wait while we verify your email address.</p>
                         </>
                     )}
 
                     {verificationStatus === "success" && (
                         <>
-                            <CheckCircleIcon className="w-16 h-16 text-success mx-auto" />
-                            <h2 className="card-title justify-center text-success">Email Verified!</h2>
-                            <p>Your email has been successfully verified. You will be redirected to the home page shortly.</p>
+                            <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CheckCircleIcon className="w-8 h-8 text-success" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2 text-success">Email Verified!</h2>
+                            <p className="text-base-content/70">Your email has been successfully verified. You will be redirected to the home page shortly.</p>
                         </>
                     )}
 
                     {verificationStatus === "error" && (
                         <>
-                            <XCircleIcon className="w-16 h-16 text-error mx-auto" />
-                            <h2 className="card-title justify-center text-error">Verification Failed</h2>
-                            <p className="mb-4">The verification link is invalid or has expired.</p>
+                            <div className="w-16 h-16 bg-error/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <XCircleIcon className="w-8 h-8 text-error" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2 text-error">Verification Failed</h2>
+                            <p className="text-base-content/70 mb-6">The verification link is invalid or has expired.</p>
 
-                            <div className="form-control w-full">
+                            <div className="form-control w-full text-left">
                                 <label className="label">
                                     <span className="label-text">Enter your email to resend verification</span>
                                 </label>
@@ -101,7 +112,7 @@ const EmailVerificationPage = () => {
                             </div>
 
                             <button
-                                className="btn btn-primary mt-4"
+                                className="btn btn-primary mt-4 w-full"
                                 onClick={handleResendEmail}
                                 disabled={!email || resendMutation.isPending}
                             >
@@ -109,7 +120,7 @@ const EmailVerificationPage = () => {
                                     <span className="loading loading-ring loading-sm"></span>
                                 ) : (
                                     <>
-                                        <EnvelopeIcon className="w-4 h-4" />
+                                        <EnvelopeIcon className="w-5 h-5 mr-2" />
                                         Resend Verification Email
                                     </>
                                 )}
@@ -119,17 +130,21 @@ const EmailVerificationPage = () => {
 
                     {verificationStatus === "resent" && (
                         <>
-                            <EnvelopeIcon className="w-16 h-16 text-info mx-auto" />
-                            <h2 className="card-title justify-center text-info">Email Sent!</h2>
-                            <p>A new verification email has been sent. Please check your inbox.</p>
+                            <div className="w-16 h-16 bg-info/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <EnvelopeIcon className="w-8 h-8 text-info" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2 text-info">Email Sent!</h2>
+                            <p className="text-base-content/70">A new verification email has been sent. Please check your inbox.</p>
                         </>
                     )}
 
                     {verificationStatus === "no-token" && (
                         <>
-                            <XCircleIcon className="w-16 h-16 text-warning mx-auto" />
-                            <h2 className="card-title justify-center text-warning">Invalid Link</h2>
-                            <p>This verification link is invalid. Please use the link from your verification email.</p>
+                            <div className="w-16 h-16 bg-warning/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <XCircleIcon className="w-8 h-8 text-warning" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2 text-warning">Invalid Link</h2>
+                            <p className="text-base-content/70">This verification link is invalid. Please use the link from your verification email.</p>
                         </>
                     )}
                 </div>

@@ -5,7 +5,7 @@
 	<br/>
 	<br/>
 	<p>
-		<a href="https://chatify.pragyesh.tech" target="_blank">Live Demo</a> ·
+		<a href="https://chatify.studio" target="_blank">Live Demo</a> ·
 		<a href="#-features">Features</a> ·
 		<a href="#-quick-start">Quick Start</a> ·
 		<a href="#-environment-variables">Env Vars</a> ·

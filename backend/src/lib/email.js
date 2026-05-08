@@ -16,7 +16,7 @@ export const sendVerificationEmail = async (email, verificationToken, fullName) 
   const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
   const emailData = {
-    from: 'Chatify <chatify-noreply@pragyesh.tech>',
+    from: 'Chatify <noreply@chatify.studio>',
     to: email,
     subject: "Verify Your Chatify Account",
     html: `
@@ -65,7 +65,7 @@ export const sendEmailChangeVerification = async (newEmail, emailChangeToken, fu
   const verificationUrl = `${frontendUrl}/verify-email-change?token=${emailChangeToken}`;
 
   const emailData = {
-    from: 'Chatify <chatify-noreply@pragyesh.tech>',
+    from: 'Chatify <noreply@chatify.studio>',
     to: newEmail,
     subject: "Verify Your New Email Address - Chatify",
     html: `
@@ -110,7 +110,7 @@ export const sendPasswordResetEmail = async (email, resetToken, fullName) => {
   const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
   const emailData = {
-    from: 'Chatify <chatify-noreply@pragyesh.tech>',
+    from: 'Chatify <noreply@chatify.studio>',
     to: email,
     subject: "Reset Your Chatify Password",
     html: `

@@ -1,7 +1,26 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-logo: "Satoshi", sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
 @plugin "daisyui" {
   themes: all;
+}
+
+/* Refined focus styles — subtle border + soft glow instead of chunky ring */
+.input:focus,
+.input:focus-within,
+.textarea:focus,
+.select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 1px oklch(var(--p) / 0.4), 0 0 6px oklch(var(--p) / 0.12) !important;
+  border-color: oklch(var(--p) / 0.5) !important;
 }
 
 

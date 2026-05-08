@@ -79,63 +79,70 @@ const SignUpPage = () => {
   return (
     <>
       <div
-        className="min-h-screen flex items-center justify-center p-2 sm:p-3"
-        data-theme="forest">
-        <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-6xl mx-auto bg-base-100 rounded-lg shadow-lg overflow-hidden">
+        className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden bg-base-200/50"
+        data-theme="forest"
+      >
+        {/* Background decoration */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-secondary/20 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="border border-primary/10 flex flex-col lg:flex-row-reverse w-full max-w-6xl mx-auto bg-base-100/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden relative z-10">
           {/* SIGNUP FORM - LEFT SIDE */}
-          <div className="w-full lg:w-1/2 p-3 sm:p-4 md:p-5 flex flex-col">
+          <div className="w-full lg:w-1/2 p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col">
             {/* LOGO */}
-            <div className="mb-2 sm:mb-3 flex items-center justify-start gap-2">
-              <img src="/favicon.png" alt="favicon" className="size-6 sm:size-7 text-primary" />
-              <span className="text-xl sm:text-2xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
+            <div className="mb-4 sm:mb-6 flex items-center justify-start gap-2">
+              <img src="/favicon.png" alt="favicon" className="size-8 sm:size-9 text-primary" />
+              <span className="text-2xl sm:text-3xl font-black font-logo bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
                 Chatify
               </span>
             </div>
 
             <div className="w-full">
               <form onSubmit={handleSignup}>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div>
-                    <h2 className="text-base sm:text-lg md:text-xl font-semibold">Create an Account</h2>
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold leading-tight">Create an Account</h2>
                     <p className="text-xs sm:text-sm opacity-70">
                       Your all-in-one communication starts here.!
                     </p>
                   </div>
 
-                  <div className="space-y-2">
-                    {/* FULLNAME */}
-                    <div className="form-control w-full">
-                      <label className="label py-1">
-                        <span className="label-text text-xs sm:text-sm">Full Name</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="fullName"
-                        placeholder="John Doe"
-                        className="input input-bordered input-sm sm:input-md w-full text-sm"
-                        value={signupData.fullName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    {/* EMAIL */}
-                    <div className="form-control w-full">
-                      <label className="label py-1">
-                        <span className="label-text text-xs sm:text-sm">Email</span>
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        placeholder="john@gmail.com"
-                        className="input input-bordered input-sm sm:input-md w-full text-sm"
-                        value={signupData.email}
-                        onChange={handleChange}
-                        required
-                      />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {/* FULLNAME */}
+                      <div className="form-control w-full">
+                        <label className="label py-1 px-0">
+                          <span className="label-text text-xs sm:text-sm">Full Name</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="fullName"
+                          placeholder="John Doe"
+                          className="input input-bordered w-full text-sm sm:text-base"
+                          value={signupData.fullName}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+                      {/* EMAIL */}
+                      <div className="form-control w-full">
+                        <label className="label py-1 px-0">
+                          <span className="label-text text-xs sm:text-sm">Email</span>
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          placeholder="john@gmail.com"
+                          className="input input-bordered w-full text-sm sm:text-base"
+                          value={signupData.email}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
                     </div>
                     {/* PASSWORD */}
                     <div className="form-control w-full">
-                      <label className="label py-1">
+                      <label className="label py-1 px-0">
                         <span className="label-text text-xs sm:text-sm flex items-center gap-1">
                           Password
                           <div className="tooltip tooltip-right" data-tip="Must be 8-128 characters with at least one uppercase, lowercase, and number">
@@ -147,7 +154,7 @@ const SignUpPage = () => {
                       </label>
                       <PasswordInput
                         placeholder="********"
-                        className="input input-bordered input-sm sm:input-md w-full text-sm"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.password}
                         onChange={handleChange}
                         name="password"
@@ -157,12 +164,12 @@ const SignUpPage = () => {
 
                     {/* CONFIRM PASSWORD */}
                     <div className="form-control w-full">
-                      <label className="label py-1">
+                      <label className="label py-1 px-0">
                         <span className="label-text text-xs sm:text-sm">Confirm Password</span>
                       </label>
                       <PasswordInput
                         placeholder="********"
-                        className="input input-bordered input-sm sm:input-md w-full text-sm"
+                        className="input input-bordered w-full text-sm sm:text-base"
                         value={signupData.confirmPassword}
                         onChange={handleChange}
                         name="confirmPassword"
@@ -175,8 +182,8 @@ const SignUpPage = () => {
                       ))}
                     </div>
 
-                    <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-2 py-1">
+                    <div className="form-control mt-1">
+                      <label className="label cursor-pointer justify-start gap-2 py-0 px-0">
                         <input type="checkbox" className="checkbox checkbox-xs sm:checkbox-sm" required />
                         <span className="text-xs sm:text-sm leading-tight">
                           I agree to the{" "}
@@ -188,7 +195,7 @@ const SignUpPage = () => {
                   </div>
 
                   <button
-                    className="btn btn-primary btn-sm sm:btn-md w-full text-xs sm:text-sm"
+                    className="btn btn-primary w-full text-sm sm:text-base mt-2"
                     type="submit"
                     disabled={isPending}
                   >
@@ -196,41 +203,29 @@ const SignUpPage = () => {
                       <span className="loading loading-ring loading-sm"></span>
                     ) : (
                       <>
-                        <UserPlusIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                        <UserPlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         Sign Up
                       </>
                     )}
                   </button>
 
-                  <div className="divider my-1 text-xs sm:text-sm">OR</div>
+                  <div className="divider my-1">OR</div>
 
                   <button
                     type="button"
                     onClick={handleGoogleSignup}
-                    className="btn btn-outline btn-sm sm:btn-md w-full flex items-center justify-center gap-2 text-xs sm:text-sm"
+                    className="btn btn-outline w-full flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
                     Continue with Google
                   </button>
 
-                  <div className="text-center mt-2">
+                  <div className="text-center mt-2 space-y-2">
                     <p className="text-xs sm:text-sm">
                       Already have an account?{" "}
                       <Link to="/login" className="text-primary hover:underline">
