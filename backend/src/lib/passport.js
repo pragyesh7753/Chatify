@@ -72,7 +72,7 @@ passport.use(
           email: profile.emails[0].value,
           fullName: fullName,
           username: username,
-          profilePic: (profile.photos?.[0]?.value || `https://avatar.iran.liara.run/public/${Math.floor(Math.random() * 100) + 1}.png`).replace(/=s\d+-c$/, ''),
+          profilePic: (profile.photos?.[0]?.value || `https://api.dicebear.com/9.x/toon-head/svg?seed=${Math.floor(Math.random() * 10000)}`).replace(/=s\d+-c$/, ''),
           isVerified: true,
           isOnboarded: false,
           bio: "",

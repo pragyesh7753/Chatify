@@ -47,8 +47,8 @@ const OnboardingPage = () => {
   };
 
   const handleRandomAvatar = () => {
-    const idx = Math.floor(Math.random() * 100) + 1;
-    const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+    const seed = Math.floor(Math.random() * 10000);
+    const randomAvatar = `https://api.dicebear.com/9.x/toon-head/svg?seed=${seed}`;
 
     setFormState({ ...formState, profilePic: randomAvatar });
     setSelectedFile(null);

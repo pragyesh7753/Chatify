@@ -29,8 +29,8 @@ export async function signup(req, res) {
       return res.status(400).json({ message: "Email already exists, please use a different one" });
     }
 
-    const idx = Math.floor(Math.random() * 100) + 1;
-    const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+    const seed = Math.floor(Math.random() * 10000);
+    const randomAvatar = `https://api.dicebear.com/9.x/toon-head/svg?seed=${seed}`;
 
     // Generate a unique username based on the full name
     let baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
